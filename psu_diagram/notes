@@ -1,8 +1,0 @@
-bin/embl_to_ps.pl -line_base_length=150000 -feature_height=4 -line_spacing=32 -scale_feature_distance=3 -font_size=3 -scale_font_size=4 -label_feature_distance=1 -protein_features=CDS,tRNA,rRNA,misc_RNA -dna_line_features=repeat_region,repeat_unit -dna_feature_labels=no  ML.tabembl > ML_A4_portrait.ps
-
-bin/general/embl_to_ps.pl -page_width=792 -page_height=594 -line_base_length=220000 -feature_height=4 -line_spacing=35 -scale_feature_distance=3 -font_size=3 -scale_font_size=4 -label_feature_distance=1 -protein_features=CDS,tRNA,rRNA,misc_RNA -dna_line_features=repeat_region,repeat_unit -dna_feature_labels=no  ML.tabembl > ML_A4_landscape.ps
-
-bin/embl_to_ps.pl -page_width=1782 -page_height=792 -line_base_length=200000 -feature_height=5 -line_spacing=40 -scale_feature_distance=4 -font_size=4 -scale_font_size=4 -label_feature_distance=1 -protein_features=CDS,tRNA,rRNA,misc_RNA -dna_line_features=repeat_region,repeat_unit -dna_feature_labels=no  ML.tabembl > ML_A4_3_page.ps
-
-bin/circular_diagram.pl -scale_label_separation=1000000 -scale_mark_separation=100000 LEPRAE.dna circle1.tab 90 5 circle2.tab 80 5 circle3.tab 70 5 circle4.tab 60 5 -gc 53 5 10000 400 -gcdev 45 5 10000 500 > ML_circular.ps
-
