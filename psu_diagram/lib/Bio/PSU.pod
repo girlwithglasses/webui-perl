@@ -1,0 +1,124 @@
+=head1 NAME
+
+Bio::PSU - simple OO Perl modules for biological sequence analysis and
+annotation
+
+=head1 SYNOPSIS
+
+N/A
+
+=head1 DESCRIPTION
+
+The Bio::PSU modules are general purpose OO Perl libraries for
+biological (DNA, RNA, protein) sequence and feature manipulation.
+
+Features include:
+
+Sequence IO
+
+    EMBL (including fuzzy ranges in feature locations)
+    Fasta
+
+Sequence (DNA/RNA/protein) objects
+
+    Simple composition methods (residue count, codon count, MWt.)
+    Reverse-complementing (including treatment of attached features)
+    Subsequence extraction (including treatment of attached features)
+
+Generic sequence feature objects
+
+    Access to feature keys and qualifiers
+    Access to feature sequence and translation
+    Simple composition methods (residue count, codon count, MWt.)
+
+Search program output parsing
+
+    Lightweight BlastN/P/X (NCBI/WU, v1 & v2) parser
+    Fasta (-m 10 format) output parser
+
+These modules will only recognise AC, ID, DE, OS, FT and SQ from EMBL
+format files. Of these, AC, ID, DE and OS are simply stored and never
+changed, unless this is done explicitly by the user. FT and SQ are
+parsed and used to create objects.
+
+The modules allow features without sequence as well as sequence
+without features. They also respect feature tables without any ID
+line. This is useful in situations where: 
+
+   * You want to separate features into different files, but don't
+     want to store a copy of the same (possibly very large) sequence
+     in each file
+
+   * Your features are dissociated from the sequence, having been
+     created from coordinates indicated by a search program output
+     (e.g. Blast, Fasta, HMMER)
+
+   * Your sequence is already parsed by another program, such as
+     Artemis (http://www.sanger.ac.uk/Software/Artemis/) and you want
+     to provide it with some features to display
+
+If you need full treatment of EMBL format, I suggest you use Bioperl
+(see http://bio.perl.org).
+
+To get an overview of the module organisation is may be useful to look
+at my attempt at a class diagram in the doc directory (Gnome Dia and
+PostScript formats).
+
+Why did I write these modules?
+
+    As a learning exercise; they are my first attempt at any sort of
+    OO code.
+
+Why not use Bioperl - remember the virtue of 'laziness'?
+
+    I used it for a while. It didn't quite do what I wanted, but I
+    couldn't understand the OO code well enough to make the changes I
+    needed.
+
+    The Bio::PSU modules are the result of my trying to learn OO
+    Perl. As they have proved useful to some people I thought I would
+    share them. Merging of functionality with Bioperl has been
+    discussed and may occur in the future.
+
+Any comments or pointers are welcome.
+
+A gzipped tar archive may be obtained from:
+
+  ftp://ftp.sanger.ac.uk/pub/pathogens/software/biopsu/Bio-PSU-0.03.tar.gz
+
+  http://www.sanger.ac.uk/Users/kdj/Bio-PSU-0.03.tar.gz
+
+=head1 INSTALLATION
+
+Bio::PSU uses the standard Perl installation system:
+
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+At the moment there are some minimal tests included. These will be
+added to when I have the time.
+
+=head1 ACKNOWLEDGEMENTS
+
+These modules incorporate some ideas from Bioperl, but not much actual
+code. Similarly, the Blast parsing code was inspired by Ian Korf's
+BPlite modules (http://sapiens.wustl.edu/~ikorf). Code, ideas and
+bug-fixes have been contributed by members of the Pathogen Sequencing
+Unit at the Sanger Centre. I can also highly recommend 'Object
+Oriented Perl' by Damian Conway.
+
+=head1 DISCLAIMER
+
+'PSU' stands for Pathogen Sequencing Unit, where I work, and
+consequently where this code has seen some use. Note however, that
+this is a personal project and therefore they are NOT endorsed in any
+way by the Pathogen Sequencing Unit or the Sanger Centre. 
+
+These modules are provided "as is" without warranty of any kind. They
+may be used, redistributed and/or modified under the same conditions
+as Perl itself.
+
+Copyright (C) 2000 Keith James. All Rights Reserved.
+

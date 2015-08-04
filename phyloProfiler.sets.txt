@@ -1,0 +1,193 @@
+###
+# Specify "groups" with <taxon_oid> <taxon name>
+#  or <phylo domain> <name> where "all vs. all" is done
+# within the group.  For incremental processing, specify
+# which group is ".new".
+#
+.set 10ref Standard Reference Microbes
+ref Standard Reference Microbes
+.setEnd
+
+.set 210iain
+2005504002	Halorubrum lacusprofundi
+ref Standard Reference Microbes
+.setEnd
+
+.set 211shew
+2500000000      Federated Shewanella amazoneis SB2B
+2500000001      Federated Shewanella sp. ANA-3
+2500000002      Federated Shewanella baltica OS155
+2500000003      Federated Shewanella denitrificans OS217
+2500000004      Federated Shewanella frigidimarina NCIMB 400
+2500000005      Federated Shewanella loihica PV-4
+2500000006      Federated Shewanella sp. MR-4
+2500000007      Federated Shewanella sp. MR-7
+2500000009      Federated Shewanella putrefaciens CN-32
+2500000010      Federated Shewanella putrefaciens W3-18-1
+2500046000      Federated Shewanella oneidensis MR-1
+ref Standard Reference Microbes
+.setEnd
+
+.set 215gflores
+2500051000      Aciduliprofundum boonei T469
+2500051001      Hydrogenivirga sp. 128-5-R1-1
+2500051002      Sulfurihydrogenibium azorense strain Az-Fu1
+2500051003      Sulfurihydrogenibium yellowstonense
+2500051004      Persephonella marina strain EX-H1
+ref Standard Reference Microbes
+.setEnd
+
+.set 216rstepan
+.new
+2500064001 Flavobacterium MS024-2A
+2500068000 Flavobacterium MS024-3C
+ref Standard Reference Microbes
+.setEnd
+
+.set 220amber
+2005520000	Thermophilic autotrophic epsilon proteobacteria AM-H
+2005520001	Chrysiogenes arsenatis DSM 11915
+2005520002	Coprothermobacter proteolyticus DSM 5265
+2005520003	Geovibrio thiophilus	
+2005520004	Haloferax volcanii DS2	
+2005520005	Synergistes jonesii
+2005520006	Thermodesulfobacterium commune DSM 2178	
+2005520007	Acidithiobacillus ferrooxidans ATCC 23270
+2005520008	Thermomicrobium roseum DSM5159	
+2005520009	Thermodesulfovibrio yellowstonii DSM 11347
+ref Standard Reference Microbes
+.setEnd
+
+.set 230igni
+#2005490000	Ignicoccus sp. Kin4-I
+640062401	Ignicoccus sp. Kin4-I
+ref Standard Reference Microbes
+.setEnd
+
+.set 300tgut Termite Gut
+2001800000 Fibrobacter succinogenes S85
+2004080001 Termite Gut (version 2)
+2004175000 Termite Gut Fosmids (version 2)
+2005560000 Termite Gut (version 3)
+2005121000 Treponema azotonutricium ZAS9
+2005121001 Treponema primitia ZAS1
+ref Standard Reference Microbes
+.setEnd
+
+.set 301cendt
+2005726000 Candidatus Endomicrobium Trichonymphae
+ref Standard Reference  Microbies
+.setEnd
+
+.set 302sulfpng
+2006028000 Sulfolobus pangenome
+ref Standard Reference Microbies
+.setEnd
+
+.set 310mgut Mouse Gut
+2004230000      Mouse Gut Community lean3
+2004230001      Mouse Gut Community lean1
+2004230002      Mouse Gut Community ob2
+2004230003      Mouse Gut Community ob1
+2004230004      Mouse Gut Community lean2
+2005700000      Mouse Gut Community PT3 (lean1) (454 data)
+2005700001      Mouse Gut Community PT6 (obese1) (454 data)
+.setEnd
+
+.set 400hsmat Hypersaline Mat
+2004247000      Hypersaline Mat 01(G)
+2004247001      Hypersaline Mat 02(H)
+2004247002      Hypersaline Mat 03(I)
+2004247003      Hypersaline Mat 04(N)
+2004247004      Hypersaline Mat 05(O)
+2004247005      Hypersaline Mat 06(P)
+2004247006      Hypersaline Mat 07(S)
+2004247007      Hypersaline Mat 08(T)
+2004247008      Hypersaline Mat 09(Y)
+2004247009      Hypersaline Mat 10(Z)
+.setEnd
+
+.set 450lwm Lake Washington
+#2003000005 Lake Washington methylotroph combined assembly
+2004388000 Lake Washington 1
+2004388001 Lake Washington 2
+2004388002 Lake Washington 3
+2005747000 Lake Washington 3 Methylotenera
+2004388003 Lake Washington 4
+2004388004 Lake Washington 5
+637000001 Acidobacteria bacterium Ellin345
+637000002 Acinetobacter sp. ADP1
+639633005 Arthrobacter aurescens TC1
+639633006 Arthrobacter sp. FB24
+639857009 Burkholderia phymatum STM815
+637000053 Burkholderia xenovorans LB400
+639857011 Chloroflexus aggregans DSM 9485
+638341064 Chloroflexus aurantiacus J-10-fl
+637000076 Clostridium acetobutylicum ATCC 824
+638341065 Clostridium beijerincki NCIMB 8052
+639857012 Comamonas testosteroni KF-1
+637000087 Cytophaga hutchinsonii ATCC 33406
+638341093 Flavobacteria bacterium BBFL7
+638341094 Flavobacteriales bacterium HTCC2170
+637000119 Geobacter metallireducens GS-15
+638341099 Geobacter uraniumreducens Rf4
+638154508 Methanosarcina acetivorans C2A
+637000165 Methylobacillus flagellatus KT
+637000166 Methylococcus capsulatus Bath
+639857020 Methylophilales bacterium HTCC2181
+637000194 Nitrosococcus oceani ATCC 19707
+637000195 Nitrosomonas europaea ATCC 19718
+637000197 Nitrosospira multiformis ATCC 25196
+639633048 Paracoccus denitrificans PD1222
+637000220 Pseudomonas fluorescens Pf-5
+638341163 Pseudomonas putida F1
+639633054 Ralstonia eutropha H16
+637000231 Ralstonia solanacearum GMI1000
+637000235 Rhodoferax ferrireducens T118
+637000236 Rhodopirellula baltica SH 1
+638341185 Rubrivivax gelatinosus PM1
+638341199 Sphingomonas sp. SKA58
+639857032 Sphingomonas wittichii RW1
+637000307 Synechococcus elongatus PCC 6301
+637000311 Synechococcus sp. CC9902
+639857005 Thermoanaerobacter ethanolicus X514
+639633065 Verminephrobacter eiseniae EF01-2
+638341235 Xanthobacter autotrophicus Py2
+.setEnd
+
+.set 600tm7 TM7cell WGA
+2004000000      TM7cell-1032
+2004000001      TM7cell-1033
+2004247010      TM7-1032 Forge Assembly
+2005503000      TM7cell-1034
+.setEnd
+
+.set 900pub_metag public metagenomes
+2000000000	Sludge/US, Phrap Assembly
+2000000001	Sludge/Australian, Phrap Assembly
+2001000000	Sludge/US, Jazz Assembly
+2001200000	Acid Mine Drainage
+2001200001	Soil: Diversa Silage
+2001200002	Whalefall Sample #1
+2001200003	Whalefall Sample #2
+2001200004	Whalefall Sample #3
+2004002000	Human Gut Community Subject 7
+2004002001	Human Gut Community Subject 8
+2004170000	Anammox Bacteria
+2004175001	AMO community
+2004178001	O.algarvensis Delta1
+2004178002	O.algarvensis Delta4
+2004178003	O.algarvensis Gamma1
+2004178004	O.algarvensis Gamma3
+2004230000	Mouse Gut Community lean3 
+2004230001	Mouse Gut Community lean1 
+2004230002	Mouse Gut Community ob2 
+2004230003	Mouse Gut Community ob1 
+2004230004	Mouse Gut Community lean2 
+2005137000	simHC. Assembly Arachne. Gene prediction fgenes
+2005137001	simLC. Assembly Arachne. Gene prediction fgenes
+2005137002	simMC. Assembly Arachne. Gene prediction fgenes
+ref Standard Reference Microbes
+.setEnd
+
+

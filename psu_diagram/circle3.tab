@@ -1,0 +1,1930 @@
+FT   CDS             complement(12856..13230)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00008.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00205.out"
+FT                   /gene="ML0008"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02237.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             13775..13966
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00010.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00206.out"
+FT                   /gene="ML0009"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02238.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(28954..29265)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00022.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00218.out"
+FT                   /gene="ML0023"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02250.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS, possibly the remains of a disrupted
+FT                   gene."
+FT                   /product="hypothetical protein"
+FT   CDS             29775..30026
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00023.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00219.out"
+FT                   /gene="ML0024"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02251.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(30293..30583)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00024.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00220.out"
+FT                   /gene="ML0025"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02252.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(34033..34638)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00028.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00222.out"
+FT                   /gene="ML0029"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02254.out"
+FT                   /ml_unique
+FT                   /note="Contains a region similar to part of several
+FT                   bacterial hypothetical membrane proteins e.g. Streptomyces
+FT                   coelicolor SC4B5.06, putative transmembrane protein,
+FT                   TR:Q9ZBW2 (EMBL:AL034443) (345 aa); Fasta score E():
+FT                   2.4e-14, 54.1% identity in 109 aa overlap. The coding
+FT                   frame predicted by GC frameplot changes to either side of
+FT                   this region of similarity, suggesting that an ancestral
+FT                   CDS was disrupted. Given this, ML0029 may not be
+FT                   functional. Contains hydrophobic, possible
+FT                   membrane-spanning regions."
+FT                   /product="possible membrane protein"
+FT   CDS             complement(91296..91559)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00060.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00247.out"
+FT                   /gene="ML0070"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02279.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             169585..170406
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00105.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00289.out"
+FT                   /gene="ML0126"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02321.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(202307..202561)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00119.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00303.out"
+FT                   /gene="ML0141"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02335.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot. Possibly
+FT                   the remains of a disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             214001..214189
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00129.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00307.out"
+FT                   /gene="ML0152"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02339.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot. Possibly
+FT                   the remains of a disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(227008..227286)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00141.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00316.out"
+FT                   /gene="ML0162"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02348.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot. Possibly
+FT                   the remains of a disrupted gene. Previously sequenced as
+FT                   TR:Q9Z5H3 (EMBL:AL035500) (92 aa); Fasta score E(): 0,
+FT                   98.9% identity in 92 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             254028..254291
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00160.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00330.out"
+FT                   /gene="ML0188"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02362.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Contains PS01047
+FT                   Heavy-metal-associated domain."
+FT                   /product="hypothetical protein"
+FT   CDS             288678..288923
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00186.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00349.out"
+FT                   /gene="ML0217"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02381.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Possibly the remains of a
+FT                   disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(289829..290215)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00189.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00350.out"
+FT                   /gene="ML0218"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02382.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot. Possibly
+FT                   the remains of a disrupted gene. Previously sequenced as
+FT                   TR:O69534 (EMBL:AL023093) (128 aa); Fasta score E(): 0,
+FT                   99.2% identity in 128 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(323092..323406)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00214.out"
+FT                   /class="III.F"
+FT                   /colour=11
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00376.out"
+FT                   /gene="arsC"
+FT                   /gene="ML0247"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02408.out"
+FT                   /ml_unique
+FT                   /note="Similar to many e.g. Escherichia coli arsC,
+FT                   arsenate reductase, SW:ARC1_ECOLI (P08692) (141 aa); Fasta
+FT                   score E(): 1.7e-07, 38.8% identity in 103 aa overlap.
+FT                   Similar to proteins which expand the substrate specificity
+FT                   of arsAB pump."
+FT                   /product="putative arsenate reductase"
+FT   CDS             345708..345920
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00222.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00384.out"
+FT                   /gene="ML0265"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02416.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot. Possibly
+FT                   the remains of a disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             364952..365722
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00234.out"
+FT                   /class="III.A.2"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00393.out"
+FT                   /gene="ML0283"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02425.out"
+FT                   /ml_unique
+FT                   /note="Similar to many cation-efflux transporter
+FT                   components e.g. Alcaligenes eutrophus czcD,
+FT                   cobalt-zinc-cadmium resistance protein, SW:CZCD_ALCEU
+FT                   (P13512) (316 aa); Fasta score E(): 3.8e-22, 36.4%
+FT                   identity in 209 aa overlap. Previously sequenced as
+FT                   TR:O69597 (EMBL:AL023514) (256 aa); Fasta score E(): 0,
+FT                   100.0% identity in 256 aa overlap. Contains hydrophobic,
+FT                   possible membrane-spanning regions. Beyond codon 220
+FT                   (approx.) GC frameplot and codon useage plots indicate a
+FT                   possible frame change. Similarity to characterised
+FT                   transporter components ends at this point. This suggests
+FT                   that the ORF may have suffered a disruption and therefore
+FT                   not encode a functional product. Contains Pfam match to
+FT                   entry PF01545 Cation_efflux, Cation efflux family."
+FT                   /product="putative cation-efflux transporter component"
+FT   CDS             complement(372034..372426)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00242.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00398.out"
+FT                   /gene="ML0291"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02430.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O69603
+FT                   (EMBL:AL023514) (130 aa); Fasta score E(): 0, 99.2%
+FT                   identity in 130 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(373605..373844)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00243.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00399.out"
+FT                   /gene="ML0292"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02431.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Possibly the remains of a
+FT                   disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(375453..375662)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00244.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00400.out"
+FT                   /gene="ML0293"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02432.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Possibly the remains of a
+FT                   disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             394457..395161
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00257.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00409.out"
+FT                   /gene="ML0308"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02441.out"
+FT                   /ml_unique
+FT                   /note="Similar to hypothetical proteins from
+FT                   methanobacteria e.g. Methanobacterium thermoautotrophicum
+FT                   MTH1801, hypothetical protein, TR:O27829 (EMBL:AE000934)
+FT                   (224 aa); Fasta score E(): 3.6e-24, 39.3% identity in 219
+FT                   aa overlap and Methanococcus jannaschii MJ0045,
+FT                   hypothetical protein, SW:Y045_METJA (Q60353) (221 aa);
+FT                   Fasta score E(): 4e-17, 30.5% identity in 220 aa overlap.
+FT                   Previously sequenced as TR:Q9ZBM1 (EMBL:AL035159) (234
+FT                   aa); Fasta score E(): 0, 100.0% identity in 234 aa
+FT                   overlap."
+FT                   /product="conserved hypothetical protein"
+FT   CDS             414865..415128
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00272.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00422.out"
+FT                   /gene="ML0325"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02454.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Possibly the remains of a
+FT                   disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(423178..423936)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00276.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00423.out"
+FT                   /gene="ML0333"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02455.out"
+FT                   /ml_unique
+FT                   /note="N-terminal half is similar to that of Emericella
+FT                   nidulans lamB, lactam utilization protein, SW:LAMB_EMENI
+FT                   (P38096) (262 aa); Fasta score E(): 2.6e-15, 38.3%
+FT                   identity in 128 aa overlap. Similar to many bacterial
+FT                   hypothetical proteins e.g. TR:Q9RL45 (EMBL:AL121596) (250
+FT                   aa); Fasta score E(): 0, 58.1% identity in 248 aa
+FT                   overlap."
+FT                   /product="conserved hypothetical protein"
+FT   CDS             complement(425727..426554)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00278.out"
+FT                   /class="III.A"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00425.out"
+FT                   /gene="ML0336"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02457.out"
+FT                   /ml_unique
+FT                   /note="Similar to many putative ABC-tranporter ATP-binding
+FT                   proteins e.g. Chlamydia trachomatis troB, ABC transporter
+FT                   ATPase, TR:O87477 (EMBL:AF077010) (286 aa); Fasta score
+FT                   E(): 4.7e-16, 31.4% identity in 223 aa overlap. Contains
+FT                   Pfam match to entry PF00005 ABC_tran, ABC transporter.
+FT                   Contains PS00017 ATP/GTP-binding site motif A (P-loop).
+FT                   Contains PS00211 ABC transporters family signature."
+FT                   /product="putative ABC-tranporter ATP-binding protein"
+FT   CDS             complement(461185..461541)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00288.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00433.out"
+FT                   /gene="ML0369"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02465.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49877
+FT                   (EMBL:U00020) (118 aa); Fasta score E(): 0, 100.0%
+FT                   identity in 118 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             469288..470289
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00294.out"
+FT                   /class="II.C.5"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00438.out"
+FT                   /gene="ML0376"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02470.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Contains hydrophobic, possible
+FT                   membrane-spanning region near the N-terminus."
+FT                   /product="putative membrane protein"
+FT   CDS             complement(489915..490427)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00312.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00452.out"
+FT                   /gene="ML0394"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02484.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Possible CDS suggested by GC
+FT                   frameplot and codon usage plots."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(493939..495747)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00315.out"
+FT                   /class="III.A"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01814.out"
+FT                   /gene="ML0397"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02487.out"
+FT                   /ml_unique
+FT                   /note="C-terminal half is similar to sugar permeases e.g.
+FT                   Escherichia coli AraH, L-arabinose transport system
+FT                   permease protein, SW:ARAH_ECOLI (P08532) (329 aa); Fasta
+FT                   score E(): 1.1e-26, 36.0% identity in 297 aa overlap. The
+FT                   N-terminal half shows weak similarity to other proteins
+FT                   containing PAS and DUF9 domains. There is a possiblity
+FT                   that this is a signal transduction protein. Previously
+FT                   sequenced as TR:Q49739 (EMBL:U00015) (577 aa); Fasta score
+FT                   E(): 0, 99.8% identity in 577 aa overlap. Contains
+FT                   hydrophobic, possible membrane-spanning regions in the
+FT                   C-terminal half. Contains Pfam match to entry PF00989 PAS,
+FT                   PAS domain. Contains Pfam match to entry PF00990 DUF9,
+FT                   Domain of unknown function. Contains PS01039 Bacterial
+FT                   extracellular solute-binding proteins, family 3
+FT                   signature."
+FT                   /note="The C-terminal half is similar to ML1419. The
+FT                   N-terminal half shows some similarity to ML1750"
+FT                   /product="putative transporter protein"
+FT   CDS             complement(496060..497097)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00316.out"
+FT                   /class="III.A"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00456.out"
+FT                   /gene="ML0398"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02488.out"
+FT                   /ml_unique
+FT                   /note="Similar to many D-ribose-binding proteins e.g.
+FT                   Bacillus subtilis rbsB, D-ribose-binding protein
+FT                   precursor, SW:RBSB_BACSU (P36949) (305 aa); Fasta score
+FT                   E(): 2e-16, 32.6% identity in 273 aa overlap. Previously
+FT                   sequenced as TR:Q49738 (EMBL:U00015) (345 aa); Fasta score
+FT                   E(): 0, 100.0% identity in 345 aa overlap. Contains
+FT                   probable N-terminal signal sequence. Contains Pfam match
+FT                   to entry PF00532 Peripla_BP_like, Periplasmic binding
+FT                   proteins and sugar binding domain of the LacI family.."
+FT                   /product="putative D-ribose-binding protein"
+FT   CDS             547312..547788
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00338.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00472.out"
+FT                   /gene="ML0447"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02504.out"
+FT                   /ml_unique
+FT                   /note="Similar to region of cytochrome P450s e.g. Bacillus
+FT                   megaterium CYP102A1, cytochrome P450(BM-3), SW:CPXB_BACME
+FT                   (P14779) (1048 aa); Fasta score E(): 0.00033, 31.8%
+FT                   identity in 132 aa overlap. previously sequenced as
+FT                   TR:O07142 (EMBL:Z96801) (126 aa); Fasta score E(): 0,
+FT                   99.2% identity in 126 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             547992..548264
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00339.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00473.out"
+FT                   /gene="ML0448"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02505.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O07143
+FT                   (EMBL:Z96801) (90 aa); Fasta score E(): 0, 100.0% identity
+FT                   in 90 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(558363..559268)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00348.out"
+FT                   /class="I.B.7"
+FT                   /colour=7
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00481.out"
+FT                   /gene="ML0458"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02513.out"
+FT                   /ml_unique
+FT                   /note="Similar to putative oxidoreductases from both
+FT                   bacteria and eukaryotes e.g. Schizosaccharomyces pombe
+FT                   SPBC215.11C, putative aldo-keto reductase, TR:O94315
+FT                   (EMBL:AL033534) (306 aa); Fasta score E(): 0, 53.5%
+FT                   identity in 288 aa overlap. Previously sequenced as
+FT                   TR:O07152 (EMBL:Z96801) (306 aa); Fasta score E(): 0,
+FT                   100.0% identity in 301 aa overlap. Contains 2 Pfam matches
+FT                   to entry PF00248 aldo_ket_red, Aldo/keto reductase
+FT                   family."
+FT                   /product="putative oxidoreductase"
+FT   CDS             561808..562095
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00351.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00482.out"
+FT                   /gene="ML0464"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02514.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O07155
+FT                   (EMBL:Z96801) (110 aa); Fasta score E(): 0, 100.0%
+FT                   identity in 95 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             563632..564537
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00352.out"
+FT                   /class="II.C.2"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00483.out"
+FT                   /gene="ML0466"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02515.out"
+FT                   /ml_unique
+FT                   /note="Similar to Streptomyces coelicolor SC6A5.23,
+FT                   hypothetical protein, TR:Q9X7W9 (EMBL:AL049485) (261 aa);
+FT                   Fasta score E(): 9.5e-26, 36.4% identity in 253 aa
+FT                   overlap. Previously sequenced as TR:O07156 (EMBL:Z96801)
+FT                   (301 aa); Fasta score E(): 0, 99.7% identity in 301 aa
+FT                   overlap. Contains a possible N-terminal signal sequence."
+FT                   /product="possible secreted protein"
+FT                   /sigcleave_file="sigcleave/CORBA-ML.tab.seq.00001.out"
+FT   CDS             complement(566057..566839)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00355.out"
+FT                   /class="II.C.4"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00485.out"
+FT                   /gene="ML0468"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02517.out"
+FT                   /ml_unique
+FT                   /note="Similar to bacterial hypothetical proteins e.g.
+FT                   Aeropyrum pernix APE0183, hypothetical protein, TR:Q9YFR6
+FT                   (EMBL:AP000058) (270 aa); Fasta score E(): 7.2e-07, 26.2%
+FT                   identity in 256 aa overlap. Contains hydrophobic, possible
+FT                   membrane-spanning regions."
+FT                   /product="putative membrane protein"
+FT   CDS             complement(571603..571893)
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00486.out"
+FT                   /gene="ML0470"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02518.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O07161
+FT                   (EMBL:Z96801) (96 aa); Fasta score E(): 0, 100.0% identity
+FT                   in 96 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             574032..574274
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00363.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00487.out"
+FT                   /gene="ML0472"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02519.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot and codon
+FT                   usage plots. Possibly the remains of a disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             574538..574810
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00364.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00488.out"
+FT                   /gene="ML0473"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02520.out"
+FT                   /ml_unique
+FT                   /note="Improbable CDS suggested by GC frameplot and codon
+FT                   usage plots. Possibly the remains of a disrupted gene."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(639678..639932)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00405.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00521.out"
+FT                   /gene="ML0527"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02553.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             697927..698202
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00448.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00555.out"
+FT                   /gene="ML0573"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02587.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49684
+FT                   (EMBL:U00013) (91 aa); Fasta score E(): 0, 98.9% identity
+FT                   in 91 aa overlap. Contains Pfam match to entry PF00121
+FT                   TIM, Triosephosphate isomerase."
+FT                   /product="hypothetical protein"
+FT   CDS             698199..698516
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00449.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00556.out"
+FT                   /gene="ML0574"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02588.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49680
+FT                   (EMBL:U00013) (105 aa); Fasta score E(): 0, 99.0% identity
+FT                   in 105 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             698674..698892
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00450.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00557.out"
+FT                   /gene="ML0575"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02589.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             699708..699938
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00451.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00558.out"
+FT                   /gene="ML0576"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02590.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49681
+FT                   (EMBL:U00013) (76 aa); Fasta score E(): 1.5e-31, 100.0%
+FT                   identity in 76 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             700214..703018
+FT                   /EC_number="4.1.1.31"
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00453.out"
+FT                   /class="I.C.1"
+FT                   /colour=7
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00560.out"
+FT                   /gene="ppc"
+FT                   /gene="ML0578"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02592.out"
+FT                   /ml_unique
+FT                   /note="Similar to many e.g. Rhodopseudomonas palustris
+FT                   ppc, phosphoenolpyruvate carboxylase, SW:CAPP_RHOPA
+FT                   (O32483) (936 aa); Fasta score E(): 0, 45.7% identity in
+FT                   936 aa overlap. Previously sequenced as SW:CAPP_MYCLE
+FT                   (P46710) (907 aa); Fasta score E(): 0, 100.0% identity in
+FT                   907 aa overlap. Contains 2 Pfam matches to entry PF00311
+FT                   PEPcase, Phosphoenolpyruvate carboxylase. Contains PS00781
+FT                   Phosphoenolpyruvate carboxylase active site 1. Contains
+FT                   PS00393 Phosphoenolpyruvate carboxylase active site 2."
+FT                   /product="putative phosphoenolpyruvate carboxylase"
+FT   CDS             713858..714100
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00460.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00567.out"
+FT                   /gene="ML0588"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02599.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49686
+FT                   (EMBL:U00013) (80 aa); Fasta score E(): 0, 98.8% identity
+FT                   in 80 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             747777..748064
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00491.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00586.out"
+FT                   /gene="ML0614"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02618.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:Q49760
+FT                   (EMBL:U00016) (95 aa); Fasta score E(): 0, 100.0% identity
+FT                   in 95 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(793592..793873)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00516.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00605.out"
+FT                   /gene="ML0656"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02637.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32893
+FT                   (EMBL:Z98271) (93 aa); Fasta score E(): 0, 100.0% identity
+FT                   in 93 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(795537..795863)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00517.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00606.out"
+FT                   /gene="ML0659"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02638.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32892
+FT                   (EMBL:Z98271) (108 aa); Fasta score E(): 0, 100.0%
+FT                   identity in 108 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             799661..799975
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00521.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00610.out"
+FT                   /gene="ML0663"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02642.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32888
+FT                   (EMBL:Z98271) (104 aa); Fasta score E(): 0, 99.0% identity
+FT                   in 104 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             800116..800379
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00522.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00611.out"
+FT                   /gene="ML0664"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02643.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(813432..813959)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00533.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00620.out"
+FT                   /gene="ML0678"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02652.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32876
+FT                   (EMBL:Z98271) (175 aa); Fasta score E(): 0, 99.4% identity
+FT                   in 175 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             814145..814372
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00534.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00621.out"
+FT                   /gene="ML0679"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02653.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(897493..897753)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00575.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00656.out"
+FT                   /gene="ML0755"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02688.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(899660..900352)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00577.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00658.out"
+FT                   /gene="ML0757"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02690.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             920655..920849
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00592.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00673.out"
+FT                   /gene="ML0777"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02705.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(949041..949448)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00608.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00683.out"
+FT                   /gene="ML0799"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02715.out"
+FT                   /ml_unique
+FT                   /note="Similar to Mycobacterium smegmatis hypothetical
+FT                   19.1 kDa protein TR:Q9XCD9 (EMBL:AF144091) fasta scores:
+FT                   E(): 1e-15, 60.2% id in 93 aa and to other hypothetical
+FT                   proteins e.g. Salmonella typhimurium 17.0 kDa protein in
+FT                   ushA 3'region ybaK SW:YBAK_SALTY (P37174) fasta scores:
+FT                   E(): 6e-08, 40.9% id in 88 aa."
+FT                   /product="conserved hypothetical protein"
+FT   CDS             complement(963428..963751)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00618.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00692.out"
+FT                   /gene="ML0814"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02724.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             993882..994265
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00637.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00703.out"
+FT                   /gene="ML0837"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02735.out"
+FT                   /ml_unique
+FT                   /note="Similar to part of Streptomyces coelicolor putative
+FT                   aldolase SCI8.29C TR:Q9RJ24 (EMBL:AL132644) (240 aa) fasta
+FT                   scores: E(): 0.001, 32.5% id in 120 aa."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(997285..998589)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00642.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00706.out"
+FT                   /gene="ML0840"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02738.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32977
+FT                   (EMBL:Z98741)."
+FT                   /product="hypothetical protein"
+FT   CDS             998972..999895
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00643.out"
+FT                   /class="II.C.2"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00707.out"
+FT                   /gene="ML0841"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02739.out"
+FT                   /ml_unique
+FT                   /note="Similar to Mycobacterium paratuberculosis 35 kDa
+FT                   protein TR:Q9RAJ4 (EMBL:AJ250887) (307 aa) fasta scores:
+FT                   E(): 0, 92.2% id in 307 aa and to Mycobacterium avium
+FT                   major membrane protein I mmpI SW:MMP1_MYCAV (Q48899) (307
+FT                   aa) fasta scores: E(): 0, 89.6% id in 308 aa. Previously
+FT                   sequenced as SW:MMP1_MYCLE (P46841)."
+FT                   /product="major membrane protein I"
+FT   CDS             complement(1004100..1004681)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00646.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00710.out"
+FT                   /gene="ML0845"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02742.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Similar to part of some acyl-CoA
+FT                   oxidases e.g. Arabidopsis thaliana  acyl-CoA oxidase cx2
+FT                   TR:O65201 (EMBL:AF057043) (692 aa) fasta scores: E():
+FT                   1.5e-06, 35.2% id in 125 aa. Previously sequenced as
+FT                   TR:O32973 (EMBL:Z98741) (193 aa) fasta scores: E(): 0,
+FT                   99.5% id in 193 aa."
+FT                   /product="hypothetical protein"
+FT   CDS             1026901..1027215
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00661.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00723.out"
+FT                   /gene="ML0863"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02755.out"
+FT                   /ml_unique
+FT                   /note="Unknown function. Previously sequenced as TR:O32957
+FT                   (EMBL:Z98741)."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1096064..1096432)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00720.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00780.out"
+FT                   /gene="ML0926"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02812.out"
+FT                   /ml_unique
+FT                   /note="Weakly similar, in parts, to Mycobacterium
+FT                   tuberculosis SW:Y940_MYCTU (P71569) (288 aa); Fasta score
+FT                   E(): 0.0071, 30.4% identity in 112 aa overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1096524..1096832)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02013.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00781.out"
+FT                   /gene="ML0927"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02813.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             1098053..1098337
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02014.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00782.out"
+FT                   /gene="ML0928"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02814.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1109892..1110188
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00728.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00783.out"
+FT                   /gene="ML0938"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02815.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             1110185..1110427
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00729.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00784.out"
+FT                   /gene="ML0939"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02816.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1117520..1117777)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00731.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00786.out"
+FT                   /gene="ML0947"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02818.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1118730..1119143)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00732.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00787.out"
+FT                   /gene="ML0949"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02819.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1119155..1119355)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00733.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00788.out"
+FT                   /gene="ML0950"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02820.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1121893..1122132
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00734.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00789.out"
+FT                   /gene="ML0953"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02821.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1125854..1126228)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02024.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00792.out"
+FT                   /gene="ML0957"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02824.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1126912..1127265
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00741.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00794.out"
+FT                   /gene="ML0959"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02826.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1131298..1131762
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00743.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00796.out"
+FT                   /gene="ML0963"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02828.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1131800..1132057
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00744.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00797.out"
+FT                   /gene="ML0964"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02829.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1172599..1172874)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02039.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00812.out"
+FT                   /gene="ML1001"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02844.out"
+FT                   /ml_unique
+FT                   /note="Doubful CDS. Similar in the N-terminus to
+FT                   Mycobacterium tuberculosis TR:O33227 (EMBL:Z98209) (82
+FT                   aa); Fasta score E(): 4.4e-05, 37.5% identity in 88 aa
+FT                   overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1180776..1181018)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00769.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00819.out"
+FT                   /gene="ML1010"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02851.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1181058..1181480)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00770.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00820.out"
+FT                   /gene="ML1011"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02852.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1187210..1187425)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00775.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00826.out"
+FT                   /gene="ML1018"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02858.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1222249..1222602
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00799.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00849.out"
+FT                   /gene="ML1057"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02881.out"
+FT                   /ml_unique
+FT                   /note="Identical to the previously sequenced Mycobacterium
+FT                   leprae hypothetical protein  TR:Q49947 (EMBL:U15180) (117
+FT                   aa); Fasta score E(): 0, 99.1% identity in 117 aa
+FT                   overlap."
+FT                   /product="hypothetical protein"
+FT   CDS             1280426..1280767
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00836.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00881.out"
+FT                   /gene="ML1106"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02913.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1338519..1338674)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02080.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00914.out"
+FT                   /gene="ML1148"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02946.out"
+FT                   /ml_unique
+FT                   /note="Identical to the previously sequenced Mycobacterium
+FT                   leprae TR:Q50137 (EMBL:U15186) (51 aa); Fasta score E():
+FT                   4.9e-22, 100.0% identity in 51 aa overlap."
+FT                   /product="doubtful CDS"
+FT   CDS             complement(1352353..1352820)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00880.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00919.out"
+FT                   /gene="ML1157"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02951.out"
+FT                   /ml_unique
+FT                   /note="Identical to the previously sequenced Mycobacterium
+FT                   leprae TR:Q49717 (EMBL:U00014) (155 aa); Fasta score E():
+FT                   0, 99.4% identity in 155 aa overlap. Also similar to
+FT                   Streptomyces coelicolor conserved hypothetical protein
+FT                   TR:CAB70628 (EMBL:AL137242) (146 aa); Fasta score E():
+FT                   1.5e-19, 42.1% identity in 140 aa overlap and Haemophilus
+FT                   influenzae lactoylglutathione lyase (EC 4.4.1.5)
+FT                   SW:LGUL_HAEIN (P44638) (135 aa); Fasta score E(): 0.69,
+FT                   27.5% identity in 138 aa overlap. Contains Pfam match to
+FT                   entry PF01626 4HPPD_C, 4-hydroxyphenylpyruvate dioxygenase
+FT                   C terminal domain."
+FT                   /product="conserved hypothetical protein"
+FT   CDS             complement(1386776..1387078)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02089.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00936.out"
+FT                   /gene="ML1186"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02968.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1390595..1390855)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02088.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00937.out"
+FT                   /gene="ML1188"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02969.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1392493..1392876)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00904.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00938.out"
+FT                   /gene="ML1189"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02970.out"
+FT                   /ml_unique
+FT                   /note="unknown function, identical to the previously
+FT                   sequenced Mycobacterium leprae hypothetical protein
+FT                   TR:Q9X7D8."
+FT                   /product="hypothetical protein"
+FT   CDS             1431094..1431279
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00920.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00949.out"
+FT                   /gene="ML1210"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.02981.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1482133..1482594
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00943.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00969.out"
+FT                   /gene="ML1243"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03001.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             1518430..1518666
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00969.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00992.out"
+FT                   /gene="ML1275"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03024.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1540612..1540854)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02118.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.00999.out"
+FT                   /gene="ML1292"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03031.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1544355..1544609)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.00983.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01001.out"
+FT                   /gene="ML1294"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03033.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1602982..1603242)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01027.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01035.out"
+FT                   /gene="ML1344"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03067.out"
+FT                   /ml_unique
+FT                   /note="unknown function, weakly similar, in parts, to
+FT                   several transposases e.g. Synechocystis sp. TR:Q55831
+FT                   (EMBL:D64004) (259 aa); Fasta score E(): 2.6, 28.4%
+FT                   identity in 88 aa overlap."
+FT                   /product="doubtful CDS"
+FT   CDS             1656225..1656563
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01840.out"
+FT                   /gene="ML1384"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03090.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             1706391..1706744
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01087.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01083.out"
+FT                   /gene="ML1420"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03115.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1739651..1739875)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01106.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01096.out"
+FT                   /gene="ML1445"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03128.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1831393..1831674)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01155.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01136.out"
+FT                   /gene="ML1517"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03168.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1837820..1838110)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01160.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01139.out"
+FT                   /gene="ML1523"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03171.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             1898124..1898522
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02175.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01161.out"
+FT                   /gene="ML1572"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03193.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1900169..1900462)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02177.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01163.out"
+FT                   /gene="ML1575"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03195.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1926754..1927119)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02183.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01177.out"
+FT                   /gene="ML1601"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03209.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1927803..1928123)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01209.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01178.out"
+FT                   /gene="ML1602"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03210.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1928376..1928636)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01210.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01179.out"
+FT                   /gene="ML1603"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03211.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(1928846..1929235)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02184.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01180.out"
+FT                   /gene="ML1604"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03212.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             1931206..1931406
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01214.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01181.out"
+FT                   /gene="ML1605"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03213.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2071353..2071646)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01298.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01257.out"
+FT                   /gene="ML1717"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03289.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="doubtful CDS"
+FT   CDS             complement(2136027..2136371)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02215.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01279.out"
+FT                   /gene="ML1761"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03311.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2138763..2138978
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01336.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01280.out"
+FT                   /gene="ML1763"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03312.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2163355..2163819)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01349.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01289.out"
+FT                   /gene="ML1788"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03321.out"
+FT                   /ml_unique
+FT                   /note="questionable CDS (possible pseudogene?)."
+FT                   /product="very hypothetical protein"
+FT   CDS             2169013..2169318
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01351.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01291.out"
+FT                   /gene="ML1793"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03323.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             2175302..2175715
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01359.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01295.out"
+FT                   /gene="ML1796"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03327.out"
+FT                   /ml_unique
+FT                   /note="previously sequenced as SW:Y15K_MYCLE (P13733) (137
+FT                   aa); Fasta score E(): 0, 100.0% identity in 137 aa
+FT                   overlap."
+FT                   /note="Similar to  and"
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2204726..2205079)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01378.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01314.out"
+FT                   /gene="ML1821"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03346.out"
+FT                   /ml_unique
+FT                   /note="questionable CDS."
+FT                   /product="very hypothetical protein"
+FT   CDS             2214813..2215190
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01384.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01316.out"
+FT                   /gene="ML1829"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03348.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2298471..2298815
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01437.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01366.out"
+FT                   /gene="ML1915"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03398.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2312431..2312568)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02132.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01376.out"
+FT                   /gene="ML1928"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03408.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2336277..2336636)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01463.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01389.out"
+FT                   /gene="ML1949"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03421.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2356311..2356541)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01485.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01406.out"
+FT                   /gene="ML1972"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03438.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2361219..2361566)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01488.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01408.out"
+FT                   /gene="ML1976"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03440.out"
+FT                   /ml_unique
+FT                   /note="unknown; questionable CDS."
+FT                   /product="very hypothetical protein"
+FT   CDS             complement(2363934..2364341)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01489.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01409.out"
+FT                   /gene="ML1979"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03441.out"
+FT                   /ml_unique
+FT                   /note="unknonwn."
+FT                   /product="hypothetical protein"
+FT   CDS             2366597..2366905
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01490.out"
+FT                   /class="II.C.5"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01410.out"
+FT                   /gene="ML1982"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03442.out"
+FT                   /ml_unique
+FT                   /note="Some similarity to transport proteins e.g.
+FT                   Escherichia coli short-chain fatty acids transporter
+FT                   SW:ATOE_ECOLI (P76460) (440 aa); Fasta score E(): 0.064,
+FT                   32.7% identity in 55 aa overlap."
+FT                   /product="putative integral membrane protein"
+FT   CDS             complement(2376735..2377085)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01496.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01415.out"
+FT                   /gene="ML1989"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03447.out"
+FT                   /ml_unique
+FT                   /note="unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2377165..2377407)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01497.out"
+FT                   /class="II.C.5"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01416.out"
+FT                   /gene="ML1990"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03448.out"
+FT                   /ml_unique
+FT                   /note="no database matches. Contains possible membrane
+FT                   spanning hydrophobic domains."
+FT                   /product="putative integral membrane protein"
+FT   CDS             complement(2405356..2405736)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01515.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01429.out"
+FT                   /gene="ML2013"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03461.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2425166..2425429)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01528.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01437.out"
+FT                   /gene="ML2035"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03469.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2434368..2434589)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01534.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01441.out"
+FT                   /gene="ML2044"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03473.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             2434998..2435255
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01535.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01442.out"
+FT                   /gene="ML2045"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03474.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             2487709..2487894
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01565.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01467.out"
+FT                   /gene="ML2091"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03499.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2561097..2561489)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01600.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01496.out"
+FT                   /gene="ML2158"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03528.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2579209..2579433)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01612.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01500.out"
+FT                   /gene="ML2170"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03532.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             2583247..2583603
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01613.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01501.out"
+FT                   /gene="ML2172"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03533.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             2588187..2588444
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01618.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01503.out"
+FT                   /gene="ML2176"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03535.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2588597..2589550)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01619.out"
+FT                   /class="I.F.4"
+FT                   /colour=7
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01504.out"
+FT                   /gene="ML2177"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03536.out"
+FT                   /ml_unique
+FT                   /note="Similar to Mus musculus uridine phosphorylase
+FT                   SW:UDP_MOUSE () fasta scores: E(): 1.9e-21, 34.0% in 268
+FT                   aa, and to Homo sapiens uridine phosphorylase SW:UDP_HUMAN
+FT                   () fasta scores: E(): 2.2e-19, 32.4% in 275 aa. Contains
+FT                   PS01232 Purine and other phosphorylases family 1
+FT                   signature."
+FT                   /product="probable uridine phosphorylase"
+FT   CDS             complement(2589791..2590042)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01620.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01505.out"
+FT                   /gene="ML2178"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03537.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             2611544..2612029
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01630.out"
+FT                   /class="I.C.5"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01514.out"
+FT                   /gene="ML2197"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03546.out"
+FT                   /ml_unique
+FT                   /note="Similar to Saccharopolyspora erythraea hypothetical
+FT                   16.0 kda protein TR:Q54082 (EMBL:M29612) fasta scores:
+FT                   E(): 4.9e-15, 43.9% in 139 aa. Contains possible membrane
+FT                   spanning hydrophobic domains."
+FT                   /product="integral membrane protein"
+FT   CDS             complement(2615448..2615687)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01634.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01518.out"
+FT                   /gene="ML2201"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03550.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2661044..2661775)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01653.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01535.out"
+FT                   /gene="ML2242"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03567.out"
+FT                   /ml_unique
+FT                   /note="Similar to Mycobacterium fortuitum plasmid pAL5000
+FT                   hypothetical 26.6 kda protein TR:Q52145 (EMBL:M23557)
+FT                   fasta scores: E(): 9.9e-05, 27.2% id in 250 aa."
+FT                   /product="conserved hypothetical protein"
+FT   CDS             complement(2667223..2667564)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01656.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01536.out"
+FT                   /gene="ML2244"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03568.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2672720..2673037)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01658.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01538.out"
+FT                   /gene="ML2249"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03570.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2675767..2676003)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01659.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01539.out"
+FT                   /gene="ML2252"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03571.out"
+FT                   /ml_unique
+FT                   /note="no database matches."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2687458..2688069)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01669.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01548.out"
+FT                   /gene="ML2264"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03580.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2688062..2688283)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01670.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01549.out"
+FT                   /gene="ML2265"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03581.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2707732..2708046
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01681.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01560.out"
+FT                   /gene="ML2283"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03592.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2708438..2708797
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01682.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01561.out"
+FT                   /gene="ML2284"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03593.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2712436..2712660)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01684.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01562.out"
+FT                   /gene="ML2288"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03594.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2740945..2741547
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01705.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01580.out"
+FT                   /gene="ML2313"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03612.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2787096..2788001)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01729.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01599.out"
+FT                   /gene="ML2346"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03631.out"
+FT                   /ml_unique
+FT                   /note="function unknown. Note the G+C content of this CDS
+FT                   (54%)."
+FT                   /product="hypothetical protein"
+FT   CDS             2788300..2789310
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01730.out"
+FT                   /class="II.C.2"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01600.out"
+FT                   /gene="ML2347"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03632.out"
+FT                   /ml_unique
+FT                   /note="function unknown. Note the low G+C content of this
+FT                   CDS (46%). Contains a possible membrane spanning
+FT                   hydrophobic domain."
+FT                   /product="putative membrane protein"
+FT   CDS             complement(2849880..2850209)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02279.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01616.out"
+FT                   /gene="ML2379"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03648.out"
+FT                   /ml_unique
+FT                   /note="Unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2905089..2905349)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01788.out"
+FT                   /class="I.J.1"
+FT                   /colour=9
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01647.out"
+FT                   /gene="ML2429"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03679.out"
+FT                   /ml_unique
+FT                   /note="Weakly similar to several including: Streptomyces
+FT                   coelicolor hypothetical protein  TR:Q9WX06 (EMBL:AL079345)
+FT                   (70 aa) fasta scores: E(): 3.4e-14, 68.3% id in 63 aa.
+FT                   Contains a probable helix-turn-helix motif at aa 33-54
+FT                   (Score 1515, SD +4.35) Contains PS00017 ATP/GTP-binding
+FT                   site motif A (P-loop)."
+FT                   /product="possible DNA-binding protein"
+FT   CDS             complement(2927236..2927607)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01804.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01663.out"
+FT                   /gene="ML2452"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03695.out"
+FT                   /ml_unique
+FT                   /note="Weakly similar in parts to Mycobacterium
+FT                   tuberculosis hypothetical protein Rv0477 SW:Y477_MYCTU
+FT                   (Q11144) fasta scores: E(): 1.8e-23, 57.3% id in 110 aa."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2942027..2942407)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01814.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01672.out"
+FT                   /gene="ML2468"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03704.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2950639..2950806)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02256.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01676.out"
+FT                   /gene="ML2476"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03708.out"
+FT                   /ml_unique
+FT                   /note="Similar in parts to several proteins of undefined
+FT                   function e.g. Streptomyces coelicolor hypothetical protein
+FT                   TR:Q9X8J2 (EMBL:AL049841) fasta scores: E(): 5.6e-10,
+FT                   53.1% id in 64 aa."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(2952757..2953146)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01823.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01677.out"
+FT                   /gene="ML2478"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03709.out"
+FT                   /ml_unique
+FT                   /note="doubtful CDS."
+FT                   /product="hypothetical protein"
+FT   CDS             2966697..2967698
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02252.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01682.out"
+FT                   /gene="ML2491"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03714.out"
+FT                   /ml_unique
+FT                   /note="Similar to the C-terminus of Mycobacterium
+FT                   tuberculosis hypothetical protein RV1754C TR:O06790
+FT                   (EMBL:Z95890) (563 aa) fasta scores: E(): 0, 71.1% id in
+FT                   336 aa, and to Mycobacterium smegmatis hypothetical 35.9
+FT                   kda protein in asd 3'region SW:YASD_MYCSM (P41402) fasta
+FT                   scores: E(): 0.0048, 25.0% id in 348 aa."
+FT                   /product="hypothetical protein"
+FT                   /tb_orthologue="Rv1754c"
+FT   CDS             2974117..2974590
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02250.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01687.out"
+FT                   /gene="ML2497"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03719.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             2974620..2975279
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01837.out"
+FT                   /class="I.H.1"
+FT                   /colour=1
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01688.out"
+FT                   /gene="ML2498"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03720.out"
+FT                   /ml_unique
+FT                   /note="Similar to several proteins belonging to the
+FT                   enoyl-CoA hydratase/isomerase family e.g. Arabidopsis
+FT                   thaliana carnitine racemase homolog TR:O23300
+FT                   (EMBL:Z97336) fasta scores: E(): 1.7e-17, 36.0% id in 203
+FT                   aa and Escherichia coli carnitine racemase CAID
+FT                   SW:CAID_ECOLI (P31551; P75623) fasta scores: E(): 2.9e-08,
+FT                   29.0% id in 214 aa. Contains Pfam match to entry PF00378
+FT                   ECH, Enoyl-CoA hydratase/isomerase family."
+FT                   /product="possible enoyl-CoA hydratase"
+FT   CDS             3054587..3054877
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01864.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01711.out"
+FT                   /gene="ML2562"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03743.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="hypothetical protein"
+FT   CDS             3062380..3062859
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01871.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01716.out"
+FT                   /gene="ML2567"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03748.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(3131780..3132367)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02236.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01752.out"
+FT                   /gene="ML2621"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03784.out"
+FT                   /ml_unique
+FT                   /note="Some similarity in regions to Mycobacterium
+FT                   tuberculosis hypothetical protein RV0207C TR:P96389
+FT                   (EMBL:Z92669) fasta scores: E(): 0, 60.8% id in 199 aa,
+FT                   and to Schizosaccharomyces pombe hypothetical protein
+FT                   TR:O74960 (EMBL:AL023705) fasta scores: E(): 1, 22.2% id
+FT                   in 248 aa."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(3144572..3145042)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02234.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01756.out"
+FT                   /gene="ML2629"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03788.out"
+FT                   /ml_unique
+FT                   /note="Weakly similar to a number of proteins of undefined
+FT                   function e.g. Mycobacterium tuberculosis RV0854 TR:O53866
+FT                   (EMBL:AL022004) fasta scores: E(): 7.1e-07, 24.6% id in
+FT                   134 aa."
+FT                   /note="Similar to ML0124"
+FT                   /product="hypothetical protein"
+FT   CDS             complement(3145226..3145597)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01918.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01757.out"
+FT                   /gene="ML2630"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03789.out"
+FT                   /ml_unique
+FT                   /note="Highly similar in parts to another Mycobacterium
+FT                   leprae hypothetical protein TR:O32870 (EMBL:Z70722) fasta
+FT                   scores: E(): 2.7e-28, 96.6% id in 88 aa. Note this is a
+FT                   possible pseudogene likely to have been formed as a
+FT                   consequence of a duplication event."
+FT                   /note="Highly similar to part of ML0007"
+FT                   /product="hypothetical protein"
+FT   CDS             complement(3169324..3170088)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.02230.out"
+FT                   /class="IV"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01765.out"
+FT                   /gene="ML2649"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03797.out"
+FT                   /ml_unique
+FT                   /note="Weakly similar to Streptomyces coelicolor putative
+FT                   oligosaccharide deacetylase TR:Q9RCX4 (EMBL:AL133469)
+FT                   fasta scores: E(): 4.5e-10, 30.9% in 165 aa, and to
+FT                   Bacillus cereus polysaccharide deacetylase-like protein
+FT                   TR:Q9XBJ5 (EMBL:AJ010139) fasta scores: E(): 2.4e-07,
+FT                   26.6% in 241 aa. Contains Pfam match to entry PF01522
+FT                   Polysac_deacet, Polysaccharide deacetylase. Contains
+FT                   PS00453 FKBP-type peptidyl-prolyl cis-trans isomerase
+FT                   signature 1."
+FT                   /product="hypothetical protein"
+FT   CDS             3173289..3173606
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01931.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01766.out"
+FT                   /gene="ML2651"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03798.out"
+FT                   /ml_unique
+FT                   /note="unknown function."
+FT                   /product="doubtful CDS"
+FT   CDS             3176727..3177224
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01933.out"
+FT                   /class="V"
+FT                   /colour=10
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01767.out"
+FT                   /gene="ML2654"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03799.out"
+FT                   /ml_unique
+FT                   /note="Similar to many proteins of undefined function e.g.
+FT                   Streptomyces coelicolor hypothetical 18.3 kda protein
+FT                   TR:Q9RJE5 (EMBL:AL133171) fasta scores: E(): 0, 60.1% in
+FT                   163 aa. Contains Pfam match to entry PF01143 UPF0025,
+FT                   Uncharacterized protein family UPF0025."
+FT                   /product="conserved hypotehical protein"
+FT   CDS             complement(3193706..3193960)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01942.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01773.out"
+FT                   /gene="ML2666"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03805.out"
+FT                   /ml_unique
+FT                   /note="function unknown."
+FT                   /product="hypothetical protein"
+FT   CDS             complement(3194549..3196405)
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01944.out"
+FT                   /class="III.A.2"
+FT                   /colour=3
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01774.out"
+FT                   /gene="ML2667"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03806.out"
+FT                   /ml_unique
+FT                   /note="Similar to Pseudomonas aeruginosa manganese
+FT                   transport protein MntH1 SW:MNT1_PSEAE (Q9RPF3) fasta
+FT                   scores: E(): 6.5e-13, 27.4% in 420 aa, and to Deinococcus
+FT                   radiodurans probable manganese transport protein MntH
+FT                   SW:MNTH_DEIRA (Q9RTP8) fasta scores: E(): 4e-15, 27.2% in
+FT                   419 aa. Contains possible membrane spanning hydrophobic
+FT                   domains."
+FT                   /product="possible membrane transport protein"
+FT   CDS             3197427..3197747
+FT                   /blastp_file="blastp/CORBA-ML.tab.seq.01945.out"
+FT                   /class="VI"
+FT                   /colour=8
+FT                   /fasta_file="fasta/CORBA-ML.tab.seq.01775.out"
+FT                   /gene="ML2669"
+FT                   /hth_file="hth/CORBA-ML.tab.seq.03807.out"
+FT                   /ml_unique
+FT                   /note="doubtful CDS."
+FT                   /product="hypothetical protein"

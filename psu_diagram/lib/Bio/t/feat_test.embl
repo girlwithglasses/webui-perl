@@ -1,0 +1,54 @@
+FT   CDS             <1..38
+FT                   /codon_start=3
+FT   misc_feature    20^39
+FT                   /note="Zero width feature"
+FT   CDS             join(64..465,528..719,892..1191)
+FT                   /note="Feature with join"
+FT   CDS             528..719
+FT   CDS             892..1191
+FT   misc_feature    (1260.1270)..(1300.1349)
+FT                   /note="Fuzzy start, fuzzy end"
+FT   CDS             1350..1586
+FT                   /note="Simple feature"
+FT   misc_feature    (1760.1765)..1780
+FT                   /note="Fuzzy start"
+FT   misc_feature    1800..(1815.1820)
+FT                   /note="Fuzzy end"
+FT   CDS             1910..>2100
+SQ   Sequence 2100 BP; 284 A; 762 C; 775 G; 279 T; 0 other;
+     gatccgtcaa tcatgccgtc atggcggtga tttcccacgt cagcaagggg ttcggcgagt        60
+     ttcatggcga cggcccgcgg gcctgcgggg cgtcagtggc gtacacctgt ggccccggcg       120
+     cacacccggg cggacggaca cgaaaagcgc ggtgcgcccc ccgctcggag gggcacaccg       180
+     cgcaccgtcg tcctctcgcg ccgtcccgtc agcgcgtgcc gaccgccgcc cgcacggccc       240
+     gccgggccag ctggcagtcg tcgtgcaacc ggcgcagcag cagccgctgt tcctcgccgg       300
+     tcggcgcggc acccggatgg gccggtcccg tcgccgcccc gaccgggtcg tgcatcgaac       360
+     gctgcacggc cgtctcgtac gtacggatct ccctggtcag tacgagcatc aggttcacca       420
+     gaaacgcgtc gcgcgcggcc gtgcccgtcg actgggcgat ctggctgatc tgacggcggg       480
+     ccaccggagc gtccccgagg accgcccaca gcgtggccag gtcgtagccc ggcaggtacc       540
+     agcccgcgtg ctcccagtcc accagcaccg gaccggccgg ggacatgagg acgttggaca       600
+     gcagcgcgtc accgtggcag aactggccca tgccctggcg cccgcccgcg tgggcgatgc       660
+     cgtgcagcag cttctgcagg tcgcccaggt cccggtcggt gagcagcccc agctcgtggt       720
+     agcgggagat gcgggccgcg tagtccagtg gggcgtcgaa ggtgccggcc gggggccgcc       780
+     aggcgttcag ccggcagacc gctccgatcg ccgccctgat gtccgcccgc ggcggggcct       840
+     ccaggggatg ccgttgcagc gccgccaccc ttccgggcat ccgctcgatg accagcgtgc       900
+     cgttgtccgg atccgccgcg atcagcctcg gcacccgcac cggagggcgc tgccggacga       960
+     acgagcggta tgcccctatc tcgtgccggc tgcgttccgc ccaggcgggg gagtggtcca      1020
+     ctaagcactt ggccaccgcc gtgctgcgcc cggtcgttcc gaccaggagc acggagcgtc      1080
+     cgctgcgccg cagcacctgc acgggggaga actcggggca gatccggtgc acggcggcga      1140
+     tcgccgtgcg cagttgggcc ccctgggggc cggacaggtc gattctcccg ctgagcggct      1200
+     gggtgccggg ccccgcgccg agccgcgccc tgccggcccc gagcaccggg gccgccggac      1260
+     gcgctggggc gagatagggg ccgccgcccg ccgtcgggcg ggggtgcagc gcgcgctgcg      1320
+     gggcggacac ggaggacgat gctgcgtaca tgggcgagac agatcccttc gtgtgcctgc      1380
+     tgtgcctgcc tgaagagggg tgccggtccg gtccgttcga taccgggggc ggcacgtctt      1440
+     ccgaaagccg tcgcgccgcc cgaccggccg ccgggggcca ccctggggag tacccccgcg      1500
+     gcgaccgggt cggggtggcg cattcctacc tgacacccgg ccgcccgtgg cacaccatct      1560
+     ggcgcaccct ggcgaacggt ggcgaatagt cgcccggcaa cccgcacggg gctactgtca      1620
+     actcagccga gaacctgggg gcttgtagtg agcaaagaac ccaacacccg tctgtcggac      1680
+     ctgttcggcc tggccggctg gtccaagggc gagctcgcga ggctggtcaa ccggcaggcg      1740
+     gcggccatgg gccaccccca gctggcgacc gacacctcgc gggtgcggcg gtggatcgac      1800
+     atgggagaga tcccgcgcga tccggtgccg cgggtgctgg cggctctgtt caccgagcgt      1860
+     ctcggccgtg tcgtgaccat cgaggacctc ggtctggtcc ggcacgggcg tgcggggaaa      1920
+     cggccacacg acgggagcga agagcatccc gacggcgtgc cgtgggcgcc cgagcggact      1980
+     gcggcggtcc tcaccgaatt cacgggaatg gacctcatgc tcaaccgacg cggcttggtg      2040
+     ggcgcgggcg ccgcgctcgc cgcgggctcc gcactcagca gcgccatgca cgactggctg      2100
+//

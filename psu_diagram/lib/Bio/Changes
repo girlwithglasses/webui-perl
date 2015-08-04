@@ -1,0 +1,22 @@
+Revision history for Perl extension Bio::PSU.
+
+0.05  Fri Feb 23 11:56:33 2001
+	- Maintainence fixes to parsers
+	- Added	Bio::PSU::Utils::FeatureSplicer
+		Bio::PSU::FeatureFactory
+
+0.04  Mon Oct 16 22:26:07 2000
+	- First release version
+
+0.03  Sun Oct 15 20:44:45 2000
+	- Fixed constructors to report invalid arguments
+	- Added formatted backtrace method to Bio::PSU::Base
+	- Fasta parser remodelled to act more like the Blast parser
+	- Bio::PSU::Feature efficiency of qualifier accessor AUTOLOAD
+	  improved
+
+0.02  Sat Sep  9 16:45:47 2000
+	- Improved Blast parser to drastically reduce memory use
+
+0.01  Sun Sep  3 11:40:24 2000
+	- original version; created by h2xs 1.20

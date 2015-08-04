@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <jnlp codebase="" href="">
+     <information>
+       <title>ArchaeopterixE</title>
+       <vendor>LBNL-JGI</vendor>
+       <homepage href="http://img/jgi/doe.gov"></homepage>
+     </information>
+     <resources>
+       <j2se version="1.6+"
+             href="http://java.sun.com/products/autodl/j2se" />
+       <jar href="forester.jar" main="true" />
+     </resources>
+     <applet-desc 
+         name="ArchaeopterixE Applet"
+         main-class="org.forester.archaeopteryx.ArchaeopteryxE"
+         width="800"
+         height="600">
+     </applet-desc>
+ </jnlp>

@@ -1,0 +1,45 @@
+<?php
+
+/* yadl_spaceid - Skip Stamping 
+The last line must be ?> and NO extra space or newline etc
+*/
+
+    header('Content-type: text/plain');
+    $search_queries = initArray();
+    $query = html_entity_decode(urldecode($_GET['query']));
+    $results = search($search_queries, $query);
+    sendResults($query,$results);
+
+function search($search_queries, $query) {
+    if (strlen($query) == 0)
+        return;
+
+    $query = strtolower($query);
+
+    $firstChar = $query[0];
+
+    if (!preg_match('/[0-9a-z$]/',$firstChar,$matches))
+        return;
+
+    $charQueries = $search_queries[$firstChar];
+
+    $results = array(); 
+    for($i = 0; $i < count($charQueries); $i++) {
+        if (strcasecmp(substr($charQueries[$i],0,strlen($query)),$query) == 0)
+            $results[] = $charQueries[$i];
+    }
+
+    return $results;
+}
+
+function sendResults($query,$results) {
+    for ($i = 0; $i < count($results); $i++)
+        print "$results[$i]\n";
+}
+
+function initArray() {
+    return array(
+    __array__
+    );
+}
+?>
