@@ -27,7 +27,6 @@ BEGIN {
   aNumLink
   appendFile
   array2Hash
-  arrayRef2HashRef
   attrLabel
   attrValue
   binOid2Name
@@ -995,47 +994,6 @@ sub getNvl {
     return "nvl";
 }
 
-sub remove_env {
-
-	delete $ENV{qw( BASH_ENV CDPATH ENV IFS PATH )};
-	return;
-
-}
-
-#	untaint_env
-#
-#	untaint all the environment paths that we might come across
-#
-#	runs everything through checkPath
-
-sub untaint_env {
-
-	my @paths = qw( BASH_ENV CDPATH ENV IFS PATH );
-#	delete $ENV{qw( BASH_ENV CDPATH ENV IFS PATH )};
-	for my $p (@paths) {
-		if ($ENV{ $p }) {
-
-#			say STDERR "$p: paths: " . Dumper $ENV{ $p };
-			# filter out everything that isn't in /usr/ or /global/
-			local $@;
-
-			my @p_arr = eval {
-				map { check_path( $_ ) }
-				grep { m#^/(usr|global|opt)# }
-				split ":", $ENV{ $p };
-			};
-
-			if ( $@ ) {
-				delete $ENV{ $p };
-			}
-			else {
-				$ENV{ $p } = join ":", @p_arr;
-			}
-		}
-	}
-	return;
-}
-
 ############################################################################
 # unsetEnvPath - Unset the environment path for external calls.
 ############################################################################
@@ -1105,7 +1063,7 @@ sub checkEvalue {
 ############################################################################
 # checkPath - Check path for invalid characters.
 ############################################################################
-sub checkPathOld {
+sub checkPath {
     my ($path) = @_;
     ## Catch bad pattern first.
     my @toks = split( /\//, $path );
@@ -1123,61 +1081,6 @@ sub checkPathOld {
     }
     return $path2;
 }
-
-
-############################################################################
-# checkPath - Check path for invalid characters.
-############################################################################
-sub checkPath {
-
-	my $path = shift;
-
-	local $@;
-
-#	my $clean_path = eval { IMG::Util::Untaint::check_path( @_ ); };
-	my $clean_path = eval { check_path( $path ); };
-
-	if ( $@ ) {
-		webDie("checkPath: invalid path '$path'");
-	}
-	else {
-		return $clean_path;
-	}
-}
-
-=head3 check_path
-
-Untaint a path
-
-See t/img_util_untaint.t for tests
-
-=cut
-
-sub check_path {
-    my $path = shift || return "";
-
-	## Catch bad patterns first.
-	if ( $path =~ /\.\./ ) {
-		croak "check_path: invalid path contains '..': $path\n";
-	}
-
-	$path =~ m#([
-		a-z0-9
-		_
-		\-
-		~
-		\.
-		/
-	]+)#xi;
-    my $new_path = $1;
-
-	if ( $new_path ne $path ) {
-		croak "check_path: invalid path:\noriginal: $path\nchecked: $new_path";
-	}
-
-	return $new_path;
-}
-
 
 
 #
@@ -2227,7 +2130,7 @@ sub webError {
     print "<div id='error'>\n";
     print "<img src='$base_url/images/error.gif' " . "width='46' height='46' alt='Error' />\n";
     print "<p>\n";
-    if ( ! $noHtmlEsc || $noHtmlEsc == 0 ) {
+    if ( defined $noHtmlEsc && $noHtmlEsc == 0 ) {
         print escHtml($txt);
     } else {
         print $txt;
@@ -8396,4 +8299,1590 @@ sub bigInQuery {
 
         if ( $i >= ( $ORACLEMAX - 1 ) ) {
             if ( $sql ne "" ) {
-                $sql = $s
+                $sql = $sql . " union all ";
+            }
+            my $tmpstr = join( ",", @tmp );
+            $sql = $sql . $origsql;
+            $sql =~ s/$pattern/$tmpstr/;
+            @tmp = ();
+            $i   = 0;
+        }
+        $i++;
+    }
+
+    if ( $#tmp > -1 ) {
+        my $tmpstr = join( ",", @tmp );
+        $sql = "$sql union all " . $origsql;
+        $sql =~ s/$pattern/$tmpstr/;
+    }
+    return $sql;
+}
+
+# Gets oracle in statement size limit
+sub getORACLEMAX {
+    return $ORACLEMAX;
+}
+
+############################################################################
+# printStartWorkingDiv - print start of working div
+#      (for progress indication)
+############################################################################
+sub printStartWorkingDiv {
+    my ($name) = @_;
+    $name = "working" if ( $name eq "" );
+    print qq{
+        <div id='$name'>
+        <p> Processing messages:</p>
+        <div class="working_area" style="resize: both;">
+        <p>
+        };
+}
+
+############################################################################
+# printEndWorkingDiv - print end of the working div
+#
+# $noClear - 1 do not clear the working div to be used on errors
+############################################################################
+sub printEndWorkingDiv {
+    my ( $name, $noClear ) = @_;
+    print qq{
+       </p>
+       </div>
+       </div>
+    };
+    clearWorkingDiv($name) if ( !$noClear );
+}
+
+############################################################################
+# clearWorkingDiv - Clear working div
+############################################################################
+sub clearWorkingDiv {
+    my ($name) = @_;
+    $name = "working" if ( $name eq "" );
+    print qq{
+    <script>
+        var e0 = document.getElementById( "$name" );
+        e0.innerHTML = "";
+        e0.style.display = 'none';
+    </script>
+    };
+}
+
+############################################################################
+# termOid2Term - Lookup term from oid.
+############################################################################
+sub termOid2Term {
+    my ( $dbh, $term_oid ) = @_;
+    my $sql = qq{
+        select term
+	from img_term
+	where term_oid = ?
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $term_oid );
+    my ($term) = $cur->fetchrow();
+    $cur->finish();
+    return $term;
+}
+
+############################################################################
+# catOid2Name - Convert catagory OID to name.
+############################################################################
+sub catOid2Name {
+    my ( $dbh, $cat_oid ) = @_;
+    my $sql = qq{
+        select category_name
+	from dt_myfunc_cat
+	where cat_oid = ?
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $cat_oid );
+    my ($category_name) = $cur->fetchrow();
+    $cur->finish();
+    return $category_name;
+}
+
+############################################################################
+# convert latitude/longitude info into useful format for mapping
+############################################################################
+sub convertLatLong {
+    my ($coord) = @_;
+    return if ( $coord eq "" );
+
+    # it is important to strip whitespaces at the beginning
+    # and end of the string, since sometimes longitude strings
+    # like  " -72.886667" is passed.
+    $coord =~ s/^\s+|\s+$//g;
+
+    # Regex for format: decimal number
+    if ( $coord =~ /^-?\d+\.?\d*$/ ) {
+        $coord = sprintf( "%.5f", $coord );
+        return $coord;
+    }
+
+    # Regex for format: N10.11.260
+    elsif ( $coord =~ /^([NWSE])(\d+)\.(\d+)\.(\d+)$/ ) {
+        my $sec    = $4 / 60;
+        my $min    = $3 + $sec;
+        my $mindeg = $min / 60;
+        my $deg    = $2 + $mindeg;
+        if ( $1 eq "S" || $1 eq "W" ) {
+            $deg = "-" . $deg;
+        }
+        return $deg;
+    }
+
+    # Regex for format: N44.560318 and/or W -110.8338344
+    elsif ( $coord =~ /^([NWSE]) ?(-?\d+.?\d+)$/ ) {
+        my $coord2 = $2;
+        $coord2 = sprintf( "%.5f", $coord2 );
+        return $coord2;
+    }
+
+    # Regex for format: 47 degrees 38.075 minutes N
+    elsif ( $coord =~ /^(\d+) (degrees|degress|degress,) (\d+).(\d+) minutes ([NWSE])/ ) {
+        my $mins    = $3 . "." . $4;
+        my $degmins = $mins / 60;
+        $degmins = sprintf( "%.5f", $degmins );
+        if ( length($degmins) > 8 ) {
+            $degmins = substr( $degmins, 0, 7 );
+        }
+        my $deg = $1 + $degmins;
+        if ( $5 eq "S" || $5 eq "W" ) {
+            $deg = "-" . $deg;
+        }
+        return $deg;
+    }
+
+    # else
+    return "";
+}
+
+############################################################################
+# get the proper google maps key based on server name
+############################################################################
+sub getGoogleMapsKey {
+    my $servername = $ENV{SERVER_NAME};
+    my $gkeys      = $env->{google_map_keys};
+    foreach my $key ( keys %$gkeys ) {
+        if ( $servername =~ m/$key$/i ) {
+            return $gkeys->{$key};
+        }
+
+    }
+    return "";
+}
+
+############################################################################
+# get the proper google analytics key based on server name
+############################################################################
+sub getGoogleAnalyticsKey {
+    my $servername = $ENV{SERVER_NAME};
+
+    #webLog("===== $servername\n");
+
+    my $gkeys = $env->{google_analytics_keys};
+    foreach my $key ( keys %$gkeys ) {
+        if ( $servername =~ m/$key$/i ) {
+            return ( $key, $gkeys->{$key} );
+        }
+
+    }
+    return "";
+}
+
+sub getGoogleReCaptchaPrivateKey {
+    my $servername = $ENV{SERVER_NAME};
+
+    my $gkeys = $env->{google_recaptcha_private_key};
+    foreach my $key ( keys %$gkeys ) {
+        if ( $servername =~ m/$key$/i ) {
+            return ( $key, $gkeys->{$key} );
+        }
+
+    }
+    return "";
+}
+
+sub getGoogleReCaptchaPublicKey {
+    my $servername = $ENV{SERVER_NAME};
+
+    my $gkeys = $env->{google_recaptcha_public_key};
+    foreach my $key ( keys %$gkeys ) {
+        if ( $servername =~ m/$key$/i ) {
+            return ( $key, $gkeys->{$key} );
+        }
+
+    }
+    return "";
+}
+
+############################################################################
+# hasDnaSequence - Check if gene  has DNA sequence.
+############################################################################
+sub hasDnaSequence {
+    my ( $dbh, $gene_oid ) = @_;
+    my $sql = qq{
+      select g.end_coord, scf.ext_accession
+      from gene g, scaffold scf
+      where g.gene_oid = ?
+      and g.scaffold = scf.scaffold_oid
+   };
+    my $cur = execSql( $dbh, $sql, $verbose, $gene_oid );
+    my ( $end_coord, $scf_ext_accession ) = $cur->fetchrow();
+    $cur->finish();
+    if ( $end_coord >= 1 && $scf_ext_accession ne "" ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+############################################################################
+# taxonReadsFasta - Get FASTA information for ID's.
+#  @return defintionLine, sequence
+############################################################################
+sub taxonReadsFasta {
+    my ( $taxon_oid, $reads_id ) = @_;
+
+    $taxon_oid = sanitizeInt($taxon_oid);
+    $reads_id =~ /([a-zA-Z0-9_\-\.]+)/;
+    $reads_id = $1;
+    my $db = "$taxon_reads_fna_dir/$taxon_oid.reads.fna";
+    if ( !-e $db ) {
+        warn("taxonReadsFasta: cannot find '$db'\n");
+        return ( "", "" );
+    }
+    unsetEnvPath();
+    my $cmd = "$fastacmd_bin -d $db -s 'lcl|$reads_id'";
+    my $cfh = newCmdFileHandle( $cmd, "taxonReadsFasta" );
+    my ( $defLine, $seq );
+    while ( my $s = $cfh->getline() ) {
+        chomp $s;
+        if ( $s =~ /^>/ ) {
+            $s =~ s/lcl\|//;
+            $defLine = $s;
+        } else {
+            $s =~ s/\s+//g;
+            $seq .= $s;
+        }
+    }
+    close $cfh;
+    resetEnvPath();
+    return ( $defLine, $seq );
+}
+
+############################################################################
+# remapTaxonOids - Remap taxon_oid's from replacements.
+############################################################################
+sub remapTaxonOids {
+    my ( $dbh, $taxon_oids_aref ) = @_;
+
+    my $size = $#$taxon_oids_aref;
+    my $taxonClause;
+    if ( $size == 0 ) {
+
+        # there is one taxon to display
+        $taxonClause = " and tr.old_taxon_oid = ? ";
+    }
+
+    my $sql = qq{
+        select tr.old_taxon_oid, tr.taxon_oid
+	    from taxon_replacements tr, taxon t
+	    where tr.old_taxon_oid = t.taxon_oid
+        and t.obsolete_flag = 'Yes'
+	    $taxonClause
+    };
+
+    my $cur;
+    if ( $size == 0 ) {
+        $cur = execSql( $dbh, $sql, $verbose, $taxon_oids_aref->[0] );
+    } else {
+        $cur = execSql( $dbh, $sql, $verbose );
+    }
+
+    my %old2New;
+    for ( ; ; ) {
+        my ( $old_taxon_oid, $taxon_oid ) = $cur->fetchrow();
+        last if !$taxon_oid;
+        $old2New{$old_taxon_oid} = $taxon_oid;
+    }
+    $cur->finish();
+
+    my @taxon_oids;
+    for my $taxon_oid (@$taxon_oids_aref) {
+        $taxon_oid = sanitizeInt($taxon_oid);
+        my $new_taxon_oid = $old2New{$taxon_oid};
+        if ( $new_taxon_oid > 0 ) {
+            push( @taxon_oids, $new_taxon_oid );
+        } else {
+            push( @taxon_oids, $taxon_oid );
+        }
+    }
+    return @taxon_oids;
+}
+
+############################################################################
+# checkTaxonAvail - Check taxon availability.
+############################################################################
+sub checkTaxonAvail {
+    my ( $dbh, $taxon_oid ) = @_;
+
+    my $sql = qq{
+       select count(*)
+       from taxon_stats
+       where taxon_oid = ?
+       and rownum < 2
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid );
+    my ($st1) = $cur->fetchrow();
+    $cur->finish();
+
+    if ( $st1 == 0 ) {
+        return 0;
+    } else {
+
+        # return 1 for next perm check
+        return 1;
+    }
+}
+
+############################################################################
+# checkGeneAvail - Check gene availability.
+############################################################################
+sub checkGeneAvail {
+    my ( $dbh, $gene_oid ) = @_;
+
+    my $taxon_oid = geneOid2TaxonOid( $dbh, $gene_oid );
+    return checkTaxonAvail( $dbh, $taxon_oid );
+}
+
+############################################################################
+# geneOidDirs - Get directories for gene_oid.  This is a bit
+#   of a hash to keep any directory from getting too large.
+############################################################################
+sub geneOidDirs {
+    my ($gene_oid) = @_;
+
+    my $len   = length($gene_oid);
+    my $mid3  = substr( $gene_oid, $len - 6, 3 );
+    my $last3 = substr( $gene_oid, $len - 3, 3 );
+    return sprintf( "%03d/%03d", $mid3, $last3 );
+}
+
+sub geneOidDirs_old {
+    my ($gene_oid) = @_;
+
+    my $len = length($gene_oid);
+    my $last3 = substr( $gene_oid, $len - 3, 3 );
+    return sprintf( "%03d", $last3 );
+}
+
+############################################################################
+# splitTerm - Split comma separated list of ID's
+############################################################################
+sub splitTerm {
+    my ( $lineTerm, $intFlag, $noErrorFlag ) = @_;
+
+    #print "<h5>splitTerm() lineTerm: $lineTerm</h5>";
+    #print "<h5>splitTerm() intFlag: $intFlag</h5>";
+
+    my @termToks = split( /\,/, $lineTerm );
+
+    #print "<h5>splitTerm() termToks: @termToks</h5>\n";
+    for (@termToks) {
+        s/^\s+//;
+        s/\s+$//;
+    }
+    my %entries;
+    for my $tok (@termToks) {
+
+        #print "<h5>splitTerm() tok: $tok</h5>\n";
+        next if ( $tok eq "" || ( $intFlag && !isInt($tok) ) );
+        $entries{$tok} = 1;
+    }
+    my @terms;    # package new array without any duplicate element
+    for my $tok (@termToks) {
+        if ( $entries{$tok} ) {
+            push( @terms, $tok );
+            $entries{$tok} = 0;
+        }
+    }
+
+    my $nTerms = @terms;
+    if ( $nTerms > 1000 ) {
+        webError("Please enter no more than 1000 terms.");
+    }
+    if ( $nTerms == 0 && $intFlag && !$noErrorFlag ) {
+        webError("Invalid integer identifier.");
+    }
+
+    return @terms;
+}
+
+############################################################################
+# addIdPrefix
+# type 1: KO id, $idPrefix = "KO:", $idPrefixForInt = "KO:K"
+#
+############################################################################
+sub addIdPrefix {
+    my ( $id, $type ) = @_;
+    $id =~ tr/a-z/A-Z/;
+    my ( $idPrefix, $idPrefixForInt );
+    if ( $type == 1 ) {    #KO id
+        $idPrefix       = "KO:";
+        $idPrefixForInt = "KO:K";
+    }
+
+    if ( $id !~ /^$idPrefix/i ) {
+        if ( $idPrefixForInt ne '' && isInt($id) ) {
+            $id = $idPrefixForInt . $id;
+        } else {
+            $id = $idPrefix . $id;
+        }
+    }
+
+    return $id;
+}
+
+############################################################################
+# hasAlphanumericChar -  have some alphanumeric characters or not
+############################################################################
+sub hasAlphanumericChar {
+    my ($text) = @_;
+
+    if ( $text =~ /[a-zA-Z0-9]+/ ) {
+        return 1;
+    }
+    return 0;
+}
+
+############################################################################
+# printSearchTermCheck - block empty and none alphanumeric search
+############################################################################
+sub processSearchTermCheck {
+    my ( $searchTerm, $searchTermName ) = @_;
+
+    if ( blankStr($searchTerm) ) {
+        if ($searchTermName) {
+            webError("No $searchTermName specified. Please go back and enter a search term.");
+        } else {
+            webError("No search term specified. Please go back and enter a term.");
+        }
+    }
+    if ( !isInt($searchTerm) && length($searchTerm) <= 2 ) {
+        if ($searchTermName) {
+            webError("$searchTermName must be at least 3 char long.");
+        } else {
+            webError("Search term must be at least 3 char long.");
+        }
+    }
+    if ( $searchTerm !~ /[a-zA-Z0-9]+/ ) {
+        if ($searchTermName) {
+            webError("$searchTermName should have some alphanumeric characters.");
+        } else {
+            webError("Search term should have some alphanumeric characters.");
+        }
+    }
+}
+
+############################################################################
+# processSearchTerm - remove space from search term etc
+############################################################################
+sub processSearchTerm {
+    my ( $searchTerm, $notEscapeSingleQuote ) = @_;
+
+    $searchTerm =~ s/\r//g;
+    $searchTerm =~ s/^\s+//;
+    $searchTerm =~ s/\s+$//;
+    my ( $term, @junk ) = split( /\n/, $searchTerm );
+    $searchTerm = $term;
+    $searchTerm =~ s/^\s+//;
+    $searchTerm =~ s/\s+$//;
+    $searchTerm =~ s/'/''/g if ( !$notEscapeSingleQuote );
+
+    return ($searchTerm);
+}
+
+############################################################################
+# processBindList - add into bindList pool
+############################################################################
+sub processBindList {
+    my ( $bindList_ref, $bindList_sql_ref, $bindList_txs_ref, $bindList_ur_ref ) = @_;
+
+    if ( $bindList_sql_ref && defined($bindList_sql_ref) && scalar(@$bindList_sql_ref) > 0 ) {
+        push( @$bindList_ref, @$bindList_sql_ref );
+    }
+    if ( $bindList_txs_ref && defined($bindList_txs_ref) && scalar(@$bindList_txs_ref) > 0 ) {
+        push( @$bindList_ref, @$bindList_txs_ref );
+    }
+    if ( $bindList_ur_ref && defined($bindList_ur_ref) && scalar(@$bindList_ur_ref) > 0 ) {
+        push( @$bindList_ref, @$bindList_ur_ref );
+    }
+}
+
+############################################################################
+# processParamValue - needed to process javascript dynamically generated param.
+############################################################################
+sub processParamValue {
+    my ($valStr) = @_;
+    my @vals = split( /,/, $valStr );
+    return @vals;
+}
+
+############################################################################
+# printNoHitMessage - print no hit message
+############################################################################
+sub printNoHitMessage {
+    print "<p>\n";
+    print "No results returned from search.\n";
+    print "</p>\n";
+}
+
+############################################################################
+# getBBHLiteRows - Get raw rows from BBH lite files.
+#   (You need to filter for valid taxons for this database in
+#    the hits since data  may come from multiple IMG systems.)
+#  Data is assumed to be sorted by descending bit score,
+#  top hits order.
+############################################################################
+sub getBBHLiteRows {
+    my ( $gene_oid, $validTaxons_href ) = @_;
+    $gene_oid = sanitizeInt($gene_oid);
+
+    # Use new format if turned on. --es 02/26/11
+    if ( $bbh_zfiles_dir ne "" ) {
+        my $dbh = dbLogin();
+        my @a   = getBBHZipRows( $dbh, $gene_oid, $validTaxons_href );
+
+        #$dbh->disconnect();
+        return @a;
+    }
+
+    my $bbh_file = "$bbh_files_dir/" . geneOidDirs($gene_oid) . "/$gene_oid.m8.txt.gz";
+    my @a;
+    if ( !-e $bbh_file ) {
+        webLog("Cannot find '$bbh_file'\n");
+        warn("Cannot find '$bbh_file'\n");
+        return @a;
+    }
+    unsetEnvPath();
+    my $cmd = "/bin/zcat $bbh_file";
+    webLog("+ $cmd\n");
+    my $rfh = newCmdFileHandle( $cmd, "getBBHLiteRows" );
+    while ( my $s = $rfh->getline() ) {
+        chomp $s;
+        my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+          split( /\t/, $s );
+        my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+        if ( defined($validTaxons_href) ) {
+            next if !$validTaxons_href->{$staxon};
+        }
+        next if $bitScore eq "";    # bad record
+        push( @a, $s );
+    }
+    close $rfh;
+    resetEnvPath();
+    return @a;
+}
+############################################################################
+# getBBHZipRows - Get raw rows from BBH zip files.
+#   (You need to filter for valid taxons for this database in
+#    the hits since data  may come from multiple IMG systems.)
+#  Data is assumed to be sorted by descending bit score,
+#  top hits order.
+############################################################################
+sub getBBHZipRows {
+    my ( $dbh, $gene_oid, $validTaxons_href ) = @_;
+    $gene_oid = sanitizeInt($gene_oid);
+    my $taxon_oid = geneOid2TaxonOid( $dbh, $gene_oid );
+    $taxon_oid = sanitizeInt($taxon_oid);
+
+    my $zipFile = "$bbh_zfiles_dir/$taxon_oid.zip";
+    my @a;
+    if ( !-e $zipFile ) {
+        webLog("getBBHZipRows: file '$zipFile' not found\n");
+        warn("getBBHZipRows: file '$zipFile' not found\n");
+        return @a;
+    }
+    unsetEnvPath();
+    my $rfh = newUnzipFileHandle( $zipFile, $gene_oid, "getBBHZipFiles" );
+    while ( my $s = $rfh->getline() ) {
+        chomp $s;
+        my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+          split( /\t/, $s );
+        my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+        if ( defined($validTaxons_href) ) {
+            next if !$validTaxons_href->{$staxon};
+        }
+        next if $bitScore eq "";    # bad record
+        push( @a, $s );
+    }
+    close $rfh;
+    resetEnvPath();
+    return @a;
+}
+
+############################################################################
+# getGeneHitsRows - Get raw rows from gene_hits files.
+############################################################################
+sub getGeneHitsRows {
+    my ( $gene_oid, $opType, $validTaxons_href ) = @_;
+    $gene_oid = sanitizeInt($gene_oid);
+
+    my $bbh_file = "$bbh_files_dir/" . geneOidDirs($gene_oid) . "/$gene_oid.m8.txt.gz";
+    my %orthologs;
+    if ( !-e $bbh_file ) {
+        webLog("Cannot find '$bbh_file'\n");
+        warn("Cannot find '$bbh_file'\n");
+    } else {
+        my @rows = getBBHLiteRows( $gene_oid, $validTaxons_href );
+        for my $row (@rows) {
+            my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+              split( /\t/, $row );
+            my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+            my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+            $orthologs{$sgene_oid} = 1;
+        }
+    }
+    my $gene_hits_file = "$gene_hits_files_dir/" . geneOidDirs($gene_oid) . "/$gene_oid.m8.txt.gz";
+    my @a;
+    if ( !-e $gene_hits_file ) {
+        webLog("Cannot find '$gene_hits_file'\n");
+        warn("Cannot find '$gene_hits_file'\n");
+        return @a;
+    } else {
+        unsetEnvPath();
+        my $cmd = "/bin/zcat $gene_hits_file";
+        webLog("+ $cmd\n");
+        my $rfh = newCmdFileHandle( $cmd, "getGeneHitsRows" );
+        while ( my $s = $rfh->getline() ) {
+            chomp $s;
+            my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+              split( /\t/, $s );
+            my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+            my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+            next if !validOid( $qgene_oid, "qgene_oid" );
+            next if !validOid( $sgene_oid, "sgene_oid" );
+            next if !validOid( $qtaxon,    "qtaxon" );
+            next if !validOid( $staxon,    "staxon" );
+            next if $bitScore eq "";    # bad record
+
+            if ( $qgene_oid ne $gene_oid ) {
+                print STDERR "getGeneHitRows: qgene_oid='$qgene_oid' " . "gene_oid='$gene_oid' file='$gene_hits_file'\n";
+                next;
+            }
+            if ( defined($validTaxons_href) ) {
+                next if !$validTaxons_href->{$staxon};
+            }
+            my $op;
+            next if $opType eq "P" && $qtaxon ne $staxon;
+            $op = "O" if $orthologs{$sgene_oid} || $opType eq "O";
+            $op = "P" if $qtaxon eq $staxon;
+            push( @a, "$s\t$op" );
+        }
+        close $rfh;
+        resetEnvPath();
+    }
+
+    return @a;
+}
+############################################################################
+# getGeneHitsZipRows - Get raw rows from gene hits zip files.
+############################################################################
+sub getGeneHitsZipRows {
+    my ( $dbh, $gene_oid, $opType, $validTaxons_href ) = @_;
+    $gene_oid = sanitizeInt($gene_oid);
+    my $taxon_oid = geneOid2TaxonOid( $dbh, $gene_oid );
+
+    my %orthologs;
+    my @rows = getBBHZipRows( $dbh, $gene_oid, $validTaxons_href );
+    for my $row (@rows) {
+        my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+          split( /\t/, $row );
+
+        #my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+        $orthologs{$sgene_oid} = 1;
+    }
+    my @a;
+    my $zipFile = "$gene_hits_zfiles_dir/$taxon_oid.zip";
+    if ( !-e $zipFile ) {
+        webLog("Cannot find '$zipFile'\n");
+        warn("Cannot find '$zipFile'\n");
+        return @a;
+    } else {
+        unsetEnvPath();
+        my $rfh = newUnzipFileHandle( $zipFile, $gene_oid, "getGeneHitsZipRows" );
+        while ( my $s = $rfh->getline() ) {
+            chomp $s;
+            my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+              split( /\t/, $s );
+            my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+            my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+            next if !validOid( $qgene_oid, "qgene_oid" );
+            next if !validOid( $sgene_oid, "sgene_oid" );
+            next if !validOid( $qtaxon,    "qtaxon" );
+            next if !validOid( $staxon,    "staxon" );
+            next if $bitScore eq "";    # bad record
+
+            if ( $qgene_oid ne $gene_oid ) {
+                print STDERR "getGeneHitZipRows: qgene_oid='$qgene_oid' "
+                  . "gene_oid='$gene_oid' file='$zipFile':'$gene_oid'\n";
+                next;
+            }
+            if ( defined($validTaxons_href) ) {
+                next if !$validTaxons_href->{$staxon};
+            }
+            my $op;
+            next if $opType eq "P" && $qtaxon ne $staxon;
+            $op = "O" if $orthologs{$sgene_oid} || $opType eq "O";
+            $op = "P" if $qtaxon eq $staxon;
+            push( @a, "$s\t$op" );
+        }
+        close $rfh;
+        resetEnvPath();
+    }
+
+    return @a;
+}
+
+############################################################################
+# validOid - Check for valid OID in case of corrput file.
+############################################################################
+sub validOid {
+    my ( $oid, $type ) = @_;
+
+    if ( length($oid) != 9 && length($oid) != 10 ) {
+        warn "INVALID OID $type '$oid'\n" if $type ne "";
+        return 0;
+    }
+    return 1;
+}
+
+############################################################################
+# getClusterHomologRows
+############################################################################
+sub getClusterHomologRows {
+    my ( $gene_oid, $opType, $validTaxons_href ) = @_;
+
+    $gene_oid = sanitizeInt($gene_oid);
+
+    my $dbh = dbLogin();
+
+    my %orthologs;
+    my $bbh_file = "$bbh_files_dir/" . geneOidDirs($gene_oid) . "/$gene_oid.m8.txt.gz";
+    if ( !-e $bbh_file ) {
+        webLog("Cannot find '$bbh_file'\n");
+        warn("Cannot find '$bbh_file'\n");
+    } else {
+        my @rows = getBBHLiteRows( $gene_oid, $validTaxons_href );
+        for my $row (@rows) {
+            my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+              split( /\t/, $row );
+            my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+            my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+            $orthologs{$sgene_oid} = 1;
+        }
+    }
+
+    my $top_n;
+    my $maxHomologResults = getSessionParam("maxHomologResults");
+    if ( $top_n eq "" && $maxHomologResults ne "" ) {
+        $top_n = $maxHomologResults;
+    }
+    webLog("top_n=$top_n\n");
+
+    my $serGiBlastDb = $img_hmms_serGiDb;
+    my $singletonsDb = $img_hmms_singletonsDb;
+
+    my $tool    = lastPathTok($0);
+    my $verbose = 1;
+
+    unsetEnvPath();
+
+    my $tmpDir = "$cgi_tmp_dir/clusterHomologs$$.tmpDir";
+    runCmd("/bin/rm -fr $tmpDir");
+    runCmd("/bin/mkdir -p $tmpDir");
+    runCmd("/bin/cp $cgi_dir/BLOSUM62 $tmpDir");
+    my $queryTmpFile = "$tmpDir/query.$gene_oid.faa";
+    my $subjTmpFile  = "$tmpDir/subject.$gene_oid.faa";
+    my $tmpOutFile1  = "$tmpDir/query.$gene_oid.m8.txt";
+    my $tmpOutFile2  = "$tmpDir/singletons.m8.txt.";
+
+    webLog( ">>> Query gene " . currDateTime() . "\n" );
+    my $sql = qq{
+       select g.gene_oid, g.taxon, g.aa_seq_length, g.aa_residue
+       from gene g
+       where g.gene_oid = ?
+    };
+    writeFaaFile( $dbh, $sql, $gene_oid, $queryTmpFile );
+
+    webLog( ">>> Subject genes " . currDateTime() . "\n" );
+    $sql = qq{
+       select distinct sm.serial_gi
+       from gene g, gene_img_clusters gic1, gene_img_clusters gic2,
+         dt_sergi_map sm
+       where g.gene_oid = ?
+       and g.gene_oid = gic1.gene_oid
+       and gic1.cluster_id = gic2.cluster_id
+       and gic2.gene_oid = sm.gene_oid
+       order by sm.serial_gi
+    };
+
+    #    my $cur        = execSql( $dbh, $sql, $verbose, $gene_oid );
+    my $giListFile = "$tmpDir/gilist.txt";
+    my $Fgi        = newWriteFileHandle( $giListFile, $tool );
+    my $count      = 0;
+
+    #    for ( ; ; ) {
+    #        my ($serial_gi) = $cur->fetchrow();
+    #        last if !$serial_gi;
+    #        $count++;
+    #        print $Fgi "$serial_gi\n";
+    #    }
+    close $Fgi;
+    webLog( "$count GI's written " . currDateTime() . "\n" );
+
+    my $z_arg = "-z 700000000 ";
+    webLog( ">>> Cluster BLAST " . currDateTime() . "\n" );
+
+    my $cmd =
+        "$blastall_bin/legacy_blast.pl blastall "
+      . " -p blastp -i $queryTmpFile -d $serGiBlastDb "
+      . " -l $giListFile "
+      . " -e 1e-2 -F F  $z_arg -m 8 -o $tmpOutFile1 -a 16 -b 2500 "
+      . " --path $blastall_bin ";
+
+    # --path is needed although fullpath of legacy_blast.pl is
+    # specified in the beginning of command! ---yjlin 03/12/2013
+    runCmd($cmd);
+    webLog( ">>> Singleton BLAST " . currDateTime() . "\n" );
+
+    $cmd =
+        "$blastall_bin/legacy_blast.pl blastall "
+      . " -p blastp -i $queryTmpFile -d $singletonsDb "
+      . " -e 1e-2 -F F  $z_arg -m 8 -o $tmpOutFile2 -a 16 -b 2500 "
+      . " --path $blastall_bin ";
+
+    # --path is needed although fullpath of legacy_blast.pl is
+    # specified in the beginning of command! ---yjlin 03/12/2013
+    runCmd($cmd);
+    webLog( ">>> Sort and write " . currDateTime() . "\n" );
+
+    my @rows;
+    my $cnt = loadHitsMapGi( $dbh, $tmpOutFile1, \@rows, $validTaxons_href );
+    webLog("== $cnt rows loaded from clusters\n");
+    $cnt = loadSingletonHits( $tmpOutFile2, \@rows, $validTaxons_href );
+    webLog("== $cnt rows loaded from singletons\n");
+    my @rows2 = sort(@rows);
+    $count = 0;
+    my @rows3;
+
+    for my $r2 (@rows2) {
+        $count++;
+        my ( $sortVal, $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue,
+            $bitScore ) = split( /\t/, $r2 );
+        my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+        next if $gene_oid eq $sgene_oid;
+        my $op;
+        $op = "O" if $orthologs{$sgene_oid};
+        $op = "P" if $qtaxon eq $staxon;
+        my $r = "$qid\t";
+        $r .= "$sid\t";
+        $r .= "$percIdent\t";
+        $r .= "$alen\t";
+        $r .= "$nMisMatch\t";
+        $r .= "$nGaps\t";
+        $r .= "$qstart\t";
+        $r .= "$qend\t";
+        $r .= "$sstart\t";
+        $r .= "$send\t";
+        $r .= "$evalue\t";
+        $r .= "$bitScore\t";
+        $r .= "$op\t";
+        push( @rows3, $r );
+    }
+    webLog("== $count rows total\n");
+    webLog( "Done. " . currDateTime() . "\n" );
+
+    runCmd("/bin/rm -fr $tmpDir");
+
+    resetEnvPath();
+
+    #$dbh->disconnect();
+
+    return @rows3;
+}
+
+############################################################################
+# writeFaaFile - Write FASTA from SQL.
+############################################################################
+sub writeFaaFile {
+    my ( $dbh, $sql, $gene_oid0, $outFile ) = @_;
+
+    my $wfh = newWriteFileHandle( $outFile, "writeFaaFile" );
+    my $cur = execSql( $dbh, $sql, $verbose, $gene_oid0 );
+    my %done;
+    my $count = 0;
+    for ( ; ; ) {
+        my ( $gene_oid, $taxon, $aa_seq_length, $aa_residue ) = $cur->fetchrow();
+        last if !$gene_oid;
+        next if $done{$gene_oid};
+        $count++;
+        print $wfh ">${gene_oid}_${taxon}_${aa_seq_length}\n";
+        my $seq = wrapSeq($aa_residue);
+        print $wfh "$seq\n";
+        $done{$gene_oid} = 1;
+    }
+    $cur->finish();
+    close $wfh;
+    webLog("$count genes written to FASTA\n");
+}
+
+############################################################################
+# loadSingletonHits
+############################################################################
+sub loadSingletonHits {
+    my ( $inFile, $rows_aref, $validTaxons_href ) = @_;
+
+    my $rfh = newReadFileHandle( $inFile, "loadHits" );
+    my $count = 0;
+    while ( my $s = $rfh->getline() ) {
+        chomp $s;
+        $count++;
+        my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
+          split( /\t/, $s );
+        my ( $qgene_oid, $qtaxon, $qlen ) = split( /_/, $qid );
+        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+        next if !$validTaxons_href->{$staxon};
+        my $revBitScore = sprintf( "%05d", 10000 - $bitScore );
+        push( @$rows_aref, "$revBitScore\t$s" );
+    }
+    close $rfh;
+    return $count;
+}
+
+############################################################################
+# loadHitsMapGi
+############################################################################
+sub loadHitsMapGi {
+    my ( $dbh, $inFile, $rows_aref, $validTaxons_href ) = @_;
+
+    return 0;
+
+    #    my $sql = qq{
+    #       select gene_lid
+    #       from dt_sergi_map
+    #       where serial_gi = ?
+    #   };
+    #    my $cur = prepSql( $dbh, $sql, $verbose );
+    #    my $rfh = newReadFileHandle( $inFile, "loadHitsMapGi" );
+    #    my $count = 0;
+    #    while ( my $s = $rfh->getline() ) {
+    #        chomp $s;
+    #        $count++;
+    #        my (
+    #             $qid,       $gi,    $percIdent, $alen,
+    #             $nMisMatch, $nGaps, $qstart,    $qend,
+    #             $sstart,    $send,  $evalue,    $bitScore
+    #          )
+    #          = split( /\t/, $s );
+    #        $gi =~ s/gi\|//;
+    #        execStmt( $cur, $gi );
+    #        my ($sid) = $cur->fetchrow();
+    #        if ( $sid eq "" ) {
+    #            print "loadHitsMapGi: gi='$gi' -> gene_lid map not found\n"
+    #              if $verbose >= 1;
+    #            next;
+    #        }
+    #        my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
+    #        next if !$validTaxons_href->{$staxon};
+    #        my $revBitScore = sprintf( "%05d", 10000 - $bitScore );
+    #        my $r = "$revBitScore\t";
+    #        $r .= "$qid\t";
+    #        $r .= "$sid\t";
+    #        $r .= "$percIdent\t";
+    #        $r .= "$alen\t";
+    #        $r .= "$nMisMatch\t";
+    #        $r .= "$nGaps\t";
+    #        $r .= "$qstart\t";
+    #        $r .= "$qend\t";
+    #        $r .= "$sstart\t";
+    #        $r .= "$send\t";
+    #        $r .= "$evalue\t";
+    #        $r .= "$bitScore\t";
+    #        push( @$rows_aref, $r );
+    #    }
+    #    $cur->finish();
+    #    close $rfh;
+    #    return $count;
+}
+
+############################################################################
+# printHeaderWithInfo - writes the header for a tool and puts the specified
+#     text as a popup tip in the question mark image next to the header
+############################################################################
+sub printSubHeaderWithInfo {
+    my ( $header, $text, $tooltip, $popup_header, $hide_metagenomes, $help, $howto, $java ) = @_;
+    print "<h2>";
+    printCustomHeader( $header, $text, $tooltip, $popup_header, $hide_metagenomes, $help, $howto, $java );
+    print "</h2>";
+}
+
+sub printHeaderWithInfo {
+    my ( $header, $text, $tooltip, $popup_header, $hide_metagenomes, $help, $howto, $java ) = @_;
+    print "<h1>";
+    printCustomHeader( $header, $text, $tooltip, $popup_header, $hide_metagenomes, $help, $howto, $java );
+    print "</h1>";
+}
+
+sub printCustomHeader {
+    my ( $header, $text, $tooltip, $popup_header, $hide_metagenomes, $help, $howto, $java ) = @_;
+    print "<script src='$base_url/overlib.js'></script>\n";
+
+    my $infolink = "";
+    if ( $text ne "" ) {
+        my $info =
+            "onclick=\"return overlib('$text', "
+          . "RIGHT, STICKY, MOUSEOFF, "
+          . "CAPTION, '$popup_header', "
+          . "FGCOLOR, '#E0FFC2', "
+          . "WIDTH, 400)\" "
+          . "onmouseout='return nd()' ";
+        $infolink = qq{
+        <a $info>
+        <img src="$base_url/images/question.png" width="24" height="24"
+        border="0" title="$tooltip"
+        style="cursor:pointer; cursor:hand;" /></a>
+        };
+    }
+
+    my $hidelink = "";
+    if ($hide_metagenomes) {
+        my $info2 =
+            "onclick=\"return overlib('Currently, this tool does not support metagenomes. "
+          . "Only isolate genomes can be analyzed.', "
+          . "RIGHT, STICKY, MOUSEOFF, "
+          . "CAPTION, 'metagenomes are not supported', "
+          . "FGCOLOR, '#E0FFC2', "
+          . "WIDTH, 400)\" "
+          . "onmouseout='return nd()' ";
+
+        $hidelink = qq{
+            <a $info2>
+            <img src="$base_url/images/no-metag.jpg" width="24" height="24"
+            border="0" title="metagenomes not supported"
+            style="cursor:pointer; cursor:hand;" /></a>
+        };
+    }
+
+    my $helplink = "";
+    if ( $help ne "" ) {
+        $helplink = qq{
+            <a href="$base_url/doc/$help" target="_help" onClick="_gaq.push(['_trackEvent', 'Document', 'printHeaderWithInfo', '$help']);">
+            <img width="30" height="24" border="0"
+             src="$base_url/images/help.gif" title="view help document"
+             style="cursor:pointer; cursor:hand;" /></a>
+        };
+    }
+
+    my $howtolink = "";
+    if ( $howto ne "" ) {
+        $howtolink = qq{
+            <a href=$base_url/doc/$howto target=_help onClick="_gaq.push(['_trackEvent', 'Document', 'printHeaderWithInfo', '$howto']);">
+            <img width="20" height="24" border="0"
+             src="$base_url/images/howto.png" title="view how-to in IMG"
+             style="cursor:pointer; cursor:hand;" /></a>
+        };
+    }
+
+    my $javalink = "";
+    if ( $java ne "" ) {
+        my $javatext =
+"Please verify the current version of java using: <a href=http://www.java.com/en/download/installed.jsp >verify</a>. <br/>Please make sure that older versions of java are uninstalled. This can be done using: <a href=http://www.java.com/en/download/uninstallapplet.jsp >uninstall</a> <br/>With Java 7 Update 51 or later, you need to go to Control Panel -> Java -> Security tab, click on <u>Edit Site List</u> and add the following to the list: <br/><br/> http://img.jgi.doe.gov/ <br/> https://img.jgi.doe.gov/ <br/><br/>On linux, go to your jre/bin directory and launch jcontrol to change the security setting as above.<br/>See <a href=$base_url/doc/systemreqs.html >System Requirements</a> for supported browsers. Some browsers may have issues with java.";
+
+        my $info3 =
+            "onclick=\"return overlib('$javatext', "
+          . "RIGHT, STICKY, MOUSEOFF, "
+          . "CAPTION, 'Java issues in IMG', "
+          . "FGCOLOR, '#E0FFC2', "
+          . "WIDTH, 450)\" "
+          . "onmouseout='return nd()' ";
+
+        $javalink = qq{
+        <a $info3>
+        <img src="$base_url/images/java-cup.jpg" width="24" height="24"
+        border="0" title="view java issues in IMG"
+        style="cursor:pointer; cursor:hand;" /></a>
+        };
+    }
+
+    print qq{
+        $header $infolink
+        $hidelink $helplink $howtolink $javalink
+    };
+}
+
+############################################################################
+# printInfoTipLink - writes a question mark image or the specified link-to
+# item ($linktothis) with a tooltip and an onclick popup that contains
+# the information specified in $text
+############################################################################
+sub printInfoTipLink {
+    my ( $text, $tooltip, $popup_header, $linktothis ) = @_;
+    print "<script src='$base_url/overlib.js'></script>\n";
+    my $info =
+        "onclick=\"return overlib('$text', "
+      . "RIGHT, STICKY, MOUSEOFF, "
+      . "CAPTION, '$popup_header', "
+      . "FGCOLOR, '#E0FFC2', "
+      . "WIDTH, 400)\" "
+      . "onmouseout='return nd()' ";
+
+    if ( $linktothis eq "" ) {
+        $linktothis = qq{
+            <img src="$base_url/images/question.png"
+            border="0" title="$tooltip"
+            style="cursor:pointer; cursor:hand;"/>
+        };
+    } else {
+        $linktothis = qq {
+            <font color="blue"><u>$linktothis</u></font>
+        };
+    }
+
+    my $link = qq{
+        <a $info title="$tooltip" style="cursor:pointer; cursor:hand;">
+        $linktothis
+        </a>
+    };
+
+    print $link;
+}
+
+############################################################################
+# parseDNACoords
+#
+# dna_coords: e.g., 3146..3680,5982..8922 or <1..30,25..>75
+#
+# return:
+# start_coord: start coord
+# end_coord: end coord
+# partial_gene: 1 if is partial gene; 0 otherwise
+# error_msg: error in dna_coords, if any
+############################################################################
+sub parseDNACoords {
+    my ($dna_coords) = @_;
+
+    my $start_coord  = 0;
+    my $end_coord    = 0;
+    my $partial_gene = 0;
+    my $error_msg    = "";
+
+    if ( !$dna_coords ) {
+        $error_msg = "No DNA coordinates.";
+        return ( $start_coord, $end_coord, $partial_gene, $error_msg );
+    }
+
+    my @coords = split( /\,/, $dna_coords );
+    for my $coord2 (@coords) {
+        my ( $s2, $e2 ) = split( /\.\./, $coord2 );
+
+        # check start coord
+        if ( $s2 =~ /^\</ ) {
+
+            # partial gene
+            $s2 = substr( $s2, 1 );
+            $partial_gene = 1;
+        }
+        if ( length($s2) == 0 || !isInt($s2) || $s2 < 0 ) {
+            $error_msg = "Incorrect start coordinate in $coord2";
+            last;
+        }
+        if ( $start_coord == 0 ) {
+            $start_coord = $s2;
+        } elsif ( $s2 < $start_coord ) {
+            $error_msg = "Coordinate $coord2 out of order";
+            last;
+        }
+
+        # check end coord
+        if ( $e2 =~ /^\>/ ) {
+
+            # partial gene
+            $e2 = substr( $e2, 1 );
+            $partial_gene = 1;
+        }
+        if ( length($e2) == 0 || !isInt($e2) || $e2 < 0 ) {
+            $error_msg = "Incorrect end coordinate in $coord2";
+            last;
+        }
+        if ( $e2 < $s2 ) {
+            $error_msg = "Incorrect DNA coordinate $coord2";
+            last;
+        }
+        if ( $end_coord == 0 ) {
+            $end_coord = $e2;
+        } elsif ( $e2 < $end_coord ) {
+            $error_msg = "Coordinate $coord2 out of order";
+            last;
+        } else {
+            $end_coord = $e2;
+        }
+    }
+
+    return ( $start_coord, $end_coord, $partial_gene, $error_msg );
+}
+
+#
+# convert a list of function ids to a url
+# the list is plain text separated by space
+# return string of html <a> tags
+# otherwise id is returned back
+#
+sub functionIdToUrl {
+    my ( $id, $type, $gene_oid ) = @_;
+
+    my $pfam_base_url    = $env->{pfam_base_url};
+    my $cog_base_url     = $env->{cog_base_url};
+    my $tigrfam_base_url = $env->{tigrfam_base_url};
+    my $enzyme_base_url  = $env->{enzyme_base_url};
+    my $kegg_module_url  = $env->{kegg_module_url};
+    my $ipr_base_url     = $env->{ipr_base_url};
+    my $cassette_url     = 'main.cgi?section=GeneCassette&page=cassetteBox&type=cog&cassette_oid=';
+
+    # main.cgi?section=KeggPathwayDetail&page=koterm2&ko_id=KO:K13280&gene_oid=646510566
+    my $ko_url = 'main.cgi?section=KeggPathwayDetail&page=koterm2&gene_oid=' . $gene_oid . '&ko_id=';
+
+    # sometimes the id is the list of ids separate by a space
+    my @ids = split( /\s/, $id );
+    my $urls;
+    if ( $id =~ /^COG/i ) {
+        foreach my $i (@ids) {
+            my $tmp = alink( $cog_base_url . $i, $i );
+            $urls .= " $tmp";
+        }
+    } elsif ( $id =~ /^EC/i ) {
+        foreach my $i (@ids) {
+            my $o = $i;
+            $i =~ tr/A-Z/a-z/;
+            my $tmp = alink( $enzyme_base_url . $i, $o );
+            $urls .= " $tmp";
+        }
+    } elsif ( $id =~ /^pfam/i ) {
+        foreach my $i (@ids) {
+            my $o = $i;
+            $i =~ s/pfam/PF/;
+            my $tmp = alink( $pfam_base_url . $i, $o );
+            $urls .= " $tmp";
+        }
+    } elsif ( $id =~ /^TIGR/i ) {
+        foreach my $i (@ids) {
+            my $tmp = alink( $tigrfam_base_url . $i, $i );
+            $urls .= " $tmp";
+        }
+    } elsif ( $id =~ /^IPR/i ) {
+        foreach my $i (@ids) {
+            my $tmp = alink( $ipr_base_url . $i, $i );
+            $urls .= " $tmp";
+        }
+    } elsif ( $id =~ /^KO/i ) {
+        foreach my $i (@ids) {
+            my $tmp = alink( $ko_url . $i, $i );
+            $urls .= " $tmp";
+        }
+
+    } elsif ( $type eq 'cassette' ) {
+        $urls = alink( $cassette_url . $id, $id );
+    }
+
+    if ( $urls ne '' ) {
+        return $urls;
+    } else {
+        return $id;
+    }
+}
+
+sub getGenomeHitsDir {
+    my $sessionId = getSessionId();
+    my $dir       = getSessionDir();
+    $dir .= "/genomeHits";
+    if ( !( -e "$dir" ) ) {
+        mkdir "$dir" or webError("Cannot make $dir!");
+    }
+    return ( $dir, $sessionId );
+}
+
+sub getCartDir {
+    my $sessionId = getSessionId();
+    my $dir       = getSessionDir();
+    $dir .= "/cart";
+    if ( !( -e "$dir" ) ) {
+        mkdir "$dir" or webError("Cannot make $dir!");
+    }
+    return ( $dir, $sessionId );
+}
+
+#
+# create and gets session dir under cgi_tmp_dir
+#
+# $e->{ cgi_tmp_dir } = "/opt/img/temp/" . $e->{ domain_name } .  "_"  . $urlTag;
+#
+# $subDir - optional - create a subdir under $cgi_tmp_dir/$sessionId/$subDir
+sub getSessionDir {
+    my ($subDir) = @_;
+
+    my $sessionId = getSessionId();
+    my $dir       = "$cgi_tmp_dir/$sessionId";
+    if ( ! -e "$dir" ) {
+        mkdir "$dir" or webError("Cannot make $dir!");
+    }
+
+    if ( $subDir ) {
+        $dir = "$cgi_tmp_dir/$sessionId/$subDir";
+        if ( ! -e "$dir" ) {
+            mkdir "$dir" or webError("Cannot make $dir!");
+        }
+    }
+
+    return $dir;
+}
+
+#
+# wrapper to getSessionDir()
+# this has a better method name
+#
+sub getSessionCgiTmpDir {
+    my ($subDir) = @_;
+    return getSessionDir($subDir);
+}
+
+#
+# create and gets session dir under tmp_dir
+#     $e->{ base_dir } = $apacheVhostDir . $e->{ domain_name } . "/htdocs/$urlTag";
+#     $e->{ tmp_dir } = $e->{ base_dir } . "/tmp";
+#
+# $subDir - optional - create a subdir under $tmp_dir/$sessionId/$subDir
+sub getSessionTmpDir {
+    my ($subDir) = @_;
+
+    my $sessionId = getSessionId();
+    my $dir       = "$tmp_dir/public/$sessionId";
+    if ( !( -e "$dir" ) ) {
+        mkdir "$dir" or webError("Cannot make $dir!");
+        chmod( 0777, $dir );
+    }
+
+    if ( $subDir ne '' ) {
+        $dir = "$tmp_dir/public/$sessionId/$subDir";
+        if ( !( -e "$dir" ) ) {
+            mkdir "$dir" or webError("Cannot make $dir!");
+            chmod( 0777, $dir );
+        }
+    }
+
+    return $dir;
+}
+
+#
+# gets tmp dir url that goes with method getSessionTmpDir()
+# You MUST call getSessionTmpDir() first, because it creates the needed sub-directories.
+#
+# $subDir - optional - create a subdir under $tmp_dir/$sessionId/$subDir
+sub getSessionTmpDirUrl {
+    my ($subDir) = @_;
+
+    my $sessionId = getSessionId();
+    my $dir       = "$tmp_url/public/$sessionId";
+    my $dirTest   = "$tmp_dir/public/$sessionId";
+    if ( !( -e $dirTest ) ) {
+        webError("Cannot find $dirTest!");
+    }
+
+    if ( $subDir ne '' ) {
+        $dir = "$tmp_url/public/$sessionId/$subDir";
+        if ( !( -e "$dirTest/$subDir" ) ) {
+            webError("Cannot find $dirTest!");
+        }
+    }
+
+    return $dir;
+}
+
+sub getGenerateDir {
+    my $dir = "$cgi_tmp_dir/generate";
+    if ( !( -e "$dir" ) ) {
+        mkdir "$dir" or webError("Cannot make $dir!");
+    }
+    return ($dir);
+}
+
+############################################################################
+# inArray - is $val in @arr?
+############################################################################
+sub inArray {
+    my ( $val, @arr ) = @_;
+
+    for my $i (@arr) {
+        if ( $val eq $i ) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+############################################################################
+# inArray_ignoreCase - is $val in @arr?
+#                      (use case-insensitive comparison)
+############################################################################
+sub inArray_ignoreCase {
+    my ( $val, @arr ) = @_;
+
+    $val = strTrim($val);
+
+    for my $i (@arr) {
+        my $val2 = strTrim($i);
+
+        if ( lc($val) eq lc($val2) ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+############################################################################
+# inIntArray - is $val in @arr? (use integer comparison)
+############################################################################
+sub inIntArray {
+    my ( $val, @arr ) = @_;
+
+    for my $i (@arr) {
+        if ( $val == $i ) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+#############################################################################
+# isSubset - is array $a_ref a subset of array $b_ref
+#############################################################################
+sub isSubset {
+    my ( $a_ref, $b_ref ) = @_;
+
+    for my $i (@$a_ref) {
+        if ( !WebUtil::inArray( $i, @$b_ref ) ) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+#############################################################################
+# intersectionOfArrays - intersection of array $a_ref and array $b_ref
+#############################################################################
+sub intersectionOfArrays {
+    my ( $a_ref, $b_ref ) = @_;
+
+    my %a_h = map { $_ => 1 } @$a_ref;
+
+    # the intersection of @$a_ref and @$b_ref:
+    my @intersection = grep( $a_h{$_}, @$b_ref );
+
+    return @intersection;
+}
+
+#
+# get server's hostanme eg gpweb04, gpweb05 etc
+#
+sub getHostname {
+    my $host = hostname;
+    if ( $host ne '' ) {
+        return $host;
+    }
+
+    # otherwise try command line way of getting host name
+    unsetEnvPath();    # to avoid -T errors in perl 5.10 - ken
+    delete @ENV{ 'IFS', 'CDPATH', 'ENV', 'BASH_ENV' };
+    my $servername = `/bin/hostname`;
+    chomp $servername;
+    return $servername;
+}
+
+############################################################################
+# sdbLogin - Login to oracle or some RDBMS and return handle.
+#   If "mode" is write, create a new sdb file.
+############################################################################
+sub sdbLogin {
+    my ( $sdb_name, $mode, $exit ) = @_;
+
+    my $sdbh;
+    webLog(">>> sdbLogin: '$sdb_name' (mode='$mode')\n");
+    if ( $sdb_name && ( -e $sdb_name ) ) {
+        $sdbh = DBI->connect( "dbi:SQLite:dbname=$sdb_name", "", "", { RaiseError => 1 }, );
+    } elsif ( $sdb_name && $mode eq "w" ) {
+        unlink($sdb_name);
+        $sdbh = DBI->connect( "dbi:SQLite:dbname=$sdb_name", "", "", { RaiseError => 1 }, );
+    }
+    if ( !defined($sdbh) ) {
+        webLog("sdbLogin: cannot connect dbi:SQLite:dbname=$sdb_name\n");
+        my $error = $DBI::errstr;
+
+        if ($exit) {
+            webErrorHeader(
+"<br/>  This is embarrassing. Sorry, $sdb_name SQLite database is down. Please try again later. <br/> $error",
+                1
+            );
+        }
+    }
+
+    return $sdbh;
+}
+
+# does the genome have a prodege data
+# https://prodege.jgi-psf.org/api/img/2518645523
+# returns json object
+# {
+#    "url": "/readJob/75"
+# }
+# OR
+# {} on no data
+#
+# return url https://prodege.jgi-psf.org/readJob/75
+# or blank ''
+sub hasProdege {
+    my ($taxonOid) = @_;
+    my $url        = "https://prodege.jgi-psf.org/api/img/" . $taxonOid;
+    my $content    = urlGet($url);
+    if ( !$content ) {
+        return '';
+    }
+    my $href = decode_json($content);
+    if ( exists $href->{url} ) {
+        my $subUrl = $href->{url};
+        return 'https://prodege.jgi-psf.org' . $subUrl;
+    }
+    return '';
+}
+
+# dir list of all files
+sub dirListAll {
+    my ($dir) = @_;
+    opendir( Dir, $dir ) || webDie("dirList: cannot read '$dir'\n");
+    my @paths = sort( readdir(Dir) );
+    closedir(Dir);
+    my @paths2;
+    my $i;
+    for $i (@paths) {
+        push( @paths2, $i );
+    }
+    return @paths2;
+}
+
+1;
+

@@ -688,7 +688,7 @@ sub getUserInfo3 {
 #
 # check to see if username or email address has been banned
 #
-# - noly works for jgi sso logins
+# - only works for jgi sso logins
 # - img accounts are not found in the IsCalibanUser.cgi - get popup of bad login
 #
 sub checkBannedUsers {

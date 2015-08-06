@@ -1,7 +1,7 @@
 ############################################################################
 #   Misc. web utility functions.
 # 	--es 04/15/2004
-# $Id: WebUtil.pm 33866 2015-07-31 20:20:06Z aireland $
+# $Id: WebUtil.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
 ############################################################################
 package WebUtil;
 
@@ -27,7 +27,6 @@ BEGIN {
   aNumLink
   appendFile
   array2Hash
-  arrayRef2HashRef
   attrLabel
   attrValue
   binOid2Name
@@ -602,6 +601,7 @@ sub setBlastPid {
 #
 sub createTmpIndex {
 
+	return;
     return if $env->{dev_site};
 
 	# make sure these directories exist
@@ -2022,6 +2022,11 @@ sub readLinearFasta {
 ############################################################################
 sub parseBlastTab {
     my ($s) = @_;
+
+    my %blast_h;
+	@blast_h{ qw( qid sid percIdent alen nMisMatch nGaps qstart qend sstart send evalue bitscore ) } = split /\t/, $s;
+	return \%blast_h;
+
     my ( $qid, $sid, $percIdent, $alen, $nMisMatch, $nGaps, $qstart, $qend, $sstart, $send, $evalue, $bitScore ) =
       split( /\t/, $s );
     my $hash_ref = {
@@ -2125,7 +2130,7 @@ sub webError {
     print "<div id='error'>\n";
     print "<img src='$base_url/images/error.gif' " . "width='46' height='46' alt='Error' />\n";
     print "<p>\n";
-    if ( ! $noHtmlEsc || $noHtmlEsc == 0 ) {
+    if ( defined $noHtmlEsc && $noHtmlEsc == 0 ) {
         print escHtml($txt);
     } else {
         print $txt;
@@ -2292,8 +2297,7 @@ sub dbLogin {
         sub {
         	webErrorHeader("Database connection timeout. UI is waiting too long. Please try again later.");
         },       # the handler code ref
-        $mask
-        # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
+        $mask # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
     );
 
     my $oldaction = POSIX::SigAction->new();
@@ -2975,10 +2979,10 @@ sub getSessionParam {
 }
 
 ############################################################################
-# getContactOid - Get currenct contact_oid for user restricted site.
+# getContactOid - Get current contact_oid for user restricted site.
 ############################################################################
 sub getContactOid {
-    if ( !$user_restricted_site && !$public_login ) {
+    if ( ! $user_restricted_site && ! $public_login ) {
         return 0;
     }
     return getSessionParam("contact_oid");
@@ -3019,22 +3023,23 @@ sub getSuperUser {
 ############################################################################
 sub isImgEditor {
     my ( $dbh, $contact_oid ) = @_;
-    return 0 if !$contact_oid;
-    return 0 if ( $contact_oid == 901 );
+    return 0 unless $contact_oid;
+    return 0 if 901 == $contact_oid;
 
     my $x = getSessionParam("editor");
-    if ( $x ne "" ) {
+    #webLog("editor == $x \n");
 
-        #webLog("editor == $x \n");
-        return $x;
-    }
+    return $x if defined $x;
+
     my $sql = qq{
        select img_editor
        from contact
        where contact_oid = ?
     };
+
     my $cur = execSql( $dbh, $sql, $verbose, $contact_oid );
     my ($img_editor) = $cur->fetchrow();
+
     $cur->finish();
 
     if ( $img_editor eq "Yes" ) {
@@ -3049,7 +3054,7 @@ sub isImgEditor {
 ## Wrapped version, no extern db login.
 sub isImgEditorWrap {
     my $contact_oid = getContactOid();
-    return 0 if !$contact_oid;
+    return 0 if ! $contact_oid;
     my $dbh = dbLogin();
     my $b   = isImgEditor( $dbh, $contact_oid );
 

@@ -1,15 +1,8 @@
 ############################################################################
-# $Id: AbundanceProfileSearch.pm 32375 2014-12-03 20:49:53Z jinghuahuang $
+# $Id: AbundanceProfileSearch.pm 33894 2015-08-04 20:53:56Z klchu $
 # Abundance Profile search / Conditional Function Profile
 ############################################################################
 package AbundanceProfileSearch;
-require Exporter;
-@ISA    = qw( Exporter );
-@EXPORT = qw(
-  printAbundanceProfileForm
-  fillLineRange
-  printAbundanceProfileRun
-);
 
 use strict;
 use CGI qw( :standard );
@@ -57,6 +50,36 @@ my $message_cnt_wrap = 1000;
 my $dot_cnt_wrap     = 160;
 
 my $nvl = getNvl();
+my $YUI = $env->{yui_dir_28};
+
+sub getPageTitle {
+    return 'Abundance Profile Search';
+}
+
+sub getAppHeaderData {
+    my($self) = @_;
+    
+    my @a = ();
+    if (WebUtil::paramMatch("noHeader") ne "") {
+        return @a;
+    } else {
+        
+        require GenomeListJSON;
+        my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
+        $template->param( base_url => $base_url );
+        $template->param( YUI      => $YUI );
+        my $js = $template->output;
+
+        my $numTaxon;
+        if ($include_metagenomes) {
+            @a = ( "CompareGenomes", '', '', $js, '', "userGuide_m.pdf#page=19" );
+        } else {
+            @a = ( "CompareGenomes", '', '', $js, '', "userGuide.pdf#page=51" );
+        }
+
+        return @a;
+    }
+}
 
 ############################################################################
 # dispatch - Dispatch to pages for this section.
@@ -66,6 +89,8 @@ my $nvl = getNvl();
 ############################################################################
 sub dispatch {
     my ($numTaxon) = @_;        # number of saved genomes
+    timeout( 60 * 20 );    # timeout in 20 minutes
+    
     my $page = param("page");
     if ( $page eq "abundanceProfileSearchRun" ) {
         printAbundanceProfileRun();

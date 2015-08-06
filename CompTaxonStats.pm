@@ -112,31 +112,31 @@ sub setColNameIdxs {
     my $colNameAutoSelected_ref = $self->{ colNamesAutoSelected };
 
     ## From sort column
-    my $colNameIdxs = WebUtil::param( "colNameIdxs" );
+    my $colNameIdxs = param( "colNameIdxs" );
     return if ! WebUtil::blankStr( $colNameIdxs );
 
     ## From resetting output columns
-    my @outputCol = WebUtil::param( "outputCol" .  $tabpage);
+    my @outputCol = param( "outputCol" .  $tabpage);
     if ( paramMatch( "setTaxonBreakdownStatCols" ) ne "" ) {
        my $colNameIdxs = "";
        for my $colName( @outputCol ) {
 	  my $idx = $colName2Idx_ref->{ $colName };
 	  $colNameIdxs .= "$idx.";
         }
-        WebUtil::param( -name => "colNameIdxs", -value => $colNameIdxs );
+        param( -name => "colNameIdxs", -value => $colNameIdxs );
         return;
     }
 
     ## From initial entry point.
     $colNameIdxs = "";
-    my $initial = WebUtil::param( "initial" );
+    my $initial = param( "initial" );
     for my $colName( @$colNames_ref ) {
 	next if !$initial;
         next if $colNameAutoSelected_ref->{ $colName } eq "";
 	my $idx = $colName2Idx_ref->{ $colName };
 	$colNameIdxs .= "$idx.";
     }
-    WebUtil::param( -name => "colNameIdxs", -value => $colNameIdxs );
+    param( -name => "colNameIdxs", -value => $colNameIdxs );
 }
 
 ############################################################################
@@ -172,11 +172,11 @@ sub printOrgTable {
        if $hideGFragment eq "Yes";
 
     $self->setColNameIdxs( $tabpage );
-    my $colNameIdxs = WebUtil::param( "colNameIdxs" );
-    my $sortIdx = WebUtil::param( "sortIdx" );
-    my $sortDomain = WebUtil::param( "sortDomain" );
-    my $sortSeqStatus = WebUtil::param( "sortSeqStatus" );
-    my $sortAbbrName = WebUtil::param( "sortAbbrName" );
+    my $colNameIdxs = param( "colNameIdxs" );
+    my $sortIdx = param( "sortIdx" );
+    my $sortDomain = param( "sortDomain" );
+    my $sortSeqStatus = param( "sortSeqStatus" );
+    my $sortAbbrName = param( "sortAbbrName" );
     my $blockDatatableCss = $self->{ blockDatatableCss };
 
     my $it = new InnerTable( 1, "$statTableName" . $$, "$statTableName", 0 );
@@ -381,9 +381,9 @@ sub printCompStatExport {
     my $colNameSortQual_ref = $self->{ colNameSortQual };
     my $pangenome_oid = $self->{ pangenome_oid };
 
-    my $colNameIdxs = WebUtil::param( "exportColNameIdxs" .$tabpage );
+    my $colNameIdxs = param( "exportColNameIdxs" .$tabpage );
 
-    my $sortIdx = WebUtil::param( "sortIdx" );
+    my $sortIdx = param( "sortIdx" );
     my $colHeader;
     $colHeader .= "taxon_oid\t";
     $colHeader .= "Genome Name\t";
@@ -473,7 +473,7 @@ sub sortLink {
     my $idx2ColName_ref = $self->{ idx2ColName };
     my $colName2Header_ref = $self->{ colName2Header };
 
-    my $colNameIdxs = WebUtil::param( "colNameIdxs" );
+    my $colNameIdxs = param( "colNameIdxs" );
     my $url = "$page_url&colNameIdxs=$colNameIdxs&sortIdx=$sortIdx";
     $url .= "&statTableName=$statTableName";
     $url .= "&sortDomain=1" if $colName eq "domain";
@@ -525,7 +525,7 @@ sub printConfigTable {
     my $pangenome_oid = $self->{ pangenome_oid };
     my $blockDatatableCss = $self->{ blockDatatableCss };
 
-    my $colNameIdxs = WebUtil::param( "colNameIdxs" );
+    my $colNameIdxs = param( "colNameIdxs" );
     my %selected;
     my @colNameIdxsArr = split( /\./, $colNameIdxs );
     for my $idx( @colNameIdxsArr ) {
@@ -571,12 +571,11 @@ sub printConfigTable {
         print "<input type='submit' id='dispGenomesButton' class='meddefbutton' "
         	. "name='$name' value='Display Genomes Again' />\n";
         # Can not be replaced by WebUtil::printButtonFooter();
-        print "<input id='selAll' type=button name='selectAll' value='Select All' " .
+        print "<input id='selAll' type='button' name='selectAll' value='Select All' " .
         "onClick='selectAllOutputCol".$tabpage."(1)' class='smbutton' />\n";
-        print "<input id='selCnts' type=button name='selectAll' value='Select Counts Only' " .
+        print "<input id='selCnts' type='button' name='selectAll' value='Select Counts Only' " .
         "onClick='selectCountOutputCol".$tabpage."(1)' class='smbutton' />\n";
-        print "&nbsp";
-        print "<input id='clrAll' type=button name='clearAll' value='Clear All' " .
+        print "<input id='clrAll' type='button' name='clearAll' value='Clear All' " .
         "onClick='selectAllOutputCol".$tabpage."(0)' class='smbutton' />\n";
     } else {
         # original way
@@ -585,12 +584,11 @@ sub printConfigTable {
         print "<input type='submit' id='dispGenomesButton' class='meddefbutton' "
         	. "name='$name' value='Display Genomes Again' />\n";
         # Can not be replaced by WebUtil::printButtonFooter();
-        print "<input id='selAll' type=ebutton name='selectAll' value='Select All' " .
+        print "<input id='selAll' type='button' name='selectAll' value='Select All' " .
         "onClick='selectAllOutputCol(1)' class='smbutton' />\n";
-        print "<input id='selCnts' type=button name='selectAll' value='Select Counts Only' " .
+        print "<input id='selCnts' type='button' name='selectAll' value='Select Counts Only' " .
         "onClick='selectCountOutputCol(1)' class='smbutton' />\n";
-        print "&nbsp";
-        print "<input id='clrAll' type=button name='clearAll' value='Clear All' " .
+        print "<input id='clrAll' type='button' name='clearAll' value='Clear All' " .
         "onClick='selectAllOutputCol(0)' class='smbutton' />\n";
     }
 }

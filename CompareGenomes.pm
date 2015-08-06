@@ -929,12 +929,14 @@ sub printTaxonBreakdownKeggStats {
         print "<h2>Export Genome Table</h2>";
         my $name = "_section_CompareGenomes_excel_exportCompStats";
 
-        print "<input type='submit' class='lgdefbutton' name='_section_CompareGenomes_excel_exportCompStats' value='Export Tab Delimited to Excel' />";
 #        print main::submit(
 #            -name  => $name,
 #            -value => "Export Tab Delimited To Excel",
 #            -class => 'lgdefbutton'
 #        );
+
+        print "<input type='submit' class='lgdefbutton' "
+        . "name='_section_CompareGenomes_excel_exportCompStats' value='Export Tab Delimited to Excel' />";
 
         # print column selection table
         print "<h2>Configuration</h2>";
@@ -1452,15 +1454,15 @@ sub printKeggConfigTable {
     print hiddenVar( "statTableName", "dt_kegg_stats" );
     print hiddenVar( "pangenome_oid" , $pangenome_oid );
 
-    my $name = "_section_CompareGenomes_setTaxonBreakdownStatCols";
-
-	print  "<input type='submit' class='meddefbutton' id='dispGenomesButton' name='_section_CompareGenomes_setTaxonBreakdownStatCols' value='Display Genomes Again' />&nbsp;";
+#    my $name = "_section_CompareGenomes_setTaxonBreakdownStatCols";
 #    print main::submit(
 #        -id    => "dispGenomesButton",
 #        -name  => $name,
 #        -value => "Display Genomes Again",
 #        -class => "meddefbutton"
 #    );
+	print  "<input type='submit' class='meddefbutton' id='dispGenomesButton' "
+	. "name='_section_CompareGenomes_setTaxonBreakdownStatCols' value='Display Genomes Again' />\n";
     # added id attribute to all buttons to distinguish from main table
     # Can not be replaced by WebUtil::printButtonFooter();
     print "<input id='selAll' type=button name='selectAll' "
@@ -4245,16 +4247,16 @@ sub printStats {
     	}
 
     	print "<p>\n";
-        my $name = "_section_CompareGenomes_requestTaxonRefresh";
-        print "<input type='submit' class='lgdefbutton' "
-        	. "name='_section_CompareGenomes_requestTaxonRefresh' "
-        	. "value='Submit Request' />";
+#        my $name = "_section_CompareGenomes_requestTaxonRefresh";
 
 #        print main::submit(
 #                        -name  => $name,
 #                        -value => "Submit Request",
 #                        -class => 'lgdefbutton'
 #                       );
+        print "<input type='submit' class='lgdefbutton' "
+        	. "name='_section_CompareGenomes_requestTaxonRefresh' "
+        	. "value='Submit Request' />";
     }
 }
 

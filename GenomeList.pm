@@ -1,6 +1,6 @@
 ############################################################################
 #
-# $Id: GenomeList.pm 33841 2015-07-29 20:48:56Z klchu $
+# $Id: GenomeList.pm 33900 2015-08-04 23:34:19Z klchu $
 ############################################################################
 package GenomeList;
 
@@ -152,7 +152,8 @@ my @genomeColumnsOrder = (
     't.is_public',                           't.comments',
     't.img_version',                         't.img_product_flag',
     't.high_quality_flag',                   "to_char(t.add_date, 'yyyy-mm-dd')",
-    "to_char(t.release_date, 'yyyy-mm-dd')", "to_char(t.distmatrix_date, 'yyyy-mm-dd')"
+    "to_char(t.release_date, 'yyyy-mm-dd')", "to_char(t.distmatrix_date, 'yyyy-mm-dd')",
+    "t.genome_completion"
 );
 
 if ($include_metagenomes) {
@@ -203,6 +204,7 @@ my %genomeColumns = (
     'gap.submission_type'                      => 'Submission Type',
     'gap.is_gene_primp'                      => 'Gene Model QC',
     'gap.assembly_method' => 'Assembly Method',
+    't.genome_completion' => 'Genome Completeness %',
 );
 
 if ($user_restricted_site) {
@@ -258,6 +260,8 @@ my %genomeColumnsAlign = (
     'gap.submission_type'                      => 'char asc left',
     'gap.is_gene_primp'                      => 'char asc left',
     'gap.assembly_method'                      => 'char asc left',
+    't.genome_completion' => 'char asc left',
+    
 );
 
 # ------------------------------------------------------------------------------------------------------
@@ -1101,6 +1105,22 @@ sub printGenomes {
 
         # do not print button
     } else {
+        # table of contents
+print qq{
+    <ul style="padding-left:1.2em;list-style-type:circle">
+            <li><a href="#Configuration">Table Configuration</a></li>
+            
+};
+if($user_restricted_site) {
+    print qq{
+        <li><a href="#Save2Workspace">Save to Workspace</a></li>
+    };
+}
+
+print qq{
+        </ul>
+};     
+        
         TaxonSearchUtil::printButtonFooter("taxontable");
         print nbsp(1);
     }
@@ -1120,7 +1140,7 @@ sub printGenomes {
     }
     printTreeButton($from);
 
-    print "<h2>Table Configuration</h2>";
+    print "<h2><a href='#' name='Configuration' >Table Configuration</a></h2>";
     my $name = "_section_${section}_genomeList";
     print submit(
         -id    => "moreGo",
@@ -1170,6 +1190,9 @@ sub printGenomes {
     if ( $from eq 'genomeCart' ) {
     } else {
         #WorkspaceUtil::printSaveGenomeToWorkspace($select_id_name);
+        print qq{
+            <a href='#' name='Save2Workspace'></a>
+        };
         WorkspaceUtil::printSaveGenomeToWorkspace_withAllBrowserGenomeList($select_id_name);            
         print end_form();
     }

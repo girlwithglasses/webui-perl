@@ -4,18 +4,27 @@ use IMG::Util::Base;
 
 use Template;
 use HTML::Template;
+use Role::Tiny;
+
+use IMG::IO::File;
+
 
 my $env;
-my $imgAppTerm;
-my $cgi;
 
 sub init {
-	my %args = @_;
-	$env = $args{env};
-	$imgAppTerm = $args{imgAppTerm};
-	$cgi = $args{cgi};
+	my $self = shift;
+	$env = shift;
+}
+
+sub section_decompress {
+
+	my $s_name = shift;
+
+	return ( $s_name =~ s/([a-z])([A-Z])/\1 \2/g );
 
 }
+
+
 
 =pod
 
@@ -35,6 +44,7 @@ IMG::Views::ViewMaker
 
 sub render_template {
 
+	my $self = shift;
 	my $tmpl_name = shift || die "No template name specified!";
 	my $data = shift // {};
 
@@ -51,6 +61,28 @@ sub render_template {
 	$tt->process($tmpl_name, $data) || die $tt->error() . "\n";
 
 }
+
+sub print_message {
+
+	my $self = shift;
+	my $message = shift;
+
+	if ( ! $message ) {
+		carp 'No message found';
+	}
+	else {
+		render_template( 'message.tt', $message );
+	}
+	return;
+#	print "<div id='message'>\n";
+#	print "<p>\n";
+#	print escapeHTML( $message );
+#	print "</p>\n";
+#	print "</div>\n";
+}
+
+
+
 
 =head3 printAppHeader
 
@@ -164,40 +196,24 @@ my %breadcrumbs = (
 	redirect_url
 	cookie
 
+=cut
+
 sub print_app_header {
 	my $env = shift;
 	my %args = @_;
 
+=cut
+
 	require HtmlUtil;
 
 	# sso
-	my $cookie_return;
-	if ( $env->{sso_enabled} && $args{current} eq "login" && $env->{sso_url} ne "" )
-	{
-		my $url = $args{redirecturl} || $env->{cgi_url} . "/" . $env->{main_cgi} . redirectform(1);
-#		$url =  if ( $redirecturl ne "" );
-		$cookie_return = CGI::Cookie->new(
-			-name   => $env->{sso_cookie_name},
-			-value  => $url,
-			-domain => $env->{sso_domain}
-		);
-	}
-	elsif ( $env->{sso_enabled} ) {
+	if ( $env->{sso_enabled} ) {
 		my $url = $env->{cgi_url} . "/" . $env->{main_cgi};
 		$cookie_return = CGI::Cookie->new(
 			-name   => $env->{sso_cookie_name},
 			-value  => $url,
 			-domain => $env->{sso_domain}
 		);
-	}
-
-	if ( $cookie_return ) {
-		print header(
-			-type   => "text/html",
-			-cookie => [ $args{cookie}, $cookie_return ]
-		);
-	}
-	else {
 		print header(
 			-type => "text/html",
 			-cookie => $args{cookie}
@@ -206,195 +222,202 @@ sub print_app_header {
 
 	return if $args{current} eq "exit";
 
+=cut
+
 	my $dbh = WebUtil::dbLogin();
 
-	if ( $args{current} eq "Home" && $env->{abc} ) {
+	if ( $args{current} eq "Home" ) {
+		if ( $env->{abc} ) {
 
-		# caching home page
-		my $time = 3600 * 24;                   # 24 hour cache
+			# caching home page
+			my $time = 3600 * 24;                   # 24 hour cache
 
-		printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $args{numTaxons} );
-		printMenuDiv( $args{current}, $dbh );
-		printErrorDiv();
+			printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $args{numTaxons} );
+			printMenuDiv( $args{current}, $dbh );
+			printErrorDiv();
 
-		HtmlUtil::cgiCacheInitialize("homepage");
-		HtmlUtil::cgiCacheStart() or return;
-
-		my ( $maxAddDate, $maxErDate ) = getMaxAddDate($dbh);
-
-		printAbcNavBar();
-		printContentHome();
-
-		require NaturalProd;
-#		$module = 'NaturalProd';
-		my $bcp_cnt = NaturalProd::getPredictedBc($dbh);
-		my $np_cnt  = NaturalProd::getSmStructures($dbh);
-		$bcp_cnt = Number::Format::format_number($bcp_cnt);
-		$np_cnt  = Number::Format::format_number($np_cnt);
-
-		my $templateFile = $env->{base_dir} . "/home-v33.html";
-		my $template = HTML::Template->new( filename => $templateFile );
-		$template->param( base_url     => $env->{base_url} );
-		$template->param( bc_predicted => $bcp_cnt );
-		$template->param( np_items     => $np_cnt );
-		print $template->output;
-
-		HtmlUtil::cgiCacheStop();
-
-	}
-	elsif ( $env->{img_proportal} && $args{current} eq "Home" ) {
-		printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $args{numTaxons} );
-		printMenuDiv( $args{current}, $dbh );
-		printErrorDiv();
-		printContentHome();
-		my $section = $cgi->param("section");
-		if ( ! $section ) {
-
-			# home page url
-			my $class = $cgi->param("class") || 'datamart';
-			my $new_url = $env->{main_cgi} . "?section=Home";
-			HtmlUtil::cgiCacheInitialize( "homepage_" . $class );
+			HtmlUtil::cgiCacheInitialize("homepage");
 			HtmlUtil::cgiCacheStart() or return;
-			require ProPortal;
-#			$module = 'ProPortal';
-			ProPortal::googleMap_new( $class, $new_url );
+
+			my ( $maxAddDate, $maxErDate ) = getMaxAddDate($dbh);
+
+			printAbcNavBar();
+			printContentHome();
+
+			require NaturalProd;
+	#		$module = 'NaturalProd';
+			my $bcp_cnt = NaturalProd::getPredictedBc($dbh);
+			my $np_cnt  = NaturalProd::getSmStructures($dbh);
+			$bcp_cnt = Number::Format::format_number($bcp_cnt);
+			$np_cnt  = Number::Format::format_number($np_cnt);
+
+			my $templateFile = $env->{base_dir} . "/home-v33.html";
+			my $template = HTML::Template->new( filename => $templateFile );
+			$template->param( base_url     => $env->{base_url} );
+			$template->param( bc_predicted => $bcp_cnt );
+			$template->param( np_items     => $np_cnt );
+			print $template->output;
+
+			HtmlUtil::cgiCacheStop();
+
+		}
+		elsif ( $env->{img_proportal} ) {
+			printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $args{numTaxons} );
+			printMenuDiv( $args{current}, $dbh );
+			printErrorDiv();
+			printContentHome();
+			my $section = $cgi->param("section");
+			if ( ! $section ) {
+
+				# home page url
+				my $class = $cgi->param("class") || 'datamart';
+				my $new_url = $env->{main_cgi} . "?section=Home";
+				HtmlUtil::cgiCacheInitialize( "homepage_" . $class );
+				HtmlUtil::cgiCacheStart() or return;
+				require ProPortal;
+	#			$module = 'ProPortal';
+				ProPortal::googleMap_new( $class, $new_url );
+				HtmlUtil::cgiCacheStop();
+			}
+
+		}
+		else { # ( $args{current} eq "Home" ) {
+
+			# caching home page
+			my $time = 3600 * 24;         # 24 hour cache
+
+			printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $numTaxons );
+			printMenuDiv( $args{current}, $dbh );
+			printErrorDiv();
+
+			HtmlUtil::cgiCacheInitialize("homepage");
+			HtmlUtil::cgiCacheStart() or return;
+
+			my ( $maxAddDate, $maxErDate ) = getMaxAddDate($dbh);
+
+			printStatsTableDiv( $maxAddDate, $maxErDate );
+			printContentHome();
+			my $templateFile = $env->{base_dir} . "/home-v33.html";
+			my $hmpGoogleJs = "";
+			if ( $env->{img_hmp} && $env->{include_metagenomes} ) {
+				$templateFile = $env->{base_dir} . "/home-hmpm-v33.html";
+				my $f = $env->{'hmp_home_page_file'};
+#				$hmpGoogleJs = file2Str( $f, 1 );
+				$hmpGoogleJs = eval { IMG::IO::File::slurp( $f ) };
+			}
+
+			my ( $sampleCnt, $proposalCnt, $newSampleCnt, $newStudies );
+			my $piechar_str;
+			my $piechar2_str;
+			my $table_str;
+			if ( $env->{include_metagenomes} ) {
+
+				# mer / m
+				my $file = $env->{webfs_data_dir} . "/hmp/img_m_home_page_v400.txt";
+				if ( $env->{home_page} ) {
+					$file = $env->{webfs_data_dir} . "/hmp/" . $env->{home_page};
+				}
+
+			#	$table_str = file2Str( $file, 1 );
+				$table_str =~ s/__IMG__/$imgAppTerm/;
+
+			}
+			elsif ( $env->{img_edu} ) {
+
+				# edu
+				my $file = $env->{webfs_data_dir} . "/hmp/img_edu_home_page_v400.txt";
+				$table_str = file2Str( $file, 1 );
+
+			}
+			elsif (!$env->{user_restricted_site}
+				&& !$env->{include_metagenomes}
+				&& !$env->{img_hmp}
+				&& !$env->{img_edu} ) {
+
+				# w
+				my $file =
+				  $env->{webfs_data_dir} . "/hmp/img_w_home_page_v400.txt";
+				$table_str = file2Str( $file, 1 );
+
+			}
+
+			my $rfh = newReadFileHandle($templateFile);
+			while ( my $s = $rfh->getline() ) {
+				chomp $s;
+				if ( $s =~ /__table__/ ) {
+					$s =~ s/__table__/$table_str/;
+					print "$s\n";
+				}
+				elsif ( $s =~ /__news__/ ) {
+					my $news = qq{
+	<p>
+	For details, see <a href='$env->{base_url}/doc/releaseNotes.pdf' onClick="_gaq.push(['_trackEvent', 'Document', 'main', 'release notes']);">IMG Release Notes</a> (Dec. 12, 2012),
+	in particular, the workspace and background computation capabilities  available to IMG registered users.
+	</p>
+	};
+
+					#$s =~ s/__news__/$news/;
+					$s =~ s/__news__//;
+					print "$s\n";
+				}
+				elsif ( $env->{img_hmp} && $s =~ /__hmp_google_js__/ ) {
+					$s =~ s/__hmp_google_js__/$hmpGoogleJs/;
+					print "$s\n";
+				}
+				elsif ( $env->{img_geba} && $s =~ /__pie_chart_geba1__/ ) {
+					$s =~ s/__pie_chart_geba1__/$piechar_str/;
+					print "$s\n";
+				}
+				elsif ( $env->{img_geba} && $s =~ /__pie_chart_geba2__/ ) {
+					$s =~ s/__pie_chart_geba2__/$piechar2_str/;
+					print "$s\n";
+				}
+				elsif ( $env->{include_metagenomes} && $s =~ /__pie_chart__/ ) {
+					$s =~ s/__pie_chart__/$piechar_str/;
+					print "$s\n";
+				}
+				elsif ( $env->{include_metagenomes} && $s =~ /__samples__/ ) {
+					$s =~ s/__samples__/$sampleCnt/;
+					print "$s\n";
+				}
+				elsif ( $env->{include_metagenomes} && $s =~ /__proposal__/ ) {
+					$s =~ s/__proposal__/$proposalCnt/;
+					print "$s\n";
+				}
+				elsif ( $env->{include_metagenomes} && $s =~ /__newSample__/ ) {
+					$s =~ s/__newSample__/$newSampleCnt/;
+					print "$s\n";
+				}
+				elsif ( $env->{include_metagenomes} && $s =~ /__study__/ ) {
+					$s =~ s/__study__/$newStudies/;
+					print "$s\n";
+				}
+				elsif ( $s =~ /__base_url__/ ) {
+					$s =~ s/__base_url__/$env->{base_url}/;
+					print "$s\n";
+				}
+				elsif ( $s =~ /__max_add_date__/ ) {
+					$s =~ s/__max_add_date__/$maxAddDate/;
+					print "$s\n";
+				}
+				elsif ( $s =~ /__yui__/ ) {
+					$s =~ s/__yui__/$env->{yui_dir_28}/;
+					print "$s\n";
+
+					# $imgAppTerm
+				}
+				elsif ( $s =~ /__IMG__/ ) {
+					$s =~ s/__IMG__/$imgAppTerm/;
+					print "$s\n";
+				}
+				else {
+					print "$s\n";
+				}
+			}
+			close $rfh;
+
 			HtmlUtil::cgiCacheStop();
 		}
-
-	}
-	elsif ( $args{current} eq "Home" ) {
-
-		# caching home page
-		my $time = 3600 * 24;         # 24 hour cache
-
-		printHTMLHead( $args{current}, "JGI IMG Home", $args{gwt_module}, "", "", $numTaxons );
-		printMenuDiv( $args{current}, $dbh );
-		printErrorDiv();
-
-		HtmlUtil::cgiCacheInitialize("homepage");
-		HtmlUtil::cgiCacheStart() or return;
-
-		my ( $maxAddDate, $maxErDate ) = getMaxAddDate($dbh);
-
-		printStatsTableDiv( $maxAddDate, $maxErDate );
-		printContentHome();
-		my $templateFile = $env->{base_dir} . "/home-v33.html";
-		my $hmpGoogleJs;
-		if ( $env->{img_hmp} && $env->{include_metagenomes} ) {
-			$templateFile = $env->{base_dir} . "/home-hmpm-v33.html";
-			my $f = $env->{'hmp_home_page_file'};
-			$hmpGoogleJs = file2Str( $f, 1 );
-		}
-
-		my ( $sampleCnt, $proposalCnt, $newSampleCnt, $newStudies );
-		my $piechar_str;
-		my $piechar2_str;
-		my $table_str;
-		if ( $env->{include_metagenomes} ) {
-
-			# mer / m
-			my $file =
-			  $env->{webfs_data_dir} . "/hmp/img_m_home_page_v400.txt";
-			if ( $env->{home_page} ) {
-				$file = $env->{webfs_data_dir} . "/hmp/" . $env->{home_page};
-			}
-
-			$table_str = file2Str( $file, 1 );
-			$table_str =~ s/__IMG__/$imgAppTerm/;
-		}
-		elsif ( $env->{img_edu} ) {
-
-			# edu
-			my $file = $env->{webfs_data_dir} . "/hmp/img_edu_home_page_v400.txt";
-			$table_str = file2Str( $file, 1 );
-		}
-		elsif (!$env->{user_restricted_site}
-			&& !$env->{include_metagenomes}
-			&& !$env->{img_hmp}
-			&& !$env->{img_edu} ) {
-
-			# w
-			my $file =
-			  $env->{webfs_data_dir} . "/hmp/img_w_home_page_v400.txt";
-			$table_str = file2Str( $file, 1 );
-		}
-
-		my $rfh = newReadFileHandle($templateFile);
-		while ( my $s = $rfh->getline() ) {
-			chomp $s;
-			if ( $s =~ /__table__/ ) {
-				$s =~ s/__table__/$table_str/;
-				print "$s\n";
-			}
-			elsif ( $s =~ /__news__/ ) {
-				my $news = qq{
-<p>
-For details, see <a href='$env->{base_url}/doc/releaseNotes.pdf' onClick="_gaq.push(['_trackEvent', 'Document', 'main', 'release notes']);">IMG Release Notes</a> (Dec. 12, 2012),
-in particular, the workspace and background computation capabilities  available to IMG registered users.
-</p>
-};
-
-				#$s =~ s/__news__/$news/;
-				$s =~ s/__news__//;
-				print "$s\n";
-			}
-			elsif ( $env->{img_hmp} && $s =~ /__hmp_google_js__/ ) {
-				$s =~ s/__hmp_google_js__/$hmpGoogleJs/;
-				print "$s\n";
-			}
-			elsif ( $env->{img_geba} && $s =~ /__pie_chart_geba1__/ ) {
-				$s =~ s/__pie_chart_geba1__/$piechar_str/;
-				print "$s\n";
-			}
-			elsif ( $env->{img_geba} && $s =~ /__pie_chart_geba2__/ ) {
-				$s =~ s/__pie_chart_geba2__/$piechar2_str/;
-				print "$s\n";
-			}
-			elsif ( $env->{include_metagenomes} && $s =~ /__pie_chart__/ ) {
-				$s =~ s/__pie_chart__/$piechar_str/;
-				print "$s\n";
-			}
-			elsif ( $env->{include_metagenomes} && $s =~ /__samples__/ ) {
-				$s =~ s/__samples__/$sampleCnt/;
-				print "$s\n";
-			}
-			elsif ( $env->{include_metagenomes} && $s =~ /__proposal__/ ) {
-				$s =~ s/__proposal__/$proposalCnt/;
-				print "$s\n";
-			}
-			elsif ( $env->{include_metagenomes} && $s =~ /__newSample__/ ) {
-				$s =~ s/__newSample__/$newSampleCnt/;
-				print "$s\n";
-			}
-			elsif ( $env->{include_metagenomes} && $s =~ /__study__/ ) {
-				$s =~ s/__study__/$newStudies/;
-				print "$s\n";
-			}
-			elsif ( $s =~ /__base_url__/ ) {
-				$s =~ s/__base_url__/$env->{base_url}/;
-				print "$s\n";
-			}
-			elsif ( $s =~ /__max_add_date__/ ) {
-				$s =~ s/__max_add_date__/$maxAddDate/;
-				print "$s\n";
-			}
-			elsif ( $s =~ /__yui__/ ) {
-				$s =~ s/__yui__/$env->{yui_dir_28}/;
-				print "$s\n";
-
-				# $imgAppTerm
-			}
-			elsif ( $s =~ /__IMG__/ ) {
-				$s =~ s/__IMG__/$imgAppTerm/;
-				print "$s\n";
-			}
-			else {
-				print "$s\n";
-			}
-		}
-		close $rfh;
-
-		HtmlUtil::cgiCacheStop();
 	}
 	else {
 		print_html_head( %args );
@@ -635,13 +658,18 @@ sub print_excel_header {
 # 2nd div
 #
 # $current - which top level menu to highlight
+
+#	other required args:
+#	contactOid
+#	img_editor
+#	superuser
+
 sub printMenuDiv {
 	my ( $current, $dbh ) = @_;
 
-	my $template =
-	  HTML::Template->new(
-		filename => $env->{base_dir} . "/menu-template.html" );
+	my $template = HTML::Template->new( filename => $env->{base_dir} . "/menu-template.html" );
 
+	$self->session->param('contact_oid');
 	my $contact_oid = getContactOid();
 	my $isEditor    = 0;
 	if ( $env->{user_restricted_site} ) {
@@ -749,10 +777,9 @@ sub printMenuDiv {
 	if ( $contact_oid > 0 && $env->{show_myimg_login} ) {
 		$template->param( my_img_1 => '1' );
 	}
-	if (   $contact_oid > 0
+	if ( $contact_oid > 0
 		&& $env->{show_myimg_login}
-		&& $env->{myimg_job} )
-	{
+		&& $env->{myimg_job} ) {
 		$template->param( my_img_2 => '1' );
 	}
 	if ( ( $env->{public_login} || $env->{user_restricted_site} ) ) {
@@ -783,11 +810,14 @@ sub printMainFooter {
 	# try to get true hostname
 	# can't use back ticks with -T
 	# - ken
-	my $servername = $ENV{SERVER_NAME};
+#	my $servername = $ENV{SERVER_NAME};
 
 	my $hostname = WebUtil::getHostname();
 
-	$servername = $hostname . ' ' . $ENV{ORA_SERVICE} . ' ' . $];
+	my $servername = join " ",
+			( WebUtil::getHostname(),
+			( $ENV{ORA_SERVICE} || "" ),
+			$] );
 
 #	my $copyright_year = };
 #	my $version_year   = $env->{version_year};
@@ -801,7 +831,7 @@ sub printMainFooter {
 	my $s = file2Str( $templateFile, 1 );
 	$s =~ s/__main_cgi__/$env->{main_cgi}/g;
 	$s =~ s/__base_url__/$env->{base_url}/g;
-	$s =~ s/__copyright_year__/$env->{copyright_year/;
+	$s =~ s/__copyright_year__/$env->{copyright_year}/;
 	$s =~ s/__version_year__/$env->{version_year}/;
 	$s =~ s/__server_name__/$servername/;
 	$s =~ s/__build_date__/$buildDate $remote_addr/;
@@ -816,6 +846,12 @@ sub print_main_footer {
 
 	my $homeVersion = shift;
 	my $postJavascript = shift;
+	my $data = {
+
+
+
+
+	};
 
 
 

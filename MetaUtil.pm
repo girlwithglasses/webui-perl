@@ -1,6 +1,6 @@
 ############################################################################
 #   Misc. web utility functions for file system
-# $Id: MetaUtil.pm 33638 2015-06-24 08:38:01Z jinghuahuang $
+# $Id: MetaUtil.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
 ############################################################################
 package MetaUtil;
 require Exporter;
@@ -6449,7 +6449,7 @@ sub getAllMetaGeneInfo {
                                         }
                                         my $workspace_id = "$taxon_oid $data_type $gene_oid";
                                         $gene_info_href->{$workspace_id} = $geneInfos{$gene_oid};
-                                        if ( $scaf_href ne '' && defined($scaf_href) ) {
+                                        if ( $scaf_href && defined($scaf_href) ) {
                                             if ( !$onlyAssembledScaf || ( $onlyAssembledScaf && $data_type eq 'assembled' ) )
                                             {
                                                 my ( $locus_type, $locus_tag, $gene_display_name, $start_coord, $end_coord,

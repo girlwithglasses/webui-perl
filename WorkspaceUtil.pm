@@ -1,6 +1,6 @@
 ############################################################################
 # WorkspaceUtil.pm
-# $Id: WorkspaceUtil.pm 33670 2015-06-30 06:38:21Z jinghuahuang $
+# $Id: WorkspaceUtil.pm 33895 2015-08-04 21:18:25Z klchu $
 ############################################################################
 package WorkspaceUtil;
 
@@ -1471,7 +1471,7 @@ sub printCartSaveToWorkspace {
 
         my $workspace =
           "<a href=\"$main_cgi?section=Workspace\">My Workspace</a>";
-        print "<h2>Save " . $what . "to My Workspace</h2>";
+        print "<h2><a href='#' name='Save2Workspace'>Save " . $what . "to My Workspace</a></h2>";
         printHint(
             "Even though you can save large amount of data into workspace, many profile functions will timeout for extremely large workspace datasets"
         );

@@ -7,7 +7,7 @@
 # filenames with white spaces     $filename =~ s/\s/_/g;
 # - ken
 #
-# $Id: Workspace.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: Workspace.pm 33905 2015-08-05 20:24:41Z klchu $
 #
 ############################################################################
 package Workspace;
@@ -182,6 +182,11 @@ sub dispatch {
         folderList($BC_FOLDER);
     } elsif ( $page eq $RULE_FOLDER ) {
         folderList($page);
+
+    } elsif ( $page eq $BC_FOLDER ) {
+        require WorkspaceBcSet;
+        WorkspaceBcSet::printWorkspaceSets();
+        
     } elsif ( $page eq "view" ) {
         viewFile();
     } elsif ( $page eq "delete" ) {
@@ -912,7 +917,7 @@ sub saveAllTaxonFuncGenes {
 sub outputFuncGene {
     my ( $res, $dbh, $func_id, $folder, $input_file, $data_type, $gene_href ) = @_;
 
-    my %func_hash;
+    my %taxon_datatype_h;
 
     open( FH, "$input_file" )
       or webError("File size - file error $input_file");
@@ -1086,8 +1091,8 @@ sub outputFuncGene {
 
                 #print "outputFuncGene() scaffold $scaffold_oid genes: @genes<br/>\n";
 
-                if ( $func_hash{$key} ) {
-                    my $h_ref = $func_hash{$key};
+                if ( $taxon_datatype_h{$key} ) {
+                    my $h_ref = $taxon_datatype_h{$key};
                     for my $gene_oid (@genes) {
                         $h_ref->{$gene_oid} = 1;
                     }
@@ -1096,7 +1101,7 @@ sub outputFuncGene {
                     for my $gene_oid (@genes) {
                         $hash2{$gene_oid} = 1;
                     }
-                    $func_hash{$key} = \%hash2;
+                    $taxon_datatype_h{$key} = \%hash2;
                 }
             }
         }    # end while line
@@ -1137,24 +1142,24 @@ sub outputFuncGene {
                 }
             }
 
-            if ( $func_hash{$key} ) {
-                my $h_ref = $func_hash{$key};
+            if ( $taxon_datatype_h{$key} ) {
+                my $h_ref = $taxon_datatype_h{$key};
                 $h_ref->{$gene_oid} = 1;
             } else {
                 my %hash2;
                 $hash2{$gene_oid} = 1;
-                $func_hash{$key}  = \%hash2;
+                $taxon_datatype_h{$key}  = \%hash2;
             }
         }    # end while line
     }
     close FH;
 
-    #print "outputFuncGene() func_hash:<br/>\n";
-    #print Dumper(\%func_hash);
+    #print "outputFuncGene() taxon_datatype_h:<br/>\n";
+    #print Dumper(\%taxon_datatype_h);
     #print "<br/>\n";
 
-    for my $key ( keys %func_hash ) {
-        my $h_ref = $func_hash{$key};
+    for my $key ( keys %taxon_datatype_h ) {
+        my $h_ref = $taxon_datatype_h{$key};
         if ( !$h_ref ) {
             next;
         }
@@ -1229,7 +1234,7 @@ sub outputFuncGene {
 sub outputFuncsGenes {
     my ( $res, $dbh, $func_ids_ref, $folder, $input_file, $data_type, $gene_href ) = @_;
 
-    my %func_hash;
+    my %taxon_datatype_h;
 
     my $func_id = @$func_ids_ref[0];
     my $func_tag = MetaUtil::getFuncTagFromFuncId( $func_id );
@@ -1395,22 +1400,22 @@ sub outputFuncsGenes {
                 }
             }
 
-            if ( $func_hash{$key} ) {
-                my $h_ref = $func_hash{$key};
+            if ( $taxon_datatype_h{$key} ) {
+                my $h_ref = $taxon_datatype_h{$key};
                 $h_ref->{$gene_oid} = 1;
             } else {
                 my %hash2;
                 $hash2{$gene_oid} = 1;
-                $func_hash{$key}  = \%hash2;
+                $taxon_datatype_h{$key}  = \%hash2;
             }
         }    # end while line
 
-        #print "outputFuncsGenes() func_hash:<br/>\n";
-        #print Dumper(\%func_hash);
+        #print "outputFuncsGenes() taxon_datatype_h:<br/>\n";
+        #print Dumper(\%taxon_datatype_h);
         #print "<br/>\n";
 
-        for my $key ( keys %func_hash ) {
-            my $h_ref = $func_hash{$key};
+        for my $key ( keys %taxon_datatype_h ) {
+            my $h_ref = $taxon_datatype_h{$key};
             if ( !$h_ref ) {
                 next;
             }
@@ -1660,7 +1665,7 @@ sub outputScaffoldFuncGenes {
         ($taxon_oid, $data_type, $scaffold_oid)  = split( / /, $input_scaffold );
     }
 
-    my %func_hash;
+    my %taxon_datatype_h;
     my @db_scaffolds;
     my $gene_count = 0;
 
@@ -1679,13 +1684,13 @@ sub outputScaffoldFuncGenes {
                 $source ) = split( /\t/, $s2 );
             #my $workspace_id = "$taxon_oid $data_type $gene_oid";
 
-            if ( $func_hash{$key} ) {
-                my $h_ref = $func_hash{$key};
+            if ( $taxon_datatype_h{$key} ) {
+                my $h_ref = $taxon_datatype_h{$key};
                 $h_ref->{$gene_oid} = 1;
             } else {
                 my %hash2;
                 $hash2{$gene_oid} = 1;
-                $func_hash{$key}  = \%hash2;
+                $taxon_datatype_h{$key}  = \%hash2;
             }
         }    # end for s2
     }
@@ -1726,8 +1731,8 @@ sub outputScaffoldFuncGenes {
     }
 
     # file
-    for my $key ( keys %func_hash ) {
-        my $h_ref = $func_hash{$key};
+    for my $key ( keys %taxon_datatype_h ) {
+        my $h_ref = $taxon_datatype_h{$key};
         if ( !$h_ref ) {
             next;
         }
@@ -1818,7 +1823,13 @@ sub outputScaffoldFuncsGenesCore {
             next;
         }
 
-        my %func_hash;
+        if ( $func_id =~ /MetaCyc/i ) {
+            my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $func_ids_ref );
+            my @ec_ids = keys %$ec2metacyc_href;
+            $func_ids_ref = \@ec_ids;
+        }
+
+        my %taxon_datatype_h;
 
         my ($taxon_oid, $data_type, $scaffold_oid)  = split( / /, $input_scaffold );
         if ( $data_type eq 'assembled' || $data_type eq 'unassembled' ) {
@@ -1832,19 +1843,19 @@ sub outputScaffoldFuncsGenesCore {
                     $source ) = split( /\t/, $s2 );
                 #my $workspace_id = "$taxon_oid $data_type $gene_oid";
 
-                if ( $func_hash{$key} ) {
-                    my $h_ref = $func_hash{$key};
+                if ( $taxon_datatype_h{$key} ) {
+                    my $h_ref = $taxon_datatype_h{$key};
                     $h_ref->{$gene_oid} = 1;
                 } else {
                     my %hash2;
                     $hash2{$gene_oid} = 1;
-                    $func_hash{$key}  = \%hash2;
+                    $taxon_datatype_h{$key}  = \%hash2;
                 }
             }    # end for s2
         }
 
-        for my $key ( keys %func_hash ) {
-            my $h_ref = $func_hash{$key};
+        for my $key ( keys %taxon_datatype_h ) {
+            my $h_ref = $taxon_datatype_h{$key};
             if ( !$h_ref ) {
                 next;
             }
@@ -1854,6 +1865,8 @@ sub outputScaffoldFuncsGenesCore {
             for my $func_id ( @$func_ids_ref ) {
                 my @func_genes = split( /\t/, $func_genes{$func_id} );
                 for my $gene_oid (@func_genes) {
+                    next if ( ! $h_ref->{$gene_oid} );
+
                     my $workspace_id = "$taxon_oid $t2 $gene_oid";
                     if ( $gene_href && $gene_href->{$workspace_id} ) {
                         # already in
@@ -4019,8 +4032,8 @@ sub showProfileGeneList {
     print "<p>\n";
     my $trunc = 0;
 
-    my %func_hash;
-    undef %func_hash;
+    my %taxon_datatype_h;
+    undef %taxon_datatype_h;
 
     printStartWorkingDiv();
 
@@ -4059,13 +4072,13 @@ sub showProfileGeneList {
             $key = "$taxon_oid $d2";
         }
 
-        if ( $func_hash{$key} ) {
-            my $h_ref = $func_hash{$key};
+        if ( $taxon_datatype_h{$key} ) {
+            my $h_ref = $taxon_datatype_h{$key};
             $h_ref->{$gene_oid} = 1;
         } else {
             my %hash2;
             $hash2{$gene_oid} = 1;
-            $func_hash{$key}  = \%hash2;
+            $taxon_datatype_h{$key}  = \%hash2;
         }
     }    # end while line
     close FH;
@@ -4083,8 +4096,8 @@ sub showProfileGeneList {
 
     my $gene_count = 0;
 
-    for my $key ( keys %func_hash ) {
-        my $h_ref = $func_hash{$key};
+    for my $key ( keys %taxon_datatype_h ) {
+        my $h_ref = $taxon_datatype_h{$key};
         if ( !$h_ref ) {
             next;
         }

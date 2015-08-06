@@ -1,6 +1,6 @@
 ############################################################################
 # MetaDetail.pm - Show taxon detail page. (use files)
-# $Id: MetaDetail.pm 33887 2015-08-04 00:31:25Z aireland $
+# $Id: MetaDetail.pm 33900 2015-08-04 23:34:19Z klchu $
 # *** THIS CODE needs to be merged into TaxonDetail ***
 ############################################################################
 package MetaDetail;
@@ -1407,7 +1407,7 @@ sub printTaxonDetail_ImgGold {
          to_char(tx.mod_date, 'yyyy-mm-dd'), tx.obsolete_flag,
      tx.submission_id, tx.proposal_name, tx.img_product_flag, tx.in_file, tx.combined_sample_flag,
      to_char(tx.distmatrix_date, 'yyyy-mm-dd'), tx.high_quality_flag,  tx.analysis_project_id,
-     tx.study_gold_id, tx.sequencing_gold_id
+     tx.study_gold_id, tx.sequencing_gold_id, tx.genome_completion
       from taxon tx
       where tx.taxon_oid = ?
     };
@@ -1421,7 +1421,7 @@ sub printTaxonDetail_ImgGold {
         $sample_gold_id,   $env_sample,     $is_big_euk,           $is_proxygene_set,   $release_date,
         $add_date,         $mod_date,       $obsolete_flag,        $submission_id,      $proposal_name,
         $img_product_flag, $in_file,        $combined_sample_flag, $distmatrix_date,    $high_quality_flag,
-        $analysis_project_id, $study_gold_id, $sequencing_gold_id
+        $analysis_project_id, $study_gold_id, $sequencing_gold_id, $genome_completion
       )
       = $cur->fetchrow();
     $cur->finish();
@@ -1870,7 +1870,8 @@ sub printTaxonDetail_ImgGold {
 
     printAttrRow( "Is Public", $is_public );
 
-    #    }
+    # $genome_completion
+    printAttrRow( "Genome Completeness %", $genome_completion );
 
     if ( taxonHasBins( $dbh, $taxon_oid ) ) {
         print "<tr class='img' >\n";
@@ -1882,69 +1883,6 @@ sub printTaxonDetail_ImgGold {
 
     # show sample information for metagenome
     my $sample_show_map = 0;
-#    if ( $genome_type eq "metagenome" ) {
-#        my %metadata =
-#          DataEntryUtil::getSampleMetadataFromGold( $submission_id, $taxon_oid, $gbk_project_id, $analysis_project_id );
-#        my @keys = keys(%metadata);
-#        if ( scalar(@keys) > 0 ) {
-#            print "<tr class='highlight'>\n";
-#            print "<th class='subhead'>" . "Sample Information" . "</th> <th class='subhead'> &nbsp; </th>\n";
-#
-#            # single valued
-#            my @attrs1 = DataEntryUtil::getGoldSampleSingleAttr();
-#            for my $attr1 (@attrs1) {
-#                if ( $metadata{$attr1} ) {
-#                    if ( $attr1 eq 'ncbi_project_id' ) {
-#                        my $attr_val = $metadata{$attr1};
-#                        my $url      = "$ncbi_project_id_base_url$attr_val";
-#
-#                        print "<tr class='img' >\n";
-#                        print "<th class='subhead'>\n";
-#                        print DataEntryUtil::getGoldSampleAttrDisplayName($attr1);
-#                        print "</th>\n";
-#                        print "</td>\n";
-#                        print "<td class='img'>\n";
-#                        print alink( $url, $attr_val );
-#                        print "</td>\n";
-#                    } else {
-#                        printAttrRow( DataEntryUtil::getGoldSampleAttrDisplayName($attr1), $metadata{$attr1} );
-#                    }
-#                }
-#            }
-#
-#            if (   defined( $metadata{'latitude'} )
-#                && defined( $metadata{'longitude'} ) )
-#            {
-#                $sample_show_map = 1;
-#                my $latitude     = $metadata{'latitude'};
-#                my $longitude    = $metadata{'longitude'};
-#                my $altitude     = $metadata{'altitude'};
-#                my $geo_location = $metadata{'geo_location'};
-#                $geo_location = escHtml($geo_location);
-#                my $clat    = convertLatLong($latitude);
-#                my $clong   = convertLatLong($longitude);
-#                my $gmapkey = getGoogleMapsKey();
-#
-#                if (   $clong ne ""
-#                    && $clat    ne ""
-#                    && $gmapkey ne "" )
-#                {
-#                    my $_map = <<END_MAP;
-#            <link href="https://code.google.com/apis/maps/documentation/javascript/examples/default.css" rel="stylesheet" type="text/css" />
-#            <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=false"></script>
-#            <script type="text/javascript" src="$base_url/googlemap.js"></script>
-#            <div id="map_canvas" style="width: 500px; height: 300px; position: relative;"></div>
-#            <script type="text/javascript">
-#            var map = createMap(10, $clat, $clong);
-#            var contentString = "<div><p>$geo_location<br>$latitude<br>$longitude<br>$altitude</p></div>";
-#            addMarker(map, $clat, $clong, '$geo_location', contentString);
-#            </script>
-#END_MAP
-#                    printAttrRowRaw( "Geographical Map", $_map );
-#                }
-#            }
-#        }    # end if scalar key > 0
-#    }
 
     my $ncbi_project_id = $gbk_project_id;
     my %metadata;

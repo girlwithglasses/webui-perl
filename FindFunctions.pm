@@ -6,7 +6,7 @@
 #  These were used in the days before this code was placed in Perl modules.
 #    --es 07/07/2005
 #
-# $Id: FindFunctions.pm 33581 2015-06-16 16:38:03Z imachen $
+# $Id: FindFunctions.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
 ############################################################################
 package FindFunctions;
 my $section = "FindFunctions";
@@ -10928,9 +10928,9 @@ sub printProdNameProfile {
     my %clusterScaleMeanStdDev;
 
     #    if ($znorm) {
-    #        arrayRef2HashRef( \@taxon_oids, \%taxonOid2GeneCount,     0 );
-    #        arrayRef2HashRef( \@bin_oids,   \%binOid2GeneCount,       0 );
-    #        arrayRef2HashRef( \@func_ids,   \%clusterScaleMeanStdDev, "" );
+    #        WebUtil::arrayRef2HashRef( \@taxon_oids, \%taxonOid2GeneCount,     0 );
+    #        WebUtil::arrayRef2HashRef( \@bin_oids,   \%binOid2GeneCount,       0 );
+    #        WebUtil::arrayRef2HashRef( \@func_ids,   \%clusterScaleMeanStdDev, "" );
     #        getTaxonGeneCount( $dbh, \%taxonOid2GeneCount );
     #        getBinGeneCount( $dbh, \%binOid2GeneCount );
     #        getClusterScaleMeanStdDev( $dbh,      "dt_func_abundance",

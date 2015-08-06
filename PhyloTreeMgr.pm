@@ -3,7 +3,7 @@
 #   implement functions such as loading the tree and printing it out.
 #      --es 02/02/2005
 #
-# $Id: PhyloTreeMgr.pm 33890 2015-08-04 00:43:41Z aireland $
+# $Id: PhyloTreeMgr.pm 33904 2015-08-05 17:46:52Z aireland $
 #############################################################################
 package PhyloTreeMgr;
 my $section = "PhyloTreeMgr";
@@ -553,8 +553,9 @@ sub printExpandableTree {
    }
    else {
       my @a = split( ',', $expand_nodes );
-      my %h = main::array2Hash( @a );
-      %expandNodes = %h;
+      @expandNodes{@a} = @a;
+#      my %h = WebUtil::array2Hash( @a );
+#      %expandNodes = %h;
    }
    if ( $collapse ne "" ) {
       delete $expandNodes{ $collapse };
@@ -563,7 +564,9 @@ sub printExpandableTree {
       $expandNodes{ $expand } = $expand;
    }
    my @taxon_oids = split( /,/, $selected_taxon_oid_str );
-   my %selectedTaxonOidsHash = WebUtil::array2Hash( @taxon_oids );
+   my %selectedTaxonOidsHash;
+#   = WebUtil::array2Hash( @taxon_oids );
+	@selectedTaxonOidsHash{ @taxon_oids } = @taxon_oids;
    if ( $select_taxon_oid ne "" ) {
       webLog( "select taxon_oid=$select_taxon_oid\n" ) if $verbose >= 1;
       $selectedTaxonOidsHash{ $select_taxon_oid } = $select_taxon_oid;

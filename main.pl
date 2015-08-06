@@ -29,9 +29,9 @@ use WebUtil qw();
 use Template;
 use GenomeCart;
 
-use IMG::Views::ViewMaker;
+#use IMG::Views::ViewMaker;
 
-#use IMG::Dispatcher;
+use IMG::Dispatcher;
 
 $| = 1;
 
@@ -179,9 +179,6 @@ if ( -e $dblock_file && !$img_ken ) {
 
 my $cgi   = WebUtil::getCgi();
 
-IMG::Views::ViewMaker::init(env => $env, cgi => $cgi, imgAppTerm => $imgAppTerm);
-
-
 my $https = $cgi->https();       # if on its not null
 if ( ( $public_login || $user_restricted_site ) && $https eq '' && $env->{ssl_enabled} ) {
 #    my $REQUEST_METHOD = uc( $ENV{REQUEST_METHOD} );
@@ -204,6 +201,7 @@ if ( ( $public_login || $user_restricted_site ) && $https eq '' && $env->{ssl_en
 # session and cookie expire after 90m
 #
 my $session = WebUtil::getSession();
+$env->{session} = $session;
 
 # +90m expire after 90 minutes
 # +24h - 24 hour cookie
@@ -232,7 +230,7 @@ if ( $cgi->param('oldLogin') eq 'true' || $oldLogin ) {
     $oldLogin = 0;
 }
 
-if ( !$oldLogin && $sso_enabled ) {
+if ( ! $oldLogin && $sso_enabled ) {
     require Caliban;
     if ( !$contact_oid ) {
         my $dbh_main = WebUtil::dbLogin();
@@ -328,6 +326,8 @@ if ( !$oldLogin && $sso_enabled ) {
     }
 }
 
+# set up cookies here: if logged in, just use the current IMG session cookie and the JGI cookie
+
 # for adding to genome cart from browser list
 if ( $cgi->param("setTaxonFilter") ) {
 
@@ -380,15 +380,54 @@ if ( $user_restricted_site && $enable_workspace ) {
 # remap the section param if required
 coerce_section();
 
-=cut
+
 
 $env->{oldLogin} = $oldLogin;
 $env->{taxon_filter_oid_str} = $taxon_filter_oid_str;
-dispatch_page({
+
+my $dispatcher = IMG::Dispatcher->new({
 	env => $env,
 	cgi => $cgi,
-	cookie => $cookie
+	session => $session,
 });
+
+#	cookie => $cookie,
+#	imgAppTerm => $imgAppTerm,
+
+my $n_taxa = get_n_taxa();
+
+carp "I've got $n_taxa taxons!";
+my $output = $dispatcher->dispatch_page( n_taxa => $n_taxa );
+
+#	return {
+#		sub       => $sub,
+#		module    => $module,
+#		tmpl_args => %tmpl_args,
+#		tmpl      => $tmpl,
+#		output    => $output
+#	};
+
+printAppHeader(
+	$output->{tmpl_args}{current} // "",
+	undef,
+	$output->{tmpl_args}{gwt_module} // undef,
+	$output->{tmpl_args}{yui_js} || undef,
+	$output->{tmpl_args}{content_js} || undef,
+	$output->{tmpl_args}{help} || undef );
+
+print $output->{output};
+
+#	my (
+#		$current, $noMenu, $gwtModule, $yuijs, $content_js, $help, $redirecturl
+#	) = @_;
+
+#	my @input = @_;
+#	my @params = qw( current no_menu gwt_module yui_js content_js help redirect_url );
+#	my %args;
+
+
+
+
 =cut
 
 ############################################################
@@ -1898,6 +1937,7 @@ if ( $cgi->param() ) {
         printAppHeader("Home");
     }
 }
+=cut
 
 printContentEnd();
 
@@ -3129,7 +3169,8 @@ sub googleAnalyticsJavaScript2 {
 #  WARNING: very convoluted code.
 ############################################################################
 
-sub printTaxonFilterStatus {
+#sub printTaxonFilterStatus {
+sub get_n_taxa {
 
     require GenomeCart;
 	my $taxon_oids = GenomeCart::getAllGenomeOids();
@@ -3140,6 +3181,12 @@ sub printTaxonFilterStatus {
 #        return $size;
 #    }
 #    return 0;
+}
+
+sub printTaxonFilterStatus {
+
+	return get_n_taxa;
+
 }
 
 ############################################################################

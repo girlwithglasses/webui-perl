@@ -1,6 +1,6 @@
 ###########################################################################
 # WorkspaceScafSet.pm
-# $Id: WorkspaceScafSet.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: WorkspaceScafSet.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
 ###########################################################################
 package WorkspaceScafSet;
 
@@ -1266,12 +1266,22 @@ sub showScafFuncSetProfile {
         for my $x2 (@all_files) {
     	    my ($c_oid, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $x2 );
     	    if ( ! $c_oid || ! $x ) {
-    		next;
+        		next;
     	    }
 
             print "<p>Processing scaffold set $x ...\n";
             my $fullname = "$workspace_dir/$c_oid/$folder/$x";
-            my %func2count_h = countScafFuncGene( $dbh, $fullname, '', \@func_ids, $data_type );
+            my %func2genes_h = countScafFuncGene_new( $dbh, $fullname, '', \@func_ids, $data_type );
+            #print "showScafFuncSetProfile() func2genes_h:<br/>\n";
+            #print Dumper(\%func2genes_h);
+            #print "<br/>\n";
+            my %func2count_h;
+            foreach my $func_id (keys %func2genes_h) {
+                my $genes_href = $func2genes_h{$func_id};
+                my $gene_count = scalar( keys %$genes_href );
+                $func2count_h{$func_id} = $gene_count;
+            }
+            #my %func2count_h = countScafFuncGene( $dbh, $fullname, '', \@func_ids, $data_type );
             $scafOrset_cnt_h{$x2} = \%func2count_h;
             #print Dumper(\%func2count_h);
             #print "showScafFuncSetProfile() filename $x retrieved count <br/>\n";
@@ -1553,6 +1563,110 @@ sub outputScafFuncGene {
 # input_scaffold: only this scaffold
 #
 ##############################################################################
+sub countScafFuncGene_new {
+    my ( $dbh, $input_file, $input_scaffold, $func_aref, $data_type ) = @_;
+
+    #print "<p>counting scaffold gene functions ...\n";
+
+    my @db_scaffolds;
+    my @meta_scaffolds;
+
+    if ($input_scaffold) {
+        # just one scaffold
+        if ( WebUtil::isInt($input_scaffold) ) {
+            push @db_scaffolds, ($input_scaffold);
+        }
+        else {
+            push @meta_scaffolds, ($input_scaffold);
+        }
+    } else {
+        # read scaffold set
+        print "<p>Reading scaffold set ...\n";
+        open( FH, "$input_file" )
+          or webError("File size - file error $input_file");
+
+        while ( my $line = <FH> ) {
+            chomp($line);
+            if ( WebUtil::isInt($line) ) {
+                push(@db_scaffolds, $line);
+            }
+            else {
+                push @meta_scaffolds, ($line);
+            }
+        }    # end while line
+        close FH;
+    }
+
+    my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( $func_aref );
+    my %func2genes_sum_h;
+
+    if ( scalar(@db_scaffolds) > 0 ) {
+        my %scaf_func2genes_h = countDbScafFuncGene( $dbh, \@db_scaffolds, \@func_groups );
+        #print "countScafFuncGene() db scaf_func2genes_h:<br/>\n";
+        #print Dumper(\%scaf_func2genes_h)."<br/>\n";
+        foreach my $scaf_id ( keys %scaf_func2genes_h ) {
+            my $func2genes_href = $scaf_func2genes_h{$scaf_id};
+            if ( $func2genes_href ) {
+                foreach my $func_id ( keys %$func2genes_href ){
+                    my $genes_href = $func2genes_href->{$func_id};
+                    if ( $genes_href ) {
+                        my $genes_sum_href = $func2genes_sum_h{$func_id};
+                        if ( ! $genes_sum_href ) {
+                            my %genes_sum_h;
+                            $genes_sum_href = \%genes_sum_h;
+                            $func2genes_sum_h{$func_id} = $genes_sum_href;
+                        }
+                        foreach my $gene_oid ( keys %$genes_href ) {
+                            $genes_sum_href->{$gene_oid} = 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    my %metaScaf_func2genes_h;
+    my %taxon_scaffolds = MetaUtil::getOrganizedTaxonScaffolds( @meta_scaffolds );
+    for my $key ( keys %taxon_scaffolds ) {
+        my ( $taxon_oid, $d2 ) = split( / /, $key );
+        if ( ($data_type eq 'assembled' || $data_type eq 'unassembled') 
+            && ($d2 ne $data_type) ) {
+                next;
+        }
+
+        $taxon_oid = sanitizeInt($taxon_oid);
+        my $oid_ref = $taxon_scaffolds{$key};
+        if ( $oid_ref && scalar(@$oid_ref) > 0 ) {
+            my %scaffolds_h;
+            WebUtil::arrayRef2HashRef( $oid_ref, \%scaffolds_h, 1 );
+            my %scaf_func2genes_h = countMetaTaxonScafFuncGene( $dbh, $taxon_oid, $d2, \@func_groups, '', \%scaffolds_h );            
+            #print "countScafFuncGene() meta scaf_func2genes_h:<br/>\n";
+            #print Dumper(\%scaf_func2genes_h)."<br/>\n";
+            foreach my $scaf_id ( keys %scaf_func2genes_h ) {
+                my $func2genes_href = $scaf_func2genes_h{$scaf_id};
+                if ( $func2genes_href ) {
+                    foreach my $func_id ( keys %$func2genes_href ){
+                        my $genes_href = $func2genes_href->{$func_id};
+                        if ( $genes_href ) {
+                            my $genes_sum_href = $func2genes_sum_h{$func_id};
+                            if ( ! $genes_sum_href ) {
+                                my %genes_sum_h;
+                                $genes_sum_href = \%genes_sum_h;
+                                $func2genes_sum_h{$func_id} = $genes_sum_href;
+                            }
+                            foreach my $gene_oid ( keys %$genes_href ) {
+                                $genes_sum_href->{$gene_oid} = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return %func2genes_sum_h;
+}
+
 sub countScafFuncGene {
     my ( $dbh, $input_file, $input_scaffold, $func_aref, $data_type ) = @_;
 
@@ -1679,9 +1793,9 @@ sub processGenesForMetaScaf {
 # countMetaTaxonScafFuncGene - count genes in scaffold with functions
 ##############################################################################
 sub countMetaTaxonScafFuncGene {
-    my ( $taxon_oid, $data_type, $func_groups_ref, $scaffolds_href ) = @_;
+    my ( $dbh, $taxon_oid, $data_type, $func_groups_ref, $scaffolds_href, $limiting_scaffolds_href ) = @_;
 
-    my %scaf_func2count_h;
+    my %scaf_func2genes_h;
     
     my %genes_h;
     my %taxon_genes;
@@ -1694,27 +1808,47 @@ sub countMetaTaxonScafFuncGene {
                 print "<p>Unknown function ID $func_id0\n";
                 next;
             }
-                    
+            
+            my ( $metacyc2ec_href, $ec2metacyc_href );
+            if ( $func_id0 =~ /MetaCyc\:/i ) {
+                ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $func_ids_ref );
+                my @ec_ids = keys %$ec2metacyc_href;
+                $func_ids_ref = \@ec_ids;
+            }
+                                
             my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $t2, $func_tag, $func_ids_ref ); 
-            for my $func_id ( @$func_ids_ref ) {
-                my @func_genes = split( /\t/, $func_genes{$func_id} );
-                for my $gene_oid (@func_genes) {
-                    my $workspace_id = "$taxon_oid $t2 $gene_oid";
-                    if ( $genes_h{$workspace_id} ) {
-                        my $func_ids_ref = $genes_h{$workspace_id};
-                        push( @$func_ids_ref, $func_id );
-                    } else {
-                        my @func_ids = ($func_id);
-                        $genes_h{$workspace_id} = \@func_ids;
-                    }
+            for my $func2 ( @$func_ids_ref ) {
+                my @func_genes = split( /\t/, $func_genes{$func2} );
 
-                    my $key = "$taxon_oid $t2";
-                    if ( $taxon_genes{$key} ) {
-                        my $oid_ref = $taxon_genes{$key};
-                        push( @$oid_ref, $gene_oid );
-                    } else {
-                        my @oid = ($gene_oid);
-                        $taxon_genes{$key} = \@oid;
+                my @func2s;
+                if ( $func_id0 =~ /MetaCyc/i ) {
+                    my $metacyc_ids_ref = $ec2metacyc_href->{$func2};
+                    @func2s = @$metacyc_ids_ref;
+                }
+                else {
+                    @func2s = ( $func2 );
+                }
+
+                foreach my $func_id ( @func2s ) {
+                    $func_id = WorkspaceQueryUtil::addBackFuncIdPrefix( $func_id0, $func_id );
+                    for my $gene_oid (@func_genes) {
+                        my $workspace_id = "$taxon_oid $t2 $gene_oid";
+                        if ( $genes_h{$workspace_id} ) {
+                            my $funcs_ref = $genes_h{$workspace_id};
+                            push( @$funcs_ref, $func_id );
+                        } else {
+                            my @func_ids = ($func_id);
+                            $genes_h{$workspace_id} = \@func_ids;
+                        }
+    
+                        my $key = "$taxon_oid $t2";
+                        if ( $taxon_genes{$key} ) {
+                            my $oid_ref = $taxon_genes{$key};
+                            push( @$oid_ref, $gene_oid );
+                        } else {
+                            my @oid = ($gene_oid);
+                            $taxon_genes{$key} = \@oid;
+                        }
                     }
                 }
             }
@@ -1723,7 +1857,7 @@ sub countMetaTaxonScafFuncGene {
 
     my %gene_info_h;
     if ( scalar( keys %genes_h ) > 0 ) {
-        MetaUtil::getAllMetaGeneInfo( \%genes_h, '', \%gene_info_h, $scaffolds_href, \%taxon_genes, 1, 0, 1 );
+        MetaUtil::getAllMetaGeneInfo( \%genes_h, '', \%gene_info_h, '', \%taxon_genes, 1, 0, 1 );
         #print "countMetaTaxonScafFuncGene() called " . currDateTime() . "<br/>\n";
         #print Dumper(\%scaf_id_h);
     }
@@ -1732,32 +1866,45 @@ sub countMetaTaxonScafFuncGene {
         my ( $locus_type, $locus_tag, $gene_display_name, $start_coord, $end_coord, $strand, $scaf_id, $tid2, $dtype2 )
               = split( /\t/, $gene_info_h{$workspace_id} );
         my ( $taxon_oid, $t2, $gene_oid ) = split( / /, $workspace_id );
+        if ( ! $scaf_id ) {
+            next;
+        }
+        if ( $limiting_scaffolds_href && defined($limiting_scaffolds_href) ) {
+            next if ( ! $limiting_scaffolds_href->{$scaf_id} );
+        }
+        
         my $scaf_workspace_id = "$taxon_oid $t2 $scaf_id";
-              
-    
-        my $func_ids_ref = $genes_h{$workspace_id};
-        foreach my $func_id ( @$func_ids_ref ) {
-            my $func2count_href = $scaf_func2count_h{$scaf_workspace_id};
-            if ( $func2count_href ) {
-                my $gene_count = $func2count_href->{$func_id};
-                if ( $gene_count ) {
-                    $func2count_href->{$func_id} = $gene_count + 1;
+        if ( $scaffolds_href && defined($scaffolds_href) ) {
+            $scaffolds_href->{$scaf_workspace_id} = 1;
+        }
+                  
+        my $funcs_ref = $genes_h{$workspace_id};
+        foreach my $func_id ( @$funcs_ref ) {
+            my $func2genes_href = $scaf_func2genes_h{$scaf_workspace_id};
+            if ( $func2genes_href ) {
+                my $genes_href = $func2genes_href->{$func_id};
+                if ( $genes_href ) {
+                    $genes_href->{$gene_oid} = 1;
                 }
                 else {
-                    $func2count_href->{$func_id} = 1;
+                    my %gene_ids_h;
+                    $gene_ids_h{$gene_oid} = 1;
+                    $func2genes_href->{$func_id} = \%gene_ids_h;
                 }
                 #print "countMetaTaxonScafFuncGene() $scaf_workspace_id, $func_id added<br/>\n";                                    
             }
             else {
-                my %func2count_h;
-                $func2count_h{$func_id} = 1;
-                $scaf_func2count_h{$scaf_workspace_id} = \%func2count_h;
+                my %gene_ids_h;
+                $gene_ids_h{$gene_oid} = 1;
+                my %func2genes_h;
+                $func2genes_h{$func_id} = \%gene_ids_h;
+                $scaf_func2genes_h{$scaf_workspace_id} = \%func2genes_h;
                 #print "countMetaTaxonScafFuncGene() $scaf_workspace_id, $func_id new<br/>\n";
             }
         }
     }
     
-    return %scaf_func2count_h;
+    return %scaf_func2genes_h;
 }
 
 
@@ -1782,57 +1929,64 @@ sub countDbScafFuncGene {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
 
-    my %scaf_func2count_h;
+    my %scaf_func2genes_h;
     if ( scalar(@db_scaffolds) > 0 ) {
         my $scaf_str = OracleUtil::getNumberIdsInClause( $dbh, @db_scaffolds );
         foreach my $func_ids_ref (@$func_groups_ref) {
-            execDbScafsFuncsCount( $dbh, \%scaf_func2count_h, $func_ids_ref, $scaf_str, $rclause, $imgClause );
+            execDbScafsFuncsGenes( $dbh, \%scaf_func2genes_h, $func_ids_ref, $scaf_str, $rclause, $imgClause );
         }
         OracleUtil::truncTable( $dbh, "gtt_num_id" )
           if ( $scaf_str =~ /gtt_num_id/i );
     }
-    #print "countDbScafFuncGene() scaf_func2count_h<br/>\n";
-    #print Dumper(\%scaf_func2count_h)."<br/>\n";
+    #print "countDbScafFuncGene() scaf_func2genes_h<br/>\n";
+    #print Dumper(\%scaf_func2genes_h)."<br/>\n";
 
-    return %scaf_func2count_h;
+    return %scaf_func2genes_h;
 }
 
-sub execDbScafsFuncsCount {
-    my ( $dbh, $scaf_func2count_href, $func_ids_ref, $scaf_str, $rclause, $imgClause ) = @_;
+sub execDbScafsFuncsGenes {
+    my ( $dbh, $scaf_func2genes_href, $func_ids_ref, $scaf_str, $rclause, $imgClause ) = @_;
 
-    #print "execDbScafFuncsCount() func_type=$func_type, func_ids_ref: @$func_ids_ref<br/>\n";
+    my $func_id0 = @$func_ids_ref[0];
+
+    #print "execDbScafsFuncsGenes() func_type=$func_type, func_ids_ref: @$func_ids_ref<br/>\n";
     my ( $sql, @bindList ) =
       WorkspaceQueryUtil::getDbScaffoldFuncsGenesSql( $dbh, $func_ids_ref, $scaf_str, $rclause, $imgClause );
-    #print "execDbScafFuncsCount() sql: $sql<br/>\n";
+    #print "execDbScafsFuncsGenes() sql: $sql<br/>\n";
     if ( $sql ) {
         my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
         for ( ; ; ) {
             my ( $gene_oid, $scaf_id, $func_id, $t_id, $gene_name ) = $cur->fetchrow();
             last if ( !$gene_oid );
-            #print "execDbScafFuncsCount() retrieved $gene_oid, $scaf_id, $func_id, $t_id, $gene_name<br/>\n";
+            $func_id = WorkspaceQueryUtil::addBackFuncIdPrefix( $func_id0, $func_id );
+            #print "execDbScafsFuncsGenes() retrieved $gene_oid, $scaf_id, $func_id, $t_id, $gene_name<br/>\n";
             
-            my $func2count_href = $scaf_func2count_href->{$scaf_id};
-            if ( $func2count_href ) {
-                my $gene_count = $func2count_href->{$func_id};
-                if ( $gene_count ) {
-                    $func2count_href->{$func_id} = $gene_count + 1;
+            my $func2genes_href = $scaf_func2genes_href->{$scaf_id};
+            if ( $func2genes_href ) {
+                my $genes_href = $func2genes_href->{$func_id};
+                if ( $genes_href ) {
+                    $genes_href->{$gene_oid} = 1;
                 }
                 else {
-                    $func2count_href->{$func_id} = 1;
+                    my %genes_h;
+                    $genes_h{$gene_oid} = 1;
+                    $func2genes_href->{$func_id} = \%genes_h;
                 }
-                #print "execDbScafFuncsCount() $scaf_id, $func_id added<br/>\n";                                    
+                #print "execDbScafsFuncsGenes() $scaf_id, $func_id added<br/>\n";                                    
             }
             else {
-                my %func2count_h;
-                $func2count_h{$func_id} = 1;
-                $scaf_func2count_href->{$scaf_id} = \%func2count_h;
-                #print "execDbScafFuncsCount() $scaf_id, $func_id new<br/>\n";
+                my %genes_h;
+                $genes_h{$gene_oid} = 1;
+                my %func2genes_h;
+                $func2genes_h{$func_id} = \%genes_h;
+                $scaf_func2genes_href->{$scaf_id} = \%func2genes_h;
+                #print "execDbScafsFuncsGenes() $scaf_id, $func_id new<br/>\n";
             }
         }
         $cur->finish();                
     }
-    #print "execDbScafsFuncsCount() scaf_func2count_href<br/>\n";
-    #print Dumper($scaf_func2count_href)."<br/>\n";
+    #print "execDbScafsFuncsGenes() scaf_func2count_href<br/>\n";
+    #print Dumper($scaf_func2genes_href)."<br/>\n";
     
 }
 

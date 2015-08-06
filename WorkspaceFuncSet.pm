@@ -641,7 +641,7 @@ sub showFuncScaffoldSearch {
 
     my %dbScaf2name_h;
     my %dbTaxon_scaffolds_h;
-    my %dbScaf_func2count_h;
+    my %dbScaf_func2genes_h;
 
     if ( scalar(keys %$taxon_db_href) > 0 ) {
         my @dbTaxons = keys %$taxon_db_href;
@@ -650,10 +650,10 @@ sub showFuncScaffoldSearch {
         %dbTaxon_scaffolds_h = %$taxon_scaffolds_href;
 
         my @scaffolds = keys %$scaffolds_href;
-        %dbScaf_func2count_h = WorkspaceScafSet::countDbScafFuncGene( $dbh, \@scaffolds, \@func_groups );
+        %dbScaf_func2genes_h = WorkspaceScafSet::countDbScafFuncGene( $dbh, \@scaffolds, \@func_groups );
     }
-    #print "showFuncScaffoldSearch() dbScaf_func2count_h<br/>\n";
-    #print Dumper(\%dbScaf_func2count_h)."<br/>\n";
+    #print "showFuncScaffoldSearch() dbScaf_func2genes_h<br/>\n";
+    #print Dumper(\%dbScaf_func2genes_h)."<br/>\n";
 
     timeout( 60 * $merfs_timeout_mins );
     my $start_time = time(); 
@@ -668,7 +668,7 @@ sub showFuncScaffoldSearch {
 
         my $genome_url;
         my %scaffolds_h;
-        my %metaScaf_func2count_h;
+        my %metaScaf_func2genes_h;
         if ( $taxon_db_href->{$taxon_oid} ) {
             $genome_url = "$main_cgi?section=TaxonDetail" 
             . "&page=taxonDetail&taxon_oid=$taxon_oid";
@@ -682,7 +682,7 @@ sub showFuncScaffoldSearch {
         elsif ( $taxon_in_file_href->{$taxon_oid} ) {
             $genome_url = "$main_cgi?section=MetaDetail" 
             . "&page=metaDetail&taxon_oid=$taxon_oid";
-            %metaScaf_func2count_h = WorkspaceScafSet::countMetaTaxonScafFuncGene( $taxon_oid, $data_type, \@func_groups, \%scaffolds_h );
+            %metaScaf_func2genes_h = WorkspaceScafSet::countMetaTaxonScafFuncGene( $dbh, $taxon_oid, $data_type, \@func_groups, \%scaffolds_h );
         }
         else {
             #invalid taxon oid
@@ -721,17 +721,18 @@ sub showFuncScaffoldSearch {
             my $taxon_name = $taxon2name_href->{$taxon_oid};
             $r .= $taxon_name . $sd . alink( $genome_url, $taxon_oid ) . "\t";
 
-            my $func2count_href;
+            my $func2genes_href;
             if ( $taxon_in_file_href->{$taxon_oid} ) {
-                $func2count_href = $metaScaf_func2count_h{$scaffold_oid};
+                $func2genes_href = $metaScaf_func2genes_h{$scaffold_oid};
             }
             else {
-                $func2count_href = $dbScaf_func2count_h{$scaffold_oid};
+                $func2genes_href = $dbScaf_func2genes_h{$scaffold_oid};
             }
 
-            if ( $func2count_href ) {
+            if ( $func2genes_href ) {
                 for my $func_id (@selected_funcs) {
-                    my $cnt = $func2count_href->{$func_id};
+                    my $genes_href = $func2genes_href->{$func_id};
+                    my $cnt = scalar( keys %$genes_href );
                     #print "showFuncScaffoldSearch() scaffold $scaffold_oid func $func_id cnt: $cnt<br/>\n";
                     if ($cnt) {
                         my $url = "$main_cgi?section=WorkspaceScafSet"

@@ -7,726 +7,769 @@
 ############################################################################
 package IMG::Dispatcher;
 
-use IMG::Util::Base;
+use IMG::Util::Base 'Class';
+
+use Class::Load ':all';
 
 use String::CamelCase qw( camelize decamelize );
 
-use IMG::Views::ViewMaker;
+#with IMG::Views::ViewMaker;
 
 #use Role::Tiny::With;
 
+#with 'IMG::Views::ViewMaker';
+
 #with 'IMG::Util::Factory', 'IMG::Views::Links';
-
 #use GenomeCart ();
-#use WebUtil ();
+use WebUtil qw();
 
-my $env;
-my $cgi;
-my $session;
-my %cgi_params;
+has 'env' => (
+	is => 'rw',
+	isa => HashRef,
+	required => 1,
+);
 
-sub section_decompress {
+has 'session' => (
+	is => 'rw',
+	required => 1,
+);
 
-	my $s_name = shift;
+has 'cgi' => (
+	is => 'ro',
+	required => 1,
+);
 
-	return ( $s_name =~ s/([a-z])([A-Z])/\1 \2/g );
+has 'cgi_params' => (
+	is => 'rw',
+	lazy => 1,
+	builder => 1,
+);
 
+sub BUILDARGS {
+
+	my $class = shift;
+	my $tmpl_args;
+
+	warn "args: " . Dumper \@_;
+
+	if ( @_ && 1 < scalar( @_ ) ) {
+		( %$tmpl_args ) = @_;
+	}
+	else {
+		$tmpl_args = shift;
+	}
+
+	return $tmpl_args;
 }
 
+sub _build_cgi_params {
 
+	my $self = shift;
 
-sub genomeHeaderJson {
-	return IMG::Views::ViewMaker::genomeHeaderJson;
-}
+	my %params = $self->cgi->Vars;
 
-sub meshTreeHeader {
-	return IMG::Views::ViewMaker::meshTreeHeader;
+	return \%params;
 }
 
 =head3 dispatch_page
 
-@param cgi
-@param env
+@param n_taxa => number of taxa in the current cart
 
 =cut
 
 sub dispatch_page {
 
-	my $arguments = shift;
+	my $self = shift;
 
-	$env = $arguments->{env};
-	$cgi = $arguments->{cgi};
-	$session = $arguments->{session};
-	%cgi_params = $cgi->Vars;
-	IMG::Views::ViewMaker::init( $arguments );
+	my $prep_args = $self->prepare;
+
+	return $self->run( @_, %$prep_args );
+
+}
+
+=head3 prepare
+
+Parse the input query params and find the appropriate module, subroutine,
+template, and template arguments to use.
+
+@return hashref with keys
+
+		sub    - subroutine to run
+		module - module to load
+		tmpl   - outer page template to use (defaults to 'default')
+		tmpl_args  - template arguments
+
+=cut
+
+sub prepare {
+
+	my $self = shift;
 
 	my $module;           # the module to load
-	my %args;             # arguments for populating page templates
+	my %tmpl_args;        # arguments for populating page templates
 	my $sub = 'dispatch'; # subroutine to run (if not dispatch)
 	my $tmpl = 'default'; # which template to use for the page
 
-	my $page = $cgi->param('page') || "";
-	my $section = $cgi->param('section');
+	my $page = $self->cgi->param('page') || "";
+	my $section = $self->cgi->param('section');
 
 	my $section_table = {
         AbundanceProfileSearch => sub {
-            %args = ( title => 'Abundance Profile Search', current => "CompareGenomes", yui_js => genomeHeaderJson(), help => "userGuide_m.pdf#page=" );
-			$args{help} .= ( $env->{include_metagenomes} )
+            %tmpl_args = ( title => 'Abundance Profile Search', current => "CompareGenomes", yui_js => 'genomeHeaderJson', help => "userGuide_m.pdf#page=" );
+			$tmpl_args{help} .= ( $self->env->{include_metagenomes} )
             ? "19"
             : "51";
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         StudyViewer => sub {
-            %args = ( title => "Metagenome Study Viewer", current => "FindGenomes", include_scripts => 'treeview.tt', include_styles => 'treeview.tt' );
+            %tmpl_args = ( title => "Metagenome Study Viewer", current => "FindGenomes", include_scripts => 'treeview.tt', include_styles => 'treeview.tt' );
         },
         ANI => sub {
-            %args = ( title => 'ANI', current => "CompareGenomes" );
+            %tmpl_args = ( title => 'ANI', current => "CompareGenomes" );
             if ( $page eq 'pairwise' ) {
-                $args{yui_js} = genomeHeaderJson();
+                $tmpl_args{yui_js} = 'genomeHeaderJson';
             }
             elsif ( $page eq 'overview' ) {
-                $args{yui_js} = meshTreeHeader();
+                $tmpl_args{yui_js} = 'meshTreeHeader';
             }
         },
         Caliban => sub {
             return;
         },
         Portal => sub {
-            %args = ( current => "Find Genomes");
+            %tmpl_args = ( current => "Find Genomes");
         },
         ProjectId => sub {
-            %args = ( title => "Project ID List", current => "FindGenomes" );
+            %tmpl_args = ( title => "Project ID List", current => "FindGenomes" );
         },
         ScaffoldSearch => sub {
-            %args = ( title => 'Scaffold Search', current => "FindGenomes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => 'Scaffold Search', current => "FindGenomes", yui_js => 'genomeHeaderJson' );
         },
         MeshTree => sub {
-            %args = ( title => "Mesh Tree", current => "FindFunctions", yui_js => meshTreeHeader() );
+            %tmpl_args = ( title => "Mesh Tree", current => "FindFunctions", yui_js => 'meshTreeHeader' );
         },
         AbundanceProfiles => sub {
-        	%args = ( title => 'Abundance Profiles', current => "CompareGenomes", yui_js => genomeHeaderJson(), help => "userGuide_m.pdf#page=" );
-			$args{help} .= ( $env->{include_metagenomes} )
+        	%tmpl_args = ( title => 'Abundance Profiles', current => "CompareGenomes", yui_js => 'genomeHeaderJson', help => "userGuide_m.pdf#page=" );
+			$tmpl_args{help} .= ( $self->env->{include_metagenomes} )
             ? "18"
             : "49";
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         AbundanceTest => sub {
-            %args = ( title => "Abundance Test", current => "CompareGenomes" );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => "Abundance Test", current => "CompareGenomes" );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         AbundanceComparisons => sub {
-            %args = ( title => 'Abundance Comparisons', current => "CompareGenomes", yui_js => genomeHeaderJson() );
-            $args{help} = 'userGuide_m.pdf#page=20' if $env->{include_metagenomes};
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => 'Abundance Comparisons', current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{help} = 'userGuide_m.pdf#page=20' if $self->env->{include_metagenomes};
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         AbundanceComparisonsSub => sub {
-            %args = ( title => 'Function Category Comparisons', current => "CompareGenomes", yui_js => genomeHeaderJson() );
-            $args{help} = 'userGuide_m.pdf#page=23' if $env->{include_metagenomes};
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => 'Function Category Comparisons', current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{help} = 'userGuide_m.pdf#page=23' if $self->env->{include_metagenomes};
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         AbundanceToolkit => sub {
-            %args = ( title => "Abundance Toolkit", current => "CompareGenomes" );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => "Abundance Toolkit", current => "CompareGenomes" );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         Artemis => sub {
-            %args = ( title => 'Artemis', current => "FindGenomes", yui_js => genomeHeaderJson() );
-            my $from = $cgi->param("from");
+            %tmpl_args = ( title => 'Artemis', current => "FindGenomes", yui_js => 'genomeHeaderJson' );
+            my $from = $self->cgi->param("from");
             if ( $from eq "ACT" || $page =~ /^ACT/ || $page =~ /ACT$/ ) {
-                $args{current} = "CompareGenomes";
+                $tmpl_args{current} = "CompareGenomes";
             }
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         ClustalW => sub {
-            %args = ( title => "Clustal - Multiple Sequence Alignment", current => "AnaCart", help => "DistanceTree.pdf#page=6" );
-            $args{timeout_mins} = 40;    # timeout in 40 minutes
+            %tmpl_args = ( title => "Clustal - Multiple Sequence Alignment", current => "AnaCart", help => "DistanceTree.pdf#page=6" );
+            $tmpl_args{timeout_mins} = 40;    # timeout in 40 minutes
         },
         CogCategoryDetail => sub {
-            %args = ( title => 'COG', current => "FindFunctions" );
-            $args{title} = 'KOG' if $page =~ /kog/i;
+            %tmpl_args = ( title => 'COG', current => "FindFunctions" );
+            $tmpl_args{title} = 'KOG' if $page =~ /kog/i;
         },
         CompTaxonStats => sub {
-            %args = ( title => "Genome Statistics", current => "CompareGenomes" );
+            %tmpl_args = ( title => "Genome Statistics", current => "CompareGenomes" );
         },
         CompareGenomes => sub {
-            if ( paramMatch("_excel") ) {
+            if ( $self->paramMatch("_excel") ) {
             	$tmpl = 'excel';
-            	%args = ( filename => "stats_export$$.xls" );
+            	%tmpl_args = ( filename => "stats_export$$.xls" );
             }
             else {
-                %args = ( title => 'Compare Genomes', current => "CompareGenomes" );
+                %tmpl_args = ( title => 'Compare Genomes', current => "CompareGenomes" );
             }
         },
         GenomeGeneOrtholog => sub {
-            %args = ( title => 'Genome Gene Ortholog', current => "CompareGenomes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => 'Genome Gene Ortholog', current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
         },
         Pangenome => sub {
-            if ( paramMatch("_excel") ) {
+            if ( $self->paramMatch("_excel") ) {
             	$tmpl = 'excel';
-            	%args = ( filename => "stats_export$$.xls" );
+            	%tmpl_args = ( filename => "stats_export$$.xls" );
             }
             else {
-                %args = ( title => 'Pangenome', current => "Pangenome" );
+                %tmpl_args = ( title => 'Pangenome', current => "Pangenome" );
             }
         },
         CompareGeneModelNeighborhood => sub {
-            %args = ( title => "Compare Gene Models", current => "CompareGenomes" );
+            %tmpl_args = ( title => "Compare Gene Models", current => "CompareGenomes" );
         },
         CuraCartStor => sub {
-            %args = ( title => 'Curation Cart', current => "AnaCart" );
-            $session->param( "lastCart", "curaCart" );
+            %tmpl_args = ( title => 'Curation Cart', current => "AnaCart" );
+            $self->session->param( "lastCart", "curaCart" );
         },
         CuraCartDataEntry => sub {
-            %args = ( title => "Curation Cart Data Entry", current => "AnaCart" );
-            $session->param( "lastCart", "curaCart" );
+            %tmpl_args = ( title => "Curation Cart Data Entry", current => "AnaCart" );
+            $self->session->param( "lastCart", "curaCart" );
         },
         DataEvolution => sub {
-            %args = ( title => "Data Evolution", current => "news" );
-        },
-        EbiIprScan => sub {
-			%args = ( title => 'EBI InterPro Scan' );
-            print header( -header => "text/html" );
+            %tmpl_args = ( title => "Data Evolution", current => "news" );
         },
         EgtCluster => sub {
-            %args = ( title => 'Genome Clustering', current => "CompareGenomes", yui_js => genomeHeaderJson() );
-            $args{help} = "DistanceTree.pdf#page=5" if $cgi->param('method') && $cgi->param('method') eq 'hier';
-            $args{timeout_mins} = 30;    # timeout in 30 minutes
+            %tmpl_args = ( title => 'Genome Clustering', current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{help} = "DistanceTree.pdf#page=5" if $self->cgi->param('method') && $self->cgi->param('method') eq 'hier';
+            $tmpl_args{timeout_mins} = 30;    # timeout in 30 minutes
         },
         EmblFile => sub {
-            %args = ( title => "EMBL File Export", current => "FindGenomes" );
+            %tmpl_args = ( title => "EMBL File Export", current => "FindGenomes" );
         },
         BcSearch => sub {
-            %args = ( title => "Biosynthetic Cluster Search", current => "getsme", yui_js => meshTreeHeader() );
-            $args{title} = "Secondary Metabolite Search" if $page eq 'npSearches' || $page eq 'npSearchResult';
+            %tmpl_args = ( title => "Biosynthetic Cluster Search", current => "getsme", yui_js => 'meshTreeHeader' );
+            $tmpl_args{title} = "Secondary Metabolite Search" if $page eq 'npSearches' || $page eq 'npSearchResult';
         },
         BiosyntheticStats => sub {
-            %args = ( title => "Biosynthetic Cluster Statistics", current => "getsme", yui_js => meshTreeHeader() );
+            %tmpl_args = ( title => "Biosynthetic Cluster Statistics", current => "getsme", yui_js => 'meshTreeHeader' );
         },
         BiosyntheticDetail => sub {
-            %args = ( title => "Biosynthetic Cluster", current => "getsme" );
+            %tmpl_args = ( title => "Biosynthetic Cluster", current => "getsme" );
         },
         NaturalProd => sub {
-            %args = ( title => "Secondary Metabolite Statistics", current => "getsme", yui_js => meshTreeHeader() );
+            %tmpl_args = ( title => "Secondary Metabolite Statistics", current => "getsme", yui_js => 'meshTreeHeader' );
         },
         BcNpIDSearch => sub {
-            %args = ( title => "Biosynthetic Cluster / Secondary Metabolite Search by ID", current => "getsme" );
+            %tmpl_args = ( title => "Biosynthetic Cluster / Secondary Metabolite Search by ID", current => "getsme" );
         },
         FindFunctions => sub {
-			%args = ( title => 'Find Functions', current => "FindFunctions", yui_js => genomeHeaderJson() );
+			%tmpl_args = ( title => 'Find Functions', current => "FindFunctions", yui_js => 'genomeHeaderJson' );
             if ( $page eq 'findFunctions' ) {
-				$args{help} = 'FunctionSearch.pdf';
+				$tmpl_args{help} = 'FunctionSearch.pdf';
             }
             elsif ( $page eq 'ffoAllSeed' ) {
-				$args{help} = 'SEED.pdf';
+				$tmpl_args{help} = 'SEED.pdf';
             }
             elsif ( $page eq 'ffoAllTc' ) {
-                $args{help} = 'TransporterClassification.pdf';
+                $tmpl_args{help} = 'TransporterClassification.pdf';
             }
         },
         FindFunctionMERFS => sub {
-            %args = ( title => "Find Functions", current => "FindFunctions" );
+            %tmpl_args = ( title => "Find Functions", current => "FindFunctions" );
         },
         FindGenes => sub {
-			%args = ( title => 'Find Genes', current => "FindGenes", yui_js => genomeHeaderJson() );
+			%tmpl_args = ( title => 'Find Genes', current => "FindGenes", yui_js => 'genomeHeaderJson' );
             if (   $page eq 'findGenes'
                 || $page eq 'geneSearch'
-                || ( $page ne 'geneSearchForm' && ! paramMatch("fgFindGenes") ) ) {
-                $args{help} = 'GeneSearch.pdf';
+                || ( $page ne 'geneSearchForm' && ! $self->paramMatch("fgFindGenes") ) ) {
+                $tmpl_args{help} = 'GeneSearch.pdf';
             }
         },
         FindGenesLucy => sub {
-            %args = ( title => "Find Genes by Keyword", current => "FindGenesLucy", help => 'GeneSearch.pdf' );
+            %tmpl_args = ( title => "Find Genes by Keyword", current => "FindGenesLucy", help => 'GeneSearch.pdf' );
         },
         FindGenesBlast => sub {
-            %args = ( title => "Find Genes - BLAST", current => "FindGenes", yui_js => genomeHeaderJson(), help => 'Blast.pdf' );
+            %tmpl_args = ( title => "Find Genes - BLAST", current => "FindGenes", yui_js => 'genomeHeaderJson', help => 'Blast.pdf' );
         },
         FindGenomes => sub {
-            %args = ( current => 'FindGenomes', title => 'Find Genomes' );
+            %tmpl_args = ( current => 'FindGenomes', title => 'Find Genomes' );
             if ( $page eq 'findGenomes' ) {
-            	$args{help} = 'GenomeBrowser.pdf';
+            	$tmpl_args{help} = 'GenomeBrowser.pdf';
             }
             elsif ( $page eq 'genomeSearch' ) {
-				$args{help} = 'GenomeSearch.pdf';
+				$tmpl_args{help} = 'GenomeSearch.pdf';
             }
         },
         FunctionAlignment => sub {
-            %args = ( title => "Function Alignment", current => "FindFunctions", help => 'FunctionAlignment.pdf' );
+            %tmpl_args = ( title => "Function Alignment", current => "FindFunctions", help => 'FunctionAlignment.pdf' );
         },
         FuncCartStor => sub {
-            %args = ( current => 'AnaCart', help => 'FunctionCart.pdf', title => 'Function Cart' );
-            $args{title} = "Assertion Profile" if paramMatch("AssertionProfile");
+            %tmpl_args = ( current => 'AnaCart', help => 'FunctionCart.pdf', title => 'Function Cart' );
+            $tmpl_args{title} = "Assertion Profile" if $self->paramMatch("AssertionProfile");
 
-            if ( $page eq 'funcCart' && $env->{enable_genomelistJson} ) {
+            if ( $page eq 'funcCart' && $self->env->{enable_genomelistJson} ) {
             ## Eh?!?!
-            	$args{help} = GenomeListJSON();
+            	$tmpl_args{help} = GenomeListJSON();
             }
-            $session->param( "lastCart", "funcCart" );
+            $self->session->param( "lastCart", "funcCart" );
         },
         FuncProfile => sub {
-            %args = ( title => "Function Profile", current => "AnaCart" );
+            %tmpl_args = ( title => "Function Profile", current => "AnaCart" );
         },
         FunctionProfiler => sub {
-            %args = ( title => 'Function Profile', current => "CompareGenomes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => 'Function Profile', current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
         },
         DotPlot => sub {
-            %args = ( title => 'Dotplot', current => "CompareGenomes", no_menu => "Synteny Viewers", yui_js => genomeHeaderJson(), help => 'Dotplot.pdf' );
-            $args{timeout_mins} = 40;    # timeout in 40 minutes
+            %tmpl_args = ( title => 'Dotplot', current => "CompareGenomes", no_menu => "Synteny Viewers", yui_js => 'genomeHeaderJson', help => 'Dotplot.pdf' );
+            $tmpl_args{timeout_mins} = 40;    # timeout in 40 minutes
         },
         DistanceTree => sub {
-            %args = ( title => 'Distance Tree', current => "CompareGenomes", yui_js => genomeHeaderJson(), help => 'DistanceTree.pdf' );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => 'Distance Tree', current => "CompareGenomes", yui_js => 'genomeHeaderJson', help => 'DistanceTree.pdf' );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         RadialPhyloTree => sub {
-            %args = ( title => "Radial Phylogenetic Tree", current => "CompareGenomes", yui_js => genomeHeaderJson() );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => "Radial Phylogenetic Tree", current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         Kmer => sub {
-            %args = ( title => "Kmer Frequency Analysis", current => "FindGenomes" ) if ! paramMatch("export");
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "Kmer Frequency Analysis", current => "FindGenomes" ) if ! $self->paramMatch("export");
+            $tmpl_args{timeout_mins} = 20;
         },
         GenBankFile => sub {
-            %args = ( title => "GenBank File Export", current => "FindGenomes" );
+            %tmpl_args = ( title => "GenBank File Export", current => "FindGenomes" );
         },
         GeneAnnotPager => sub {
-            %args = ( title => "Comparative Annotations", current => "FindGenomes" );
+            %tmpl_args = ( title => "Comparative Annotations", current => "FindGenomes" );
         },
         GeneInfoPager => sub {
-            %args = ( title => "Download Gene Information", current => "FindGenomes" );
-            $args{timeout_mins} = 60;
+            %tmpl_args = ( title => "Download Gene Information", current => "FindGenomes" );
+            $tmpl_args{timeout_mins} = 60;
         },
         GeneCartChrViewer => sub {
-            %args = ( title => "Circular Chromosome Viewer", current => "AnaCart" );
-            $session->param( "lastCart", "geneCart" );
+            %tmpl_args = ( title => "Circular Chromosome Viewer", current => "AnaCart" );
+            $self->session->param( "lastCart", "geneCart" );
         },
         GeneCartDataEntry => sub {
-            %args = ( title => "Gene Cart Data Entry", current => "AnaCart" );
-            $session->param( "lastCart", "geneCart" );
-        },
-        GenomeListJSON => sub {
-            %args = ( current => "AnaCart", yui_js => genomeHeaderJson() );
-#            GenomeListJSON::test();
-			$module = 'GenomeListJSON';
-			$sub = sub {
-				$module::test();
-			};
+            %tmpl_args = ( title => "Gene Cart Data Entry", current => "AnaCart" );
+            $self->session->param( "lastCart", "geneCart" );
         },
         GeneCartStor => sub  {
-            %args = ( current =>  'AnaCart', title => 'Gene Cart' );
-            my $last_cart = ( paramMatch('addFunctionCart') )
+            %tmpl_args = ( current =>  'AnaCart', title => 'Gene Cart' );
+            my $last_cart = ( $self->paramMatch('addFunctionCart') )
             ? 'funcCart'
             : 'geneCart';
-            $session->param( "lastCart", $last_cart );
+            $self->session->param( "lastCart", $last_cart );
 
             if ( $page eq 'geneCart' ) {
-				$args{help} = 'GeneCart.pdf';
-                $args{yui_js} = genomeHeaderJson() if $env->{enable_genomelistJson};
+				$tmpl_args{help} = 'GeneCart.pdf';
+                $tmpl_args{yui_js} = 'genomeHeaderJson' if $self->env->{enable_genomelistJson};
 			}
         },
         MyGeneDetail => sub {
-            %args = ( title => "My Gene Detail", current => "FindGenes" );
+            %tmpl_args = ( title => "My Gene Detail", current => "FindGenes" );
         },
         Help => sub {
-            %args = ( title => "Help", current => "about" );
+            %tmpl_args = ( title => "Help", current => "about" );
         },
         GeneDetail => sub {
-            %args = ( title => "Gene Details", current => "FindGenes" );
+            %tmpl_args = ( title => "Gene Details", current => "FindGenes" );
         },
         MetaGeneDetail => sub {
-            %args = ( title => "Metagenome Gene Details", current => "FindGenes" );
+            %tmpl_args = ( title => "Metagenome Gene Details", current => "FindGenes" );
         },
         MetaGeneTable => sub {
-            %args = ( title => "Gene List", current => "FindGenes" );
+            %tmpl_args = ( title => "Gene List", current => "FindGenes" );
         },
         GeneNeighborhood => sub {
-            %args = ( title => "Gene Neighborhood", current => "FindGenes" );
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "Gene Neighborhood", current => "FindGenes" );
+            $tmpl_args{timeout_mins} = 20;
         },
         FindClosure => sub {
-            %args = ( title => "Functional Closure", current => "AnaCart" );
+            %tmpl_args = ( title => "Functional Closure", current => "AnaCart" );
         },
         GeneCassette => sub {
-            %args = ( title => "IMG Cassette", current => "CompareGenomes" );
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "IMG Cassette", current => "CompareGenomes" );
+            $tmpl_args{timeout_mins} = 20;
         },
         MetagPhyloDist => sub {
-            %args = ( title => "Phylogenetic Distribution", current => "CompareGenomes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => "Phylogenetic Distribution", current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
         },
         Cart => sub {
-            %args = ( title => "My Cart", current => "AnaCart" );
+            %tmpl_args = ( title => "My Cart", current => "AnaCart" );
         },
         GeneCassetteSearch => sub {
-            %args = ( title => "IMG Cassette Search", current => "FindGenes", yui_js => genomeHeaderJson() );
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "IMG Cassette Search", current => "FindGenes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{timeout_mins} = 20;
         },
         TreeFile => sub {
-            %args = ( title => "IMG Tree", current => "FindGenomes" );
+            %tmpl_args = ( title => "IMG Tree", current => "FindGenomes" );
         },
         HorizontalTransfer => sub {
-            %args = ( title => "Horizontal Transfer", current => "FindGenomes" );
+            %tmpl_args = ( title => "Horizontal Transfer", current => "FindGenomes" );
         },
         ImgTermStats => sub {
-            %args = ( title => "IMG Term", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Term", current => "FindFunctions" );
         },
         KoTermStats => sub {
-            %args = ( title => "KO Stats", current => "FindFunctions" );
+            %tmpl_args = ( title => "KO Stats", current => "FindFunctions" );
         },
         HmpTaxonList => sub {
-            %args = ( title => 'HMP Genome List', current => "FindGenomes" );
-            if ( paramMatch("_excel") ) {
+            %tmpl_args = ( title => 'HMP Genome List', current => "FindGenomes" );
+            if ( $self->paramMatch("_excel") ) {
                 $tmpl = 'excel';
-                %args = ( filename => "genome_export$$.xls" );
+                %tmpl_args = ( filename => "genome_export$$.xls" );
             }
         },
         EggNog => sub {
-            %args = ( title => "EggNOG", current => "FindFunctions" );
+            %tmpl_args = ( title => "EggNOG", current => "FindFunctions" );
         },
         Interpro => sub {
-            %args = ( title => "Interpro", current => "FindFunctions" );
+            %tmpl_args = ( title => "Interpro", current => "FindFunctions" );
         },
         MetaCyc => sub {
-            %args = ( title => "MetaCyc", current => "FindFunctions" );
+            %tmpl_args = ( title => "MetaCyc", current => "FindFunctions" );
         },
         Fastbit => sub {
-            %args = ( title => "Fastbit Test", current => "FindFunctions", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => "Fastbit Test", current => "FindFunctions", yui_js => 'genomeHeaderJson' );
         },
         AnalysisProject => sub {
-            %args = ( title => "Analysis Project", current => "FindGenomes" );
+            %tmpl_args = ( title => "Analysis Project", current => "FindGenomes" );
         },
         GeneCassetteProfiler => sub {
-            %args = ( title => "Phylogenetic Profiler", current => "FindGenes", yui_js => genomeHeaderJson() );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => "Phylogenetic Profiler", current => "FindGenes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         ImgStatsOverview => sub {
-            %args = ( title => "IMG Stats Overview", current => "ImgStatsOverview" );
-            if ( $cgi->param('excel') && $cgi->param('excel') eq 'yes' ) {
+            %tmpl_args = ( title => "IMG Stats Overview", current => "ImgStatsOverview" );
+            if ( $self->cgi->param('excel') && $self->cgi->param('excel') eq 'yes' ) {
             	$tmpl = 'excel';
-            	%args = ( filename => "stats_export$$.xls" );
+            	%tmpl_args = ( filename => "stats_export$$.xls" );
             }
         },
         TaxonEdit => sub {
-            %args = ( title => "Taxon Edit", current => "Taxon Edit" );
+            %tmpl_args = ( title => "Taxon Edit", current => "Taxon Edit" );
         },
         GenePageEnvBlast => sub {
-            %args = ( title => "SNP BLAST",);
+            %tmpl_args = ( title => "SNP BLAST",);
         },
         GeneProfilerStor => sub {
-            %args = ( title => "Gene Profiler", current => "AnaCart" );
-            $session->param( "lastCart", "geneCart" );
+            %tmpl_args = ( title => "Gene Profiler", current => "AnaCart" );
+            $self->session->param( "lastCart", "geneCart" );
         },
         GenomeProperty => sub {
-            %args = ( title => "Genome Property" );
-        },
-        GreenGenesBlast => sub {
-            %args = ( title => 'Green Genes BLAST' );
-            print header( -header => "text/html" );
+            %tmpl_args = ( title => "Genome Property" );
         },
         HomologToolkit => sub {
-            %args = ( title => "Homolog Toolkit", current => "FindGenes" );
+            %tmpl_args = ( title => "Homolog Toolkit", current => "FindGenes" );
         },
         ImgCompound => sub {
-            %args = ( title => "IMG Compound", current => "FindFunctions", yui_js => meshTreeHeader() );
+            %tmpl_args = ( title => "IMG Compound", current => "FindFunctions", yui_js => 'meshTreeHeader' );
         },
         ImgCpdCartStor => sub {
-            %args = ( title => "IMG Compound Cart", current => "AnaCart" );
-            $session->param( "lastCart", "imgCpdCart" );
+            %tmpl_args = ( title => "IMG Compound Cart", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgCpdCart" );
         },
         ImgTermAndPathTab => sub {
-            %args = ( title => "IMG Terms & Pathways", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Terms & Pathways", current => "FindFunctions" );
         },
         ImgNetworkBrowser => sub {
-            %args = ( title => "IMG Network Browser", current => "FindFunctions", js => '', redirect_url => 'imgterms.html' );
+            %tmpl_args = ( title => "IMG Network Browser", current => "FindFunctions", js => '', redirect_url => 'imgterms.html' );
         },
         ImgPwayBrowser => sub {
-            %args = ( title => "IMG Pathway Browser", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Pathway Browser", current => "FindFunctions" );
         },
         ImgPartsListBrowser => sub {
-            %args = ( title => "IMG Parts List Browser", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Parts List Browser", current => "FindFunctions" );
         },
         ImgPartsListCartStor => sub {
-            %args = ( title => "IMG Parts List Cart", current => "AnaCart" );
-            $session->param( "lastCart", "imgPartsListCart" );
+            %tmpl_args = ( title => "IMG Parts List Cart", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgPartsListCart" );
         },
         ImgPartsListDataEntry => sub {
-            %args = ( title => "IMG Parts List Data Entry", current => "AnaCart" );
-            $session->param( "lastCart", "imgPartsListCart" );
+            %tmpl_args = ( title => "IMG Parts List Data Entry", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgPartsListCart" );
         },
         ImgPwayCartDataEntry => sub {
-            %args = ( title => "IMG Pathway Cart Data Entry", current => "AnaCart" );
-            $session->param( "lastCart", "imgPwayCart" );
+            %tmpl_args = ( title => "IMG Pathway Cart Data Entry", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgPwayCart" );
         },
         ImgPwayCartStor => sub {
-            %args = ( title => "IMG Pathway Cart", current => "AnaCart" );
-            $session->param( "lastCart", "imgPwayCart" );
+            %tmpl_args = ( title => "IMG Pathway Cart", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgPwayCart" );
         },
         ImgReaction => sub {
-            %args = ( title => "IMG Reaction", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Reaction", current => "FindFunctions" );
         },
         ImgRxnCartStor => sub {
-            %args = ( title => "IMG Reaction Cart", current => "AnaCart" );
-            $session->param( "lastCart", "imgRxnCart" );
+            %tmpl_args = ( title => "IMG Reaction Cart", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgRxnCart" );
         },
         ImgTermBrowser => sub {
-            %args = ( title => "IMG Term Browser", current => "FindFunctions" );
+            %tmpl_args = ( title => "IMG Term Browser", current => "FindFunctions" );
         },
         ImgTermCartDataEntry => sub {
-            %args = ( title => "IMG Term Cart Data Entry", current => "AnaCart" );
-            $session->param( "lastCart", "imgTermCart" );
+            %tmpl_args = ( title => "IMG Term Cart Data Entry", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgTermCart" );
         },
         ImgTermCartStor => sub {
-            %args = ( title => "IMG Term Cart", current => "AnaCart" );
-            $session->param( "lastCart", "imgTermCart" );
+            %tmpl_args = ( title => "IMG Term Cart", current => "AnaCart" );
+            $self->session->param( "lastCart", "imgTermCart" );
         },
         KeggMap => sub {
-            %args = ( title => "KEGG Map", current => "FindFunctions" );
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "KEGG Map", current => "FindFunctions" );
+            $tmpl_args{timeout_mins} = 20;
         },
         KeggPathwayDetail => sub {
-            %args = ( title => "KEGG Pathway Detail", current => "FindFunctions", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => "KEGG Pathway Detail", current => "FindFunctions", yui_js => 'genomeHeaderJson' );
         },
         PathwayMaps => sub {
-            %args = ( title => "Pathway Maps", current => "PathwayMaps" );
-            $args{timeout_mins} = 20;
+            %tmpl_args = ( title => "Pathway Maps", current => "PathwayMaps" );
+            $tmpl_args{timeout_mins} = 20;
         },
         Metagenome => sub {
-            %args = ( title => "Metagenome", current => "FindGenomes" );
+            %tmpl_args = ( title => "Metagenome", current => "FindGenomes" );
         },
         AllPwayBrowser => sub {
-            %args = ( title => "All Pathways", current => "FindFunctions" );
+            %tmpl_args = ( title => "All Pathways", current => "FindFunctions" );
         },
         MpwPwayBrowser => sub {
-            %args = ( title => "Mpw Pathway Browser", current => "FindFunctions" );
+            %tmpl_args = ( title => "Mpw Pathway Browser", current => "FindFunctions" );
         },
         GenomeHits => sub {
-            %args = ( title => "Genome Hits", current => "CompareGenomes", yui_js => genomeHeaderJson() );
-            $args{timeout_mins} = 20;    # timeout in 20 minutes
+            %tmpl_args = ( title => "Genome Hits", current => "CompareGenomes", yui_js => 'genomeHeaderJson' );
+            $tmpl_args{timeout_mins} = 20;    # timeout in 20 minutes
         },
         ScaffoldHits => sub {
-            %args = ( title => 'Scaffold Hits', current => "AnaCart" );
+            %tmpl_args = ( title => 'Scaffold Hits', current => "AnaCart" );
         },
         ScaffoldCart => sub {
-            %args = ( title => 'Scaffold Cart', current => "AnaCart" );
-            if (   paramMatch("exportScaffoldCart")
-                || paramMatch("exportFasta") ) {
+            %tmpl_args = ( title => 'Scaffold Cart', current => "AnaCart" );
+            if (   $self->paramMatch("exportScaffoldCart")
+                || $self->paramMatch("exportFasta") ) {
             	# export excel
-                $session->param( "lastCart", "scaffoldCart" );
+                $self->session->param( "lastCart", "scaffoldCart" );
             }
-            elsif ( ! paramMatch("addSelectedToGeneCart") ) {
-                $session->param( "lastCart", "scaffoldCart" );
+            elsif ( ! $self->paramMatch("addSelectedToGeneCart") ) {
+                $self->session->param( "lastCart", "scaffoldCart" );
             }
         },
         GenomeCart => sub {
-            %args = ( title => 'Genome Cart', current => "AnaCart" );
-            $session->param( "lastCart", "genomeCart" );
+            %tmpl_args = ( title => 'Genome Cart', current => "AnaCart" );
+            $self->session->param( "lastCart", "genomeCart" );
         },
         MetagenomeHits => sub {
-            %args = ( title => 'Genome Hits', current => "FindGenomes" );
+            %tmpl_args = ( title => 'Genome Hits', current => "FindGenomes" );
         },
         MetaFileHits => sub {
-            %args = ( title => 'Metagenome Hits', current => "FindGenomes" );
+            %tmpl_args = ( title => 'Metagenome Hits', current => "FindGenomes" );
         },
         MetagenomeGraph => sub {
-            %args = ( title => 'Genome Graph', current => "FindGenomes" );
-            $args{timeout_mins} = 40;
+            %tmpl_args = ( title => 'Genome Graph', current => "FindGenomes" );
+            $tmpl_args{timeout_mins} = 40;
         },
         MetaFileGraph => sub {
-            %args = ( title => 'Metagenome Graph', current => "FindGenomes" );
+            %tmpl_args = ( title => 'Metagenome Graph', current => "FindGenomes" );
         },
         MissingGenes => sub {
-            %args = ( title => "MissingGenes", current => "AnaCart" );
+            %tmpl_args = ( title => "MissingGenes", current => "AnaCart" );
         },
         MyFuncCat => sub {
-            %args = ( title => "My Functional Categories", current => "AnaCart" );
+            %tmpl_args = ( title => "My Functional Categories", current => "AnaCart" );
         },
         MyIMG => sub {
-            %args = ( title => 'My IMG', current => "MyIMG", help => 'MyIMG4.pdf' );
+            %tmpl_args = ( title => 'My IMG', current => "MyIMG", help => 'MyIMG4.pdf' );
             if ( $page eq 'taxonUploadForm' ) {
-            	delete $args{help};
-            	$args{current} = 'AnaCart';
+            	delete $tmpl_args{help};
+            	$tmpl_args{current} = 'AnaCart';
             }
         },
         ImgGroup => sub {
-            %args = ( title => "MyIMG", current => "MyIMG" );
+            %tmpl_args = ( title => "MyIMG", current => "MyIMG" );
         },
         MyBins => sub {
-            %args = ( title => "My Bins", current => "MyIMG" );
+            %tmpl_args = ( title => "My Bins", current => "MyIMG" );
         },
         About => sub {
-            %args = ( title => "About", current => "about" );
+            %tmpl_args = ( title => "About", current => "about" );
         },
         NcbiBlast => sub {
-            %args = ( title => "NCBI BLAST", current => "FindGenes" );
+            %tmpl_args = ( title => "NCBI BLAST", current => "FindGenes" );
         },
         NrHits => sub {
-            %args = ( title => "Gene Details" );
+            %tmpl_args = ( title => "Gene Details" );
         },
         Operon => sub {
-            %args = ( title => "Operons", current => "FindGenes" );
+            %tmpl_args = ( title => "Operons", current => "FindGenes" );
         },
         OtfBlast => sub {
-            %args = ( title => 'Gene Details', current => "FindGenes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => 'Gene Details', current => "FindGenes", yui_js => 'genomeHeaderJson' );
         },
         PepStats => sub {
-            %args = ( title => "Peptide Stats", current => "FindGenes" );
+            %tmpl_args = ( title => "Peptide Stats", current => "FindGenes" );
         },
         PfamCategoryDetail => sub {
-            %args = ( title => "Pfam Category", current => "FindFunctions" );
+            %tmpl_args = ( title => "Pfam Category", current => "FindFunctions" );
         },
         PhyloCogs => sub {
-            %args = ( title => 'Phylogenetic Marker COGs', current => "CompareGenomes" );
+            %tmpl_args = ( title => 'Phylogenetic Marker COGs', current => "CompareGenomes" );
         },
         PhyloDist => sub {
-            %args = ( title => "Phylogenetic Distribution", current => "FindGenes" );
+            %tmpl_args = ( title => "Phylogenetic Distribution", current => "FindGenes" );
         },
         PhyloOccur => sub {
-            %args = ( title => "Phylogenetic Occurrence Profile", current => "AnaCart" );
+            %tmpl_args = ( title => "Phylogenetic Occurrence Profile", current => "AnaCart" );
         },
         PhyloProfile => sub {
-            %args = ( title => "Phylogenetic Profile", current => "AnaCart" );
+            %tmpl_args = ( title => "Phylogenetic Profile", current => "AnaCart" );
         },
         PhyloSim => sub {
-            %args = ( title => "Phylogenetic Similarity Search", current => "FindGenes" );
+            %tmpl_args = ( title => "Phylogenetic Similarity Search", current => "FindGenes" );
         },
         PhyloClusterProfiler => sub {
-            %args = ( title => 'Phylogenetic Profiler using Clusters', current => "FindGenes" );
+            %tmpl_args = ( title => 'Phylogenetic Profiler using Clusters', current => "FindGenes" );
         },
         PhylogenProfiler => sub {
-            %args = ( title => 'Phylogenetic Profiler', current => "FindGenes", yui_js => genomeHeaderJson() );
+            %tmpl_args = ( title => 'Phylogenetic Profiler', current => "FindGenes", yui_js => 'genomeHeaderJson' );
         },
         ProteinCluster => sub {
-            %args = ( title => "Protein Cluster", current => "FindGenes" );
+            %tmpl_args = ( title => "Protein Cluster", current => "FindGenes" );
         },
         ProfileQuery => sub {
-            %args = ( title => "Profile Query", current => "FindFunctions" );
-        },
-        PdbBlast => sub {
-            %args = ( title => 'Protein Data Bank BLAST' );
-            print header( -header => "text/html" );
+            %tmpl_args = ( title => "Profile Query", current => "FindFunctions" );
         },
         Registration => sub {
-            %args = ( title => "Registration", current => "MyIMG" );
+            %tmpl_args = ( title => "Registration", current => "MyIMG" );
         },
         SixPack => sub {
-            %args = ( title => "Six Frame Translation", current => "FindGenes" );
+            %tmpl_args = ( title => "Six Frame Translation", current => "FindGenes" );
         },
         Sequence => sub {
-            %args = ( title => "Six Frame Translation", current => "FindGenes" );
+            %tmpl_args = ( title => "Six Frame Translation", current => "FindGenes" );
         },
         ScaffoldGraph => sub {
-            %args = ( title => "Chromosome Viewer", current => "FindGenomes" );
+            %tmpl_args = ( title => "Chromosome Viewer", current => "FindGenomes" );
         },
         MetaScaffoldGraph => sub {
-            %args = ( title => "Chromosome Viewer", current => "FindGenomes" );
+            %tmpl_args = ( title => "Chromosome Viewer", current => "FindGenomes" );
         },
         TaxonCircMaps => sub {
-            %args = ( title => "Circular Map", current => "FindGenomes" );
+            %tmpl_args = ( title => "Circular Map", current => "FindGenomes" );
         },
         GenerateArtemisFile => sub {
-            %args = ( current => "FindGenomes" );
+            %tmpl_args = ( current => "FindGenomes" );
         },
         GenomeList => sub {
-            %args = ( title => "Genome List", current => "FindGenomes" );
+            %tmpl_args = ( title => "Genome List", current => "FindGenomes" );
         },
         TaxonDetail => sub {
-			%args = ( title => 'Taxon Details', current => "FindGenomes" );
-            $args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
+			%tmpl_args = ( title => 'Taxon Details', current => "FindGenomes" );
+            $tmpl_args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
         },
         TaxonDeleted => sub {
-            %args = ( title => "Taxon Deleted", current => "FindGenomes" );
+            %tmpl_args = ( title => "Taxon Deleted", current => "FindGenomes" );
         },
         MetaDetail => sub {
-			%args = ( title => 'Microbiome Details', current => "FindGenomes" );
-            $args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
+			%tmpl_args = ( title => 'Microbiome Details', current => "FindGenomes" );
+            $tmpl_args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
         },
         TaxonList => sub {
-			%args = ( title => 'Taxon Browser', current => 'FindGenomes' );
-			$args{title} = 'Category Browser' if $page eq 'categoryBrowser';
-            if ( paramMatch("_excel") ) {
+			%tmpl_args = ( title => 'Taxon Browser', current => 'FindGenomes' );
+			$tmpl_args{title} = 'Category Browser' if $page eq 'categoryBrowser';
+            if ( $self->paramMatch("_excel") ) {
             	$tmpl = 'excel';
-            	%args = ( filename => "genome_export$$.xls" );
+            	%tmpl_args = ( filename => "genome_export$$.xls" );
 #                printExcelHeader("genome_export$$.xls");
             }
             elsif (   $page eq 'taxonListAlpha'
                     || $page eq 'gebaList'
                     || $page eq 'selected' ) {
-				$args{help} = 'GenomeBrowser.pdf';
+				$tmpl_args{help} = 'GenomeBrowser.pdf';
             }
         },
         TaxonSearch => sub {
-            %args = ( title => "Taxon Search", current => "FindGenomes" );
+            %tmpl_args = ( title => "Taxon Search", current => "FindGenomes" );
         },
         TigrBrowser => sub {
-            %args = ( title => "TIGRfam Browser", current => "FindFunctions" );
+            %tmpl_args = ( title => "TIGRfam Browser", current => "FindFunctions" );
         },
         TreeQ => sub {
-            %args = ( title => "Dynamic Tree View" );
+            %tmpl_args = ( title => "Dynamic Tree View" );
         },
         Vista => sub {
-            %args = ( title => 'VISTA', current => "CompareGenomes" );
-			$args{title} = 'Synteny Viewers' if $page eq 'toppage';
+            %tmpl_args = ( title => 'VISTA', current => "CompareGenomes" );
+			$tmpl_args{title} = 'Synteny Viewers' if $page eq 'toppage';
         },
         IMGContent => sub {
-            %args = ( title => "IMG Content", current => "IMGContent" );
+            %tmpl_args = ( title => "IMG Content", current => "IMGContent" );
         },
         IMGProteins => sub {
-            %args = ( title => "Proteomics", current => "Proteomics", help => "Proteomics.pdf" );
+            %tmpl_args = ( title => "Proteomics", current => "Proteomics", help => "Proteomics.pdf" );
         },
         Methylomics => sub {
-            %args = ( title => "Methylomics Experiments", current => "Methylomics", help => "Methylomics.pdf" );
+            %tmpl_args = ( title => "Methylomics Experiments", current => "Methylomics", help => "Methylomics.pdf" );
         },
         RNAStudies => sub {
-            %args = ( title => "RNASeq Expression Studies", current => "RNAStudies", help => "RNAStudies.pdf" );
-            $args{timeout_mins} = 20;
-            if ( paramMatch("samplePathways") ) {
-                $args{title} = "RNASeq Studies: Pathways";
+            %tmpl_args = ( title => "RNASeq Expression Studies", current => "RNAStudies", help => "RNAStudies.pdf" );
+            $tmpl_args{timeout_mins} = 20;
+            if ( $self->paramMatch("samplePathways") ) {
+                $tmpl_args{title} = "RNASeq Studies: Pathways";
             }
-            elsif ( paramMatch("describeSamples") ) {
-                $args{title} = "RNASeq Studies: Describe";
+            elsif ( $self->paramMatch("describeSamples") ) {
+                $tmpl_args{title} = "RNASeq Studies: Describe";
             }
         },
         Questions => sub {
-            %args = ( title => "Questions and Comments", current => "about" );
+            %tmpl_args = ( title => "Questions and Comments", current => "about" );
+		},
+		Workspace => sub {
+			%tmpl_args = ( title => 'Workspace', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => 'workspaceStyles' );
+		},
+		WorkspaceFuncSet => sub {
+			%tmpl_args = ( title => 'Workspace Function Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => 'workspaceStyles' );
+		},
+		WorkspaceGeneSet => sub {
+			%tmpl_args = ( title => 'Workspace Gene Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => 'workspaceStyles' );
+		},
+		WorkspaceGenomeSet => sub {
+			%tmpl_args = ( title => 'Workspace Genome Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => 'workspaceStyles' );
+		},
+		WorkspaceJob => sub {
+			%tmpl_args = ( title => 'Workspace Jobs', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf' );
+		},
+		WorkspaceRuleSet => sub {
+			%tmpl_args = ( title => 'Workspace Rule Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf' );
+		},
+		WorkspaceScafSet => sub {
+			%tmpl_args = ( title => 'Workspace Scaffold Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => 'workspaceStyles' );
 		},
         np => sub {
             $module = 'NaturalProd';
-            %args = ( title => "Biosynthetic Clusters and Secondary Metabolites", current => "getsme", help => 'GetSMe_intro.pdf' );
-            $sub = sub {
-            	$module::printLandingPage();
-            };
+            %tmpl_args = ( title => "Biosynthetic Clusters and Secondary Metabolites", current => "getsme", help => 'GetSMe_intro.pdf' );
+            $sub = 'printLandingPage';
         },
-		Workspace => sub {
-			%args = ( title => 'Workspace', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => Workspace::getStyles() );
-		},
-		WorkspaceFuncSet => sub {
-			%args = ( title => 'Workspace Function Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => Workspace::getStyles() );
-		},
-		WorkspaceGeneSet => sub {
-			%args = ( title => 'Workspace Gene Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => Workspace::getStyles() );
-		},
-		WorkspaceGenomeSet => sub {
-			%args = ( title => 'Workspace Genome Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => Workspace::getStyles() );
-		},
-		WorkspaceJob => sub {
-			%args = ( title => 'Workspace Jobs', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf' );
-		},
-		WorkspaceRuleSet => sub {
-			%args = ( title => 'Workspace Rule Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf' );
-		},
-		WorkspaceScafSet => sub {
-			%args = ( title => 'Workspace Scaffold Sets', current => "MyIMG", help => 'IMGWorkspaceUserGuide.pdf', yui_js => Workspace::getStyles() );
-		},
+        GenomeListJSON => sub {
+            %tmpl_args = ( current => "AnaCart", yui_js => 'genomeHeaderJson' );
+#            GenomeListJSON::test();
+			$module = 'GenomeListJSON';
+			$sub = 'test';
+        },
 	};
 
 	# extras that use existing data:
-	$section_table->{ CompareGenomesTab } = {
+	$section_table->{ CompareGenomesTab } = sub {
 		$module = 'CompareGenomes';
 		$section_table->{ $module }->();
 	};
-	$section_table->{ FuncCartStorTab } = {
+	$section_table->{ FuncCartStorTab } = sub {
 		$module = 'FuncCartStor';
 		$section_table->{ $module }->();
 	};
-	$section_table->{ GeneCartStorTab } = {
+	$section_table->{ GeneCartStorTab } = sub {
 		$module = 'GeneCartStor';
 		$section_table->{ $module }->();
+	};
+
+	# extras that print headers:
+	$section_table->{ EbiIprScan } = sub {
+		%tmpl_args = ( title => 'EBI InterPro Scan' );
+		print header( -header => "text/html" );
+	};
+	$section_table->{ GreenGenesBlast } = sub {
+		%tmpl_args = ( title => 'Green Genes BLAST' );
+		print header( -header => "text/html" );
+	};
+	$section_table->{ PdbBlast } = sub {
+		%tmpl_args = ( title => 'Protein Data Bank BLAST' );
+		print header( -header => "text/html" );
 	};
 
 
@@ -744,7 +787,7 @@ sub dispatch_page {
 					WorkspaceRuleSet::dispatch();
 				}
 				elsif ( $1 eq "Job" ) {
-					delete $args{yui_js};
+					delete $tmpl_args{yui_js};
 #					require WorkspaceJob;
 					$module = 'WorkspaceJob';
 									my $header = param("header");
@@ -758,7 +801,7 @@ sub dispatch_page {
 					WorkspaceJob::dispatch();
 				}
 				elsif ( $1 eq 'FuncSet' || $1 eq 'GeneSet' || $1 eq 'GenomeSet' || $1 eq 'ScafSet' ) {
-					$args{yui_js} = Workspace::getStyles();
+					$tmpl_args{yui_js} = Workspace::getStyles();
 				}
 			}
 #			elsif ( $section eq 'Workspace' ) {
@@ -840,6 +883,7 @@ sub dispatch_page {
 
 	my $page_table = {
 
+		# no incidences
 		questions => sub {
 			$module = 'Questions';
 			$section_table->{ $module }->();
@@ -860,34 +904,35 @@ sub dispatch_page {
 			$section_table->{ $module }->();
 		},
 
+		# not found
         znormNote => sub {
 			$module = 'WebUtil';
-            %args = ( title => "Z-normalization", current => "FindGenes" );
-            $sub = sub {
-            	$module::printZnormNote();
-            };
+            %tmpl_args = ( title => "Z-normalization", current => "FindGenes" );
+            $sub = 'printZnormNote';
         },
+
+        # not found
         Imas => sub {
             $module = 'Imas';
-            %args = ( title => 'Imas', gwt_module => "Imas" );
-            $sub = sub {
-            	$module::printForm();
-			};
+            %tmpl_args = ( title => 'Imas', gwt_module => "Imas" );
+            $sub = 'printForm';
         },
 
         # non-standard
         message => sub {
-            %args = ( title => 'Message', current => $cgi->param("menuSelection") );
+            %tmpl_args = ( title => 'Message', current => $self->cgi->param("menuSelection") );
 			$module = 'IMG::Views::ViewMaker';
-			$sub = {
-				$module::print_message( $cgi->param('message') );
-			};
+			$sub = 'print_message';
+#			$sub = sub {
+#				$module->print_message( undef, $self->cgi->param('message') );
+#			};
         },
 	};
 
 
+
 	if ( $section && $section_table->{$section} ) {
-		$module = is_valid_module( $section ) if ! $module;
+		$module = $self->is_valid_module( $section ) if ! $module;
 		croak "$section does not seem to be a valid module!" if ! $module;
 		$section_table->{$section}->();
 	}
@@ -896,64 +941,117 @@ sub dispatch_page {
 		$page_table->{$page}->();
 	}
 	else {
-		say "No match found! Crap!";
+
+		croak "No match found for cgi input: " . Dumper $self->cgi_params;
+
 	}
 
-#	$args{numTaxons} = get_n_taxa();
+	warn "Returning from prepare with args sub: $sub, module: $module, tmpl: $tmpl";
 
-	my ($ok, $err) = try_load_module( $module );
-	$ok or croak "Unable to load class $module: $err";
+	return {
+		sub       => $sub,
+		module    => $module,
+		tmpl_args => \%tmpl_args,
+		tmpl      => $tmpl
+	};
+
+}
+
+sub run {
+
+	my $self = shift;
+	my $arg_h;
+	%$arg_h = @_;
+
+
+#	warn "entering run; args: " . Dumper $arg_h;
+
+	# make sure that we know how many taxa we have
+	croak unless defined $arg_h->{n_taxa};
+
+#	$tmpl_args{numTaxons} = get_n_taxa();
+
+	my ($ok, $err) = try_load_class( $arg_h->{module} );
+	$ok or croak "Unable to load class " . $arg_h->{module} . ": $err";
+
+#	warn "Loaded module OK!";
+
+	my $to_do;
+	if (! ref $arg_h->{sub} ) {
+		warn "Setting to_do to " . $arg_h->{module} .'::' . $arg_h->{sub};
+		$to_do = \&{ $arg_h->{module} .'::' . $arg_h->{sub} };
+	}
+	else {
+		$to_do = $arg_h->{sub};
+	}
+
+	if ($arg_h->{tmpl_args}{timeout_mins}) {
+#		warn "setting timeout...";
+		WebUtil::timeout( $arg_h->{tmpl_args}{timeout_mins} );
+	}
+
+#	warn "Running the sub";
 
 	# capture output and save it to $output
 	my $output;
 	$| = 1;
-	open local *STDOUT, ">", \$output;
 
-	if (! ref $sub ) {
-		$module::dispatch( $args{numTaxons} );
+	local $@;
+	eval {
+
+		open local *STDOUT, ">", \$output;
+
+		$to_do->( $arg_h->{n_taxa} );
+
+		close local *STDOUT;
+
+	};
+
+	if ($@) {
+		croak $@;
 	}
-	else {
-		&$sub->();
-	}
 
-	close local *STDOUT;
+	$arg_h->{output} = $output;
 
-	if (! $cgi->param('noHeader') && 'default' eq $tmpl) {
-		print_app_header( %args );
-	}
+	warn "I got this output: $output";
 
-	return $output;
+	return $arg_h;
 
+#	if (! $cgi->param('noHeader') && 'default' eq $arg_h->{tmpl}) {
+#		print_app_header( %tmpl_args );
+#	}
+#	return $output;
 
+}
 
 =cut
 
         # EXCEPTION
         elsif ( paramMatch("taxon_oid") && scalar( $cgi->param() ) < 2 ) {
             $module = 'TaxonDetail';
-			%args = ( title => 'Taxon Details', current => "FindGenomes" );
-            $args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
+			%tmpl_args = ( title => 'Taxon Details', current => "FindGenomes" );
+            $tmpl_args{help} = 'GenerateGenBankFile.pdf' if $page eq 'taxonArtemisForm';
 
             # if only taxon_oid is specified assume taxon detail page
-            $session->param( "section", "TaxonDetail" );
-            $session->param( "page",    "taxonDetail" );
+            $self->session->param( "section", "TaxonDetail" );
+            $self->session->param( "page",    "taxonDetail" );
 #            TaxonDetail::dispatch();
 
         }
         # EXCEPTION!
-        elsif ( $cgi->param("setTaxonFilter") && $env->{taxon_filter_oid_str} ) {
+        elsif ( $cgi->param("setTaxonFilter") && $self->env->{taxon_filter_oid_str} ) {
             $module = 'GenomeCart';
-            %args = ( title => 'Genome Cart', current => "AnaCart" );
+            %tmpl_args = ( title => 'Genome Cart', current => "AnaCart" );
             # add to genome cart - ken
             require GenomeList;
             GenomeList::clearCache();
-            $session->param( "lastCart", "genomeCart" );
+            $self->session->param( "lastCart", "genomeCart" );
 #            GenomeCart::dispatch();
         }
         # EXCEPTION!
-        elsif (! $cgi->param("setTaxonFilter") && ! $env->{taxon_filter_oid_str} ) {
+        elsif (! $cgi->param("setTaxonFilter") && ! $self->env->{taxon_filter_oid_str} ) {
 
-            %args = ( title => "Genome Selection Message", current => "FindGenomes" );
+            %tmpl_args = ( title => "Genome Selection Message", current => "FindGenomes" );
             printMessage( "Saving 'no selections' is the same as selecting "
                   . "all genomes. Genome filtering is disabled.\n" );
 
@@ -961,7 +1059,7 @@ sub dispatch_page {
         # non-standard
         elsif ( paramMatch("uploadTaxonSelections") ) {
             $module = 'TaxonList';
-            %args = ( title => 'Genome Browser', current => "FindGenomes", help => 'GenomeBrowser.pdf' );
+            %tmpl_args = ( title => 'Genome Browser', current => "FindGenomes", help => 'GenomeBrowser.pdf' );
             $sub = 'printTaxonTable';
             my $taxon_filter_oid_str = TaxonList::uploadTaxonSelections();
             setTaxonSelections($taxon_filter_oid_str);
@@ -976,7 +1074,7 @@ sub dispatch_page {
 #					webError("You must select at least one gene to export.");
 #				}
 				$tmpl = 'excel';
-				%args = ( filename => 'gene_export$$.xls' );
+				%tmpl_args = ( filename => 'gene_export$$.xls' );
 				$module = 'GeneCartStor';
 				$sub = sub {
 					$module::printGenesToExcelLarge( \@gene_oid );
@@ -986,7 +1084,7 @@ sub dispatch_page {
 			}
 			elsif ( 'nucleic' eq $et ) {
 				$module = 'GenerateArtemisFile';
-				%args = ( title => "Gene Export" );
+				%tmpl_args = ( title => "Gene Export" );
 				$sub = sub {
 					$module::prepareProcessGeneFastaFile();
 				};
@@ -994,7 +1092,7 @@ sub dispatch_page {
 			}
 			elsif ( 'amino' eq $et ) {
 				$module = 'GenerateArtemisFile';
-				%args = ( title => "Gene Export" );
+				%tmpl_args = ( title => "Gene Export" );
 				$sub = sub {
 					$module::prepareProcessGeneAAFastaFile();
 				};
@@ -1018,17 +1116,17 @@ sub dispatch_page {
 				print "</pre>\n";
 			}
 		}
-        elsif ( ( $env->{public_login} || $env->{user_restricted_site} ) && $cgi->param("logout") ) {
+        elsif ( ( $self->env->{public_login} || $self->env->{user_restricted_site} ) && $cgi->param("logout") ) {
 
-            #        if ( !$oldLogin && $env->{sso_enabled} ) {
+            #        if ( !$oldLogin && $self->env->{sso_enabled} ) {
             #
             #            # do no login log here
             #        } else {
             #            WebUtil::loginLog( 'logout main.pl', 'img' );
             #        }
 
-            $session->param( "blank_taxon_filter_oid_str", "1" );
-            $session->param( "oldLogin",                   0 );
+            $self->session->param( "blank_taxon_filter_oid_str", "1" );
+            $self->session->param( "oldLogin",                   0 );
             setTaxonSelections("");
             print_app_header( current => "logout" );
 
@@ -1044,7 +1142,7 @@ sub dispatch_page {
 			};
 
             # sso
-            if ( ! $env->{oldLogin} && $env->{sso_enabled} ) {
+            if ( ! $self->env->{oldLogin} && $self->env->{sso_enabled} ) {
                 $module = 'Caliban';
                 $sub = sub {
                 	$module::sso_logout;
@@ -1062,12 +1160,12 @@ sub dispatch_page {
     }
     else {
         my $rurl = $cgi->param("redirect");
-        if ( ( $env->{public_login} || $env->{user_restricted_site} ) && $rurl ) {
+        if ( ( $self->env->{public_login} || $self->env->{user_restricted_site} ) && $rurl ) {
             redirecturl($rurl);
         }
         else {
-            $env->{homePage} = 1;
-            %args = ( current => "Home" );
+            $self->env->{homePage} = 1;
+            %tmpl_args = ( current => "Home" );
         }
     }
 
@@ -1085,7 +1183,7 @@ sub dispatch_page {
  'logout';
  'printTaxonTable';
  'printForm';
-	$args{numTaxons} = get_n_taxa();
+	$tmpl_args{numTaxons} = get_n_taxa();
 
 	my ($ok, $err) = try_load_module( $module );
 	$ok or croak "Unable to load class $module: $err";
@@ -1095,24 +1193,23 @@ sub dispatch_page {
 	$| = 1;
 	open local *STDOUT, ">", \$output;
 
-	$module->dispatch( $args{numTaxons}, $args{numTaxons} );
+	$module->dispatch( $tmpl_args{numTaxons}, $tmpl_args{numTaxons} );
 
 	close local *STDOUT;
 
 	if (! $cgi->param('noHeader') ) {
-		print_app_header( %args );
+		print_app_header( %tmpl_args );
 	}
 =cut
 
-
-	return;
-}
-
 sub paramMatch {
 
+	my $self = shift;
 	my $p = shift;
 
-	for my $k (keys %cgi_params) {
+	carp "running paramMatch: p: $p";
+
+	for my $k (keys %{$self->cgi_params}) {
 		return $k if $k =~ /$p/;
 	}
 	return undef;
@@ -1120,9 +1217,9 @@ sub paramMatch {
 }
 
 sub is_valid_module {
+	my $self = shift;
 	my $m = shift;
-
-	my $valid = valid_modules();
+	my $valid = $self->valid_modules();
 	for (@$valid) {
 		# untaint
 		return $_ if $_ eq $m;
