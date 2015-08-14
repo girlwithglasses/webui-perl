@@ -2,7 +2,7 @@
 # AbundanceComparisons.pm - Tool to allow for multiple pairwise
 #   genome abundance comparisons.
 #        --es 06/11/2007
-# $Id: AbundanceComparisonsSub.pm 33080 2015-03-31 06:17:01Z jinghuahuang $
+# $Id: AbundanceComparisonsSub.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package AbundanceComparisonsSub;
 
@@ -82,6 +82,7 @@ my %func_text = (
 sub dispatch {
     my ($numTaxon) = @_;
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( paramMatch("abundanceResults") ne "" ) {
         printAbundanceResults();
@@ -109,11 +110,11 @@ sub printQueryForm {
 
     print "<p style='width: 800px;'>\n";
     print qq{
-        The <b>Function Category Comparison</b> tool allows you to 
-        compare <u>a query</u> (meta)genome to <u>multiple reference</u> 
-        (meta)genomes in terms of the abundance of pre-defined groups of 
-        protein families as represented by different types of functional 
-        classifications such as COG Pathways, KEGG Pathways and 
+        The <b>Function Category Comparison</b> tool allows you to
+        compare <u>a query</u> (meta)genome to <u>multiple reference</u>
+        (meta)genomes in terms of the abundance of pre-defined groups of
+        protein families as represented by different types of functional
+        classifications such as COG Pathways, KEGG Pathways and
         KEGG Pathway Categories.
     };
     print "</p>\n";
@@ -225,7 +226,7 @@ sub printQueryForm {
     </SCRIPT>
 EOF
     print qq{
-        <input type='checkbox' name='zerofilter' value='no' 
+        <input type='checkbox' name='zerofilter' value='no'
             onclick='checkzero()'" . " />\n
         Include all rows, including those without hits<br/>\n
         <br/>\n
@@ -260,7 +261,7 @@ EOF
         <a name="hint2" href="#"></a>\n
         2 - Gene count less than min. will have a d-score set to zero.<br/>\n
         <a name="hint3" href="#"></a>\n
-        3 - A normalization ranking abundance d-scores. 
+        3 - A normalization ranking abundance d-scores.
         ( $link_str )<br/>\n
         <a name="hint4" href="#"></a>\n
         4 - abs( D-rank )<br/>\n
@@ -323,8 +324,8 @@ sub printAbundanceResults {
 
     printMainForm();
     printStatusLine( "Loading ...", 1 );
-    
-    if ( hasMerFsTaxons( \@queryGenomes ) 
+
+    if ( hasMerFsTaxons( \@queryGenomes )
         || hasMerFsTaxons( \@referenceGenomes ) )
     {
         timeout( 60 * $merfs_timeout_mins );
@@ -357,7 +358,7 @@ sub printAbundanceResults {
     getCombinedProfileVectors( $dbh, "query", \@queryGenomes, $function, $xcopy, \%queryTaxonProfiles, \%queryTaxon_h, $q_data_type );
     #print Dumper(\%queryTaxonProfiles);
     #print "<br/>\n";
-    
+
     # there can be only one query taxon selected
     my $query_taxon_oid = $queryGenomes[0];
     my $queryProfile_ref = $queryTaxonProfiles{$query_taxon_oid};
@@ -884,7 +885,7 @@ sub printAbundancePager {
     my $normalization = param("normalization");
     my $funcsPerPage  = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     my $sortType      = param("sortType");
 
     print "<h1>Function Category Comparisons</h1>\n";
@@ -991,7 +992,7 @@ sub printOnePage {
     my $normalization         = param("normalization");
     my $funcsPerPage          = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     my $doGenomeNormalization = 0;
     $doGenomeNormalization = 1               if $normalization eq "genomeSize";
     $pageNo                = param("pageNo") if $pageNo        eq "";
@@ -1323,7 +1324,7 @@ sub getFunctionCounts {
     } elsif ( $func eq "keggp" ) {
         $sql = qq{
             select kp.pathway_oid, count(distinct kt.enzymes)
-            from ko_term_enzymes kt, image_roi_ko_terms rk, 
+            from ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where kt.ko_id = rk.ko_terms
             and rk.roi_id = ir.roi_id
@@ -1334,7 +1335,7 @@ sub getFunctionCounts {
     } elsif ( $func eq "keggc" ) {
         $sql = qq{
             select kp.category, count(distinct kt.enzymes)
-            from ko_term_enzymes kt, image_roi_ko_terms rk, 
+            from ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where kt.ko_id = rk.ko_terms
             and rk.roi_id = ir.roi_id
@@ -1440,28 +1441,28 @@ sub getCombinedProfileVectors {
                 my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $t2, $func_type );
                 #print Dumper(\%func_genes);
                 #print "<br/>\n";
-                
+
                 for my $cat (keys %$cat2funcIds_href) {
                     my $func_ids_ref = $cat2funcIds_href->{$cat};
                     #my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $data_type, $func_type, $func_ids_ref );
                     #print "getFuncVector() $cat func_genes for @$func_ids_ref: <br/>\n";
                     #print Dumper(\%func_genes);
                     #print "<br/>\n";
-    
+
                     if ( !exists $profile2{$cat} ) {
                         my %funcHash;
-                        $profile2{$cat} = \%funcHash;                    
+                        $profile2{$cat} = \%funcHash;
                     }
                     my $func2cnt_href = $profile2{$cat};
-                    
+
                     my %genes_h;
                     for my $func_id ( @$func_ids_ref ) {
                         my @funcGenes = split( /\t/, $func_genes{$func_id} );
-    
+
                         my $cnt = 0;
                         for my $gene (@funcGenes) {
                             $genes_h{$gene} = 1;
-    
+
                             if ( $xcopy eq 'gene_count' ) {
                                 $cnt++;
                             }
@@ -1470,12 +1471,12 @@ sub getCombinedProfileVectors {
                                 if ( $gene_est_copy{$gene} ) {
                                     $copies = $gene_est_copy{$gene};
                                 }
-                                $cnt += $copies;                            
+                                $cnt += $copies;
                             }
                         }
                         $func2cnt_href->{$func_id} += $cnt;
                     }
-    
+
                     my $cnt;
                     if ( $xcopy eq 'gene_count' ) {
                         $cnt = scalar(keys %genes_h);
@@ -1486,14 +1487,14 @@ sub getCombinedProfileVectors {
                             if ( $gene_est_copy{$gene} ) {
                                 $copies = $gene_est_copy{$gene};
                             }
-                            $cnt += $copies;                            
+                            $cnt += $copies;
                         }
                     }
                     $profile1{$cat} += $cnt;
                 }
-                
+
             }
-                    
+
             $taxonProfiles1_ref->{$taxon_oid} = \%profile1;
             $taxonProfiles2_ref->{$taxon_oid} = \%profile2;
 
@@ -1570,7 +1571,7 @@ sub getProfileVectors {
             #print "cat2funcIds: <br/>\n";
             #print Dumper($cat2funcIds_href);
             #print "<br/>\n";
-                
+
             my %profile;
             for my $cat (keys %$cat2funcIds_href) {
                 my $func_ids_ref = $cat2funcIds_href->{$cat};
@@ -1578,7 +1579,7 @@ sub getProfileVectors {
                 #print "getFuncVector() $cat func_genes for @$func_ids_ref: <br/>\n";
                 #print Dumper(\%func_genes);
                 #print "<br/>\n";
-                
+
                 my %genes_h;
                 for my $func_id ( @$func_ids_ref ) {
                     my @funcGenes = split( /\t/, $func_genes{$func_id} );
@@ -1597,7 +1598,7 @@ sub getProfileVectors {
                         if ( $gene_est_copy{$gene} ) {
                             $copies = $gene_est_copy{$gene};
                         }
-                        $cnt += $copies;                            
+                        $cnt += $copies;
                     }
                 }
                 if ( $profile{$cat} ) {
@@ -1607,14 +1608,14 @@ sub getProfileVectors {
                 }
 
             }
-    
+
             $taxonProfiles_ref->{$taxon_oid} = \%profile;
 
         }
         else {
 
             # DB
-            my ( $cur ) = getFuncCatProfileCur( $dbh, $xcopy, $func, $taxon_oid );    
+            my ( $cur ) = getFuncCatProfileCur( $dbh, $xcopy, $func, $taxon_oid );
 
             my %profile;
             for ( ; ; ) {
@@ -1655,11 +1656,11 @@ sub getProfileVectors2 {
             }
             else {
                 print "Computing $taxon_oid $data_type $func est copy ...<br/>\n";
-                my ($func_cnt_href, $last_id1) = AbundanceToolkit::getMetaTaxonFuncEstCopies( 
+                my ($func_cnt_href, $last_id1) = AbundanceToolkit::getMetaTaxonFuncEstCopies(
                     $dbh, $taxon_oid, $func_type, $data_type );
                 %func_cnt = %$func_cnt_href;
             }
-                        
+
             my $cat2funcIds_href = getCat2FuncIds( $dbh, $func );
             #print "cat2funcIds: <br/>\n";
             #print Dumper($cat2funcIds_href);
@@ -1673,14 +1674,14 @@ sub getProfileVectors2 {
                     my $func_href = $profile{$cat};
                     for my $func_id ( @$func_ids_ref ) {
                         my $cnt = $func_cnt{$func_id};
-                        $func_href->{$func_id} = $cnt;    
-                    }                        
+                        $func_href->{$func_id} = $cnt;
+                    }
                 } else {
                     my %funcHash;
                     for my $func_id ( @$func_ids_ref ) {
                         my $cnt = $func_cnt{$func_id};
                         $funcHash{$func_id} = $cnt;
-                    }                        
+                    }
                     $profile{$cat} = \%funcHash;
                 }
             }
@@ -1690,7 +1691,7 @@ sub getProfileVectors2 {
         else {
 
             # DB
-            my ( $cur ) = getFuncCatFuncIdProfileCur( $dbh, $xcopy, $func, $taxon_oid );    
+            my ( $cur ) = getFuncCatFuncIdProfileCur( $dbh, $xcopy, $func, $taxon_oid );
 
             my %profile;
             for ( ; ; ) {
@@ -1774,8 +1775,8 @@ sub getFuncCatProfileCur {
     } elsif ( $func_type eq "keggp" ) {
         $sql = qq{
             select kp.pathway_oid, $aggFunc
-            from gene g, gene_ko_enzymes ge, 
-                ko_term_enzymes kt, image_roi_ko_terms rk, 
+            from gene g, gene_ko_enzymes ge,
+                ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where g.taxon = ?
             and g.gene_oid = ge.gene_oid
@@ -1788,8 +1789,8 @@ sub getFuncCatProfileCur {
     } elsif ( $func_type eq "keggc" ) {
         $sql = qq{
             select kp.category, $aggFunc
-            from gene g, gene_ko_enzymes ge, 
-                ko_term_enzymes kt, image_roi_ko_terms rk, 
+            from gene g, gene_ko_enzymes ge,
+                ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where g.taxon = ?
             and g.gene_oid = ge.gene_oid
@@ -1846,7 +1847,7 @@ sub getFuncCatProfileCur {
             and tr.sub_role != ?
             group by tr.sub_role
         };
-    }    
+    }
     #print "getFuncCatProfileCur() sql: $sql<br/>\n";
 
     my $cur;
@@ -1888,7 +1889,7 @@ sub getFuncCatFuncIdProfileCur {
     } elsif ( $func_type eq "cogc" ) {
         $sql = qq{
             select cf.function_code, gcg.cog, $aggFunc
-            from gene g, gene_cog_groups gcg, 
+            from gene g, gene_cog_groups gcg,
                 cog_function cf, cog_functions cfs
             where g.gene_oid = gcg.gene_oid
             and g.taxon = ?
@@ -1899,7 +1900,7 @@ sub getFuncCatFuncIdProfileCur {
     } elsif ( $func_type eq "keggp" ) {
         $sql = qq{
             select kp.pathway_oid, ge.enzymes, $aggFunc
-            from gene g, gene_ko_enzymes ge, 
+            from gene g, gene_ko_enzymes ge,
                 ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where g.taxon = ?
@@ -1913,7 +1914,7 @@ sub getFuncCatFuncIdProfileCur {
     } elsif ( $func_type eq "keggc" ) {
         $sql = qq{
             select kp.category, ge.enzymes, $aggFunc
-            from gene g, gene_ko_enzymes ge, 
+            from gene g, gene_ko_enzymes ge,
                 ko_term_enzymes kt, image_roi_ko_terms rk,
                 image_roi ir, kegg_pathway kp
             where g.taxon = ?
@@ -1973,7 +1974,7 @@ sub getFuncCatFuncIdProfileCur {
             group by tr.sub_role, gtf.ext_accession
             order by tr.sub_role
         };
-    }    
+    }
     #print "getFuncCatProfileCur() sql: $sql<br/>\n";
 
     my $cur;
@@ -1995,7 +1996,7 @@ sub getCat2FuncIds {
     if ( $func_type eq 'cogp' ) {
         $sql = qq{
             select distinct cog_pathway_oid, cog_members
-            from cog_pathway_cog_members 
+            from cog_pathway_cog_members
         };
         if ( $cat ) {
            $sql .= " where cog_pathway_oid = ? ";
@@ -2003,8 +2004,8 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq 'cogc' ) {
         $sql = qq{
-            select distinct functions, cog_id 
-            from cog_functions 
+            select distinct functions, cog_id
+            from cog_functions
         };
         if ( $cat ) {
            $sql .= " where functions = ? ";
@@ -2012,10 +2013,10 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq 'keggp' ) {
         $sql = qq{
-            select distinct ir.pathway, kt.enzymes 
+            select distinct ir.pathway, kt.enzymes
             from ko_term_enzymes kt, image_roi_ko_terms rk, image_roi ir
             where kt.ko_id = rk.ko_terms
-            and rk.roi_id = ir.roi_id 
+            and rk.roi_id = ir.roi_id
         };
         if ( $cat ) {
            $sql .= " and ir.pathway = ? ";
@@ -2024,10 +2025,10 @@ sub getCat2FuncIds {
     } elsif ( $func_type eq 'keggc' ) {
         $sql = qq{
             select distinct kp.category, kt.enzymes
-            from ko_term_enzymes kt, image_roi_ko_terms rk, image_roi ir, kegg_pathway kp 
+            from ko_term_enzymes kt, image_roi_ko_terms rk, image_roi ir, kegg_pathway kp
             where kt.ko_id = rk.ko_terms
-            and rk.roi_id = ir.roi_id 
-            and ir.pathway = kp.pathway_oid 
+            and rk.roi_id = ir.roi_id
+            and ir.pathway = kp.pathway_oid
         };
         if ( $cat ) {
            $sql .= " and kp.category = ? ";
@@ -2035,9 +2036,9 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq 'keggp_ko' ) {
         $sql = qq{
-            select distinct ir.pathway, rk.ko_terms 
+            select distinct ir.pathway, rk.ko_terms
             from image_roi_ko_terms rk, image_roi ir
-            where rk.roi_id = ir.roi_id 
+            where rk.roi_id = ir.roi_id
         };
         if ( $cat ) {
            $sql .= " and ir.pathway = ? ";
@@ -2045,9 +2046,9 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq "keggc_ko" ) {
         $sql = qq{
-            select distinct kp.category, rk.ko_terms 
+            select distinct kp.category, rk.ko_terms
             from image_roi_ko_terms rk, image_roi ir, kegg_pathway kp
-            where rk.roi_id = ir.roi_id 
+            where rk.roi_id = ir.roi_id
             and ir.pathway = kp.pathway_oid
         };
         if ( $cat ) {
@@ -2056,10 +2057,10 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq 'pfam' ) {
         $sql = qq{
-            select distinct cp.cog_pathway_oid, pfc.ext_accession 
-            from pfam_family_cogs pfc, cog_function cf, cog_pathway cp 
-            where pfc.functions = cf.function_code 
-            and cf.function_code = cp.function 
+            select distinct cp.cog_pathway_oid, pfc.ext_accession
+            from pfam_family_cogs pfc, cog_function cf, cog_pathway cp
+            where pfc.functions = cf.function_code
+            and cf.function_code = cp.function
         };
         if ( $cat ) {
            $sql .= " and cp.cog_pathway_oid = ? ";
@@ -2067,9 +2068,9 @@ sub getCat2FuncIds {
         }
     } elsif ( $func_type eq 'tigrfam' ) {
         $sql = qq{
-            select distinct tr.sub_role, trs.ext_accession 
-            from tigr_role tr, tigrfam_roles trs 
-            where tr.role_id = trs.roles 
+            select distinct tr.sub_role, trs.ext_accession
+            from tigr_role tr, tigrfam_roles trs
+            where tr.role_id = trs.roles
             and tr.sub_role != ?
         };
         @binds = ( 'Other' );
@@ -2086,7 +2087,7 @@ sub getCat2FuncIds {
     for ( ; ; ) {
         my ( $cat, $func_id ) = $cur->fetchrow();
         last if !$cat;
-        
+
         my $funcs_ref = $cat2funcIds{$cat};
         if ( $funcs_ref ) {
             push(@$funcs_ref, $func_id);
@@ -2097,7 +2098,7 @@ sub getCat2FuncIds {
         }
     }
     $cur->finish();
-    
+
     return \%cat2funcIds;
 }
 
@@ -2106,7 +2107,7 @@ sub getCat2FuncIds {
 #    funcId / taxon_oid.
 ############################################################################
 sub printGeneList {
-    
+
     my $cat       = param("funcId");
     my $taxon_oid = param("taxon_oid");
     my $data_type = param("data_type");
@@ -2115,16 +2116,16 @@ sub printGeneList {
 
     printMainForm();
     print "<h1>Function Comparison Genes</h1>\n";
-    
+
     print hiddenVar( "taxon_oid", $taxon_oid );
     print hiddenVar( "data_type", $data_type );
 
     my $dbh = dbLogin();
     printStatusLine( "Loading ...", 1 );
 
-    my $isTaxonInFile = printAbundanceCategoryGeneListSubHeader( 
+    my $isTaxonInFile = printAbundanceCategoryGeneListSubHeader(
         $dbh, $function, $cat, $taxon_oid, $data_type);
-    
+
     # get gene oids
     my @gene_oids = ();
     if ( $isTaxonInFile ) {
@@ -2145,7 +2146,7 @@ sub printGeneList {
 
             for my $func_id2 ( @$func_ids_ref ) {
                 my @funcGenes = split( /\t/, $func_genes{$func_id2} );
-    
+
                 for my $g2 (@funcGenes) {
                     my $workspace_id = "$taxon_oid $t2 $g2";
                     $gene_h{$workspace_id} = $workspace_id;
@@ -2154,12 +2155,12 @@ sub printGeneList {
         }
 
         @gene_oids = ( keys %gene_h );
-        
+
     } else {
 
         my $sql;
         if ( $function eq "cogp" ) {
-    
+
             # fix cog_functions query
             $sql = qq{
                 select distinct g.gene_oid
@@ -2169,10 +2170,10 @@ sub printGeneList {
                 and cpcm.cog_pathway_oid = ?
                 order by g.gene_oid
             };
-    
-    
+
+
         } elsif ( $function eq "cogc" ) {
-    
+
             # fix cog_functions query
             $sql = qq{
                 select distinct g.gene_oid
@@ -2182,30 +2183,30 @@ sub printGeneList {
                 and cfs.functions = ?
                 order by g.gene_oid
             };
-    
-    
+
+
         } elsif ( $function eq "keggp" ) {
-    
+
             #  keggp - ken
             $sql = qq{
                 select distinct g.gene_oid
-                from gene_ko_enzymes g, ko_term_enzymes kt, 
+                from gene_ko_enzymes g, ko_term_enzymes kt,
                     image_roi_ko_terms rk, image_roi ir
                 where g.taxon = ?
                 and g.enzymes = kt.enzymes
                 and kt.ko_id = rk.ko_terms
                 and rk.roi_id = ir.roi_id
                 and ir.pathway = ?
-                order by g.gene_oid         
+                order by g.gene_oid
             };
-    
+
         } elsif ( $function eq "keggc" ) {
-    
+
             #  fix query
             # keggc - ken
             $sql = qq{
                 select distinct g.gene_oid
-                from gene_ko_enzymes g, ko_term_enzymes kt, 
+                from gene_ko_enzymes g, ko_term_enzymes kt,
                     image_roi_ko_terms rk, image_roi ir, kegg_pathway kp
                 where g.taxon = ?
                 and g.enzymes = kt.enzymes
@@ -2213,12 +2214,12 @@ sub printGeneList {
                 and rk.roi_id = ir.roi_id
                 and ir.pathway = kp.pathway_oid
                 and kp.category = ?
-                order by g.gene_oid         
+                order by g.gene_oid
             };
-    
-    
+
+
         } elsif ( $function eq "keggp_ko" ) {
-    
+
             #  ko version
             $sql = qq{
                 select distinct g.gene_oid
@@ -2227,12 +2228,12 @@ sub printGeneList {
                 and g.ko_terms = rk.ko_terms
                 and rk.roi_id = ir.roi_id
                 and ir.pathway = ?
-                order by g.gene_oid         
+                order by g.gene_oid
             };
-    
-    
+
+
         } elsif ( $function eq "keggc_ko" ) {
-    
+
             # ko version
             $sql = qq{
                 select distinct g.gene_oid
@@ -2242,10 +2243,10 @@ sub printGeneList {
                 and rk.roi_id = ir.roi_id
                 and ir.pathway = kp.pathway_oid
                 and kp.category = ?
-                order by g.gene_oid         
+                order by g.gene_oid
             };
-    
-    
+
+
         } elsif ( $function eq "pfam" ) {
             $sql = qq{
                 select distinct g.gene_oid
@@ -2257,7 +2258,7 @@ sub printGeneList {
                 and cp.cog_pathway_oid = ?
                 order by g.gene_oid
             };
-    
+
         } elsif ( $function eq "tigrfam" ) {
             $sql = qq{
                 select distinct g.gene_oid
@@ -2268,11 +2269,11 @@ sub printGeneList {
                 and tr.sub_role = ?
                 order by g.gene_oid
             };
-    
+
         }
         #'$cat'
         my @bindList = ($taxon_oid, $cat);
-        
+
         my $cur = WebUtil::execSqlBind( $dbh, $sql, \@bindList, $verbose );
         for ( ; ; ) {
             my ($gene_oid) = $cur->fetchrow();
@@ -2280,7 +2281,7 @@ sub printGeneList {
             push( @gene_oids, $gene_oid );
         }
         $cur->finish();
-        
+
     }
 
     require InnerTable;
@@ -2297,7 +2298,7 @@ sub printGeneList {
     my $trunc = 0;
     my $count = 0;
     if ( $isTaxonInFile ) {
-        
+
         # MER-FS
         my %gene_copies;
         if ( $xcopy eq 'est_copy' && $data_type ne 'unassembled' ) {
@@ -2330,7 +2331,7 @@ sub printGeneList {
                 }
             }
             $row .= $value . $sd . $value . "\t";
-            
+
             $it->addRow($row);
         }
 
@@ -2349,7 +2350,7 @@ sub printGeneList {
                 last;
             }
         }
-        HtmlUtil::flushGeneBatchSorting( $dbh, \@batch, $it, '', 1 );        
+        HtmlUtil::flushGeneBatchSorting( $dbh, \@batch, $it, '', 1 );
     }
 
     WebUtil::printGeneCartFooter() if ( $count > 10 );
@@ -2783,7 +2784,7 @@ sub printDScoreNote {
        <br/>
        <i>(Assuming the miniumum count is 5.)</i><br/>
        <i>x1 >= 5 and x2 >= 5</i>.<br/>
-       <i>The d_score is set to zero when summing in D-rank 
+       <i>The d_score is set to zero when summing in D-rank
           if not a valid test</i>.</br>
        <br><br>
        <b>D-Rank:</b><br><br>
@@ -2913,7 +2914,7 @@ sub getFuncCatDict {
     my ($dbh, $func, $id) = @_;
 
     #print "getFuncCatDict(): func type '$func'<br/>\n";
-    
+
     my $sql;
     my @binds;
     if ( $func eq "cogp" || $func eq "pfam" ) {
@@ -2970,7 +2971,7 @@ sub getFuncCatDict {
     #print("getFuncCatDict() sql: $sql<br/>\n");
 
     my $cur = execSql( $dbh, $sql, $verbose, @binds );
-    
+
     my %funcId2Name;
     for ( ; ; ) {
         my ( $id, $name ) = $cur->fetchrow();
@@ -2978,7 +2979,7 @@ sub getFuncCatDict {
         $funcId2Name{$id} = $name;
     }
     $cur->finish();
-    
+
     return \%funcId2Name;
 }
 
@@ -3006,9 +3007,9 @@ sub printAbundanceCategoryGeneListSubHeader {
 
     print "<p>\n";
     print "$func_header ID: $func_id\n";
-    print "<br>$func_header Name: $func_name\n";    
+    print "<br>$func_header Name: $func_name\n";
     print "</p>\n";
-    
+
     my $taxon_name = QueryUtil::fetchTaxonName( $dbh, $taxon_oid );
 
     my $isTaxonInFile;
@@ -3021,7 +3022,7 @@ sub printAbundanceCategoryGeneListSubHeader {
             }
         }
     }
-    
+
     print "<p>\n";
     print "Taxon ID: <a href='main.cgi?section=TaxonDetail"
       . "&page=taxonDetail&taxon_oid=$taxon_oid'>"

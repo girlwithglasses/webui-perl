@@ -1,5 +1,5 @@
 ############################################################################
-# $Id: ImgStatsOverview.pm 33841 2015-07-29 20:48:56Z klchu $
+# $Id: ImgStatsOverview.pm 33935 2015-08-07 18:26:22Z klchu $
 ############################################################################
 package ImgStatsOverview;
 
@@ -60,6 +60,24 @@ my $microbiomeLabel = "Metagenome";    # column heading for *Microbiome
 ############################################################################
 # dispatch - Dispatch loop.
 ############################################################################
+sub getPageTitle {
+    return 'IMG Stats Overview';
+}
+
+sub getAppHeaderData {
+    my ($self) = @_;
+
+    my @a = ();
+    
+    if ( param('excel') eq 'yes' ) {
+        printExcelHeader("stats_export$$.xls");
+    } else {
+        @a = ("ImgStatsOverview");
+    }    
+    
+    return @a;
+}
+
 sub dispatch {
 
     # if turn off cache
@@ -1671,13 +1689,14 @@ sub readCacheData {
 }
 
 sub getEnvSample_v20 {
-    my ($dbh) = @_;
-
+    my ($dbh, $type) = @_;
+    $type = 'metagenome' if $type eq '';
     my $sql;
-    my $totalGenome;
+    my $totalGenome = 0;
     my $rclause   = WebUtil::urClause('t');
     my $imgClause = WebUtil::imgClause('t');
-    if ($include_metagenomes) {
+
+    if ($type eq 'metagenome') {
 
         # total metagenome count
         $sql = qq{
@@ -1688,7 +1707,7 @@ and t.obsolete_flag = 'No'
 $rclause
 $imgClause 
         };
-    } else {
+     } elsif ($type eq 'genome') {
         $sql = qq{
 select count(*)
 from taxon t
@@ -1698,91 +1717,55 @@ and t.domain in ('Bacteria', 'Archaea' ,'Eukaryota')
 $rclause
 $imgClause
         };
+    } 
+    
+    if($type eq 'genome' || $type eq 'metagenome') {
+        my $cur = execSql( $dbh, $sql, $verbose );
+        ($totalGenome) = $cur->fetchrow();
+    } elsif ($type eq 'cart') {
+        my $oidsInCart_ref = GenomeCart::getAllGenomeOids();
+        $totalGenome = $#$oidsInCart_ref + 1;
     }
-    my $cur = execSql( $dbh, $sql, $verbose );
-    ($totalGenome) = $cur->fetchrow();
-
-    if ($include_metagenomes) {
-        my $rclause   = WebUtil::urClause('t2');
-        my $imgClause = WebUtil::imgClause('t2');
-
-        my $sql2;
-        if ($user_restricted_site) {
-            $sql2 = qq{
-        union
-        select t2.taxon_oid, t2.taxon_display_name, e2.geo_location, e2.latitude, e2.longitude, e2.altitude
-        from env_sample_gold e2, taxon t2, submission s
-        where t2.submission_id = s.submission_id
-        and s.sample_oid = e2.sample_oid
-        and t2.genome_type = 'metagenome'
-        and t2.obsolete_flag = 'No'
-        and e2.longitude is not null          
-        and e2.latitude is not null
-        $rclause
-        $imgClause       
-            };
-        }
-
+    
+    if ($type eq 'metagenome') {
         $sql = qq{
-        select t2.taxon_oid, t2.taxon_display_name, e2.geo_location, e2.latitude, e2.longitude, e2.altitude
-        from project_info_gold e2, taxon t2
-        where e2.gold_stamp_id = t2.gold_id
-        and t2.genome_type = 'metagenome'
-        and t2.obsolete_flag = 'No'
-        and t2.is_public = 'Yes'
-        and e2.longitude is not null          
-        and e2.latitude is not null
-        union
-        select t2.taxon_oid, t2.taxon_display_name, e2.geo_location, e2.latitude, e2.longitude, e2.altitude
-        from env_sample_gold e2, taxon t2
-        where e2.gold_id = t2.sample_gold_id
-        and t2.genome_type = 'metagenome'
-        and t2.is_public = 'Yes'
-        and t2.obsolete_flag = 'No'
-        and e2.longitude is not null          
-        and e2.latitude is not null
-        
-        $sql2        
-        
-        order by 4, 5, 3, 2
+select distinct t.taxon_oid, t.taxon_display_name, 
+p.geo_location, p.latitude, p.longitude, p.altitude
+from taxon t, GOLD_SEQUENCING_PROJECT p
+where p.GOLD_ID = t.SEQUENCING_GOLD_ID
+and t.genome_type = 'metagenome'
+and t.obsolete_flag = 'No'
+and p.longitude is not null 
+and p.latitude is not null
+$rclause
+$imgClause
+order by 4, 5, 3, 2
       };
 
-    } else {
-        my $rclause   = WebUtil::urClause('t');
-        my $imgClause = WebUtil::imgClause('t');
-
-        my $sql2;
-        if ($user_restricted_site) {
-            $sql2 = qq{
-        union
-        select t.taxon_oid, t.taxon_display_name, e2.geo_location, e2.latitude, e2.longitude, e2.altitude
-        from project_info_gold e2, taxon t, submission s
-        where t.submission_id = s.submission_id
-        and s.project_info = e2.project_oid
+    } elsif ($type eq 'genome') {
+        $sql = qq{
+select distinct t.taxon_oid, t.taxon_display_name, 
+p.geo_location, p.latitude, p.longitude, p.altitude
+from taxon t, GOLD_SEQUENCING_PROJECT p
+where p.GOLD_ID = t.SEQUENCING_GOLD_ID
         and t.genome_type = 'isolate'
         and t.domain in ('Bacteria', 'Archaea' ,'Eukaryota')
         and t.obsolete_flag = 'No'
-        and e2.longitude is not null 
-        and e2.latitude is not null
-        $rclause
-        $imgClause
-            };
-        }
-
-        $sql = qq{
-        select t.taxon_oid, t.taxon_display_name, p.geo_location, p.latitude, p.longitude, p.altitude
-        from taxon t, project_info_gold p
-        where t.gold_id = p.gold_stamp_id
-          and t.obsolete_flag = 'No'
-          and t.domain in ('Bacteria', 'Archaea' ,'Eukaryota')
-          and t.is_public = 'Yes'
-          $rclause
-          $imgClause
-          
-         $sql2 
-          
+        and p.longitude is not null 
+        and p.latitude is not null
         order by 4, 5, 3, 2
       };
+    } elsif($type eq 'cart') {
+        $sql = qq{
+select distinct t.taxon_oid, t.taxon_display_name, 
+p.geo_location, p.latitude, p.longitude, p.altitude
+from taxon t, GOLD_SEQUENCING_PROJECT p
+where p.GOLD_ID = t.SEQUENCING_GOLD_ID
+        and t.obsolete_flag = 'No'
+        and p.longitude is not null 
+        and p.latitude is not null
+        order by 4, 5, 3, 2
+      };        
     }
 
     my @recs;
@@ -1803,73 +1786,8 @@ $imgClause
     return ( \@recs, ( $totalGenome - ( $#recs + 1 ) ) );
 }
 
-sub getEnvSample {
-    my ($dbh) = @_;
-
-    my $sql;
-    if ($include_metagenomes) {
-        my $rclause   = WebUtil::urClause('t2');
-        my $imgClause = WebUtil::imgClause('t2');
-        $sql = qq{
-        select t2.taxon_oid, t2.taxon_display_name, e2.geo_location,
-               e2.latitude, e2.longitude, e2.altitude
-        from project_info_gold e2, taxon t2
-        where e2.gold_stamp_id = t2.gold_id
-          $rclause
-          $imgClause
-          and t2.genome_type = 'metagenome'
-          and t2.is_public = 'Yes'
-
-        union
-        select t2.taxon_oid, t2.taxon_display_name, e2.geo_location, 
-               e2.latitude, e2.longitude, e2.altitude
-        from env_sample_gold e2, taxon t2
-        where e2.gold_id = t2.sample_gold_id
-          $rclause
-          $imgClause
-          and t2.genome_type = 'metagenome'
-          and t2.is_public = 'Yes'
-
-        order by 4, 5, 3, 2
-      };
-
-    } else {
-        my $rclause   = WebUtil::urClause('t');
-        my $imgClause = WebUtil::imgClause('t');
-        $sql = qq{
-        select t.taxon_oid, t.taxon_display_name, p.geo_location, 
-               p.latitude, p.longitude, p.altitude
-        from taxon t, project_info_gold p
-        where t.gold_id = p.gold_stamp_id
-          $rclause
-          $imgClause
-          and t.domain in ('Bacteria', 'Archaea' ,'Eukaryota')
-        order by p.latitude, p.longitude, p.geo_location, t.taxon_display_name
-      };
-
-    }
-
-    my @recs;
-    my $count_rejected = 0;
-    my $cur = execSql( $dbh, $sql, $verbose );
-    for ( ; ; ) {
-        my ( $taxon_oid, $name, $geo_location, $latitude, $longitude, $altitude ) = $cur->fetchrow();
-        last if !$taxon_oid;
-        $latitude  = strTrim($latitude);
-        $longitude = strTrim($longitude);
-        if ( $latitude eq '' || $longitude eq '' ) {
-            $count_rejected++;
-            next;
-        }
-        push( @recs, "$taxon_oid\t$name\t$geo_location\t$latitude\t$longitude\t$altitude" );
-    }
-    $cur->finish();
-
-    return ( \@recs, $count_rejected );
-}
 
 # api v3
-
 # gold metagenome query
 #select p.project_oid, p.domain ,p.display_name, p.img_oid,
 #es.sample_oid, es.gold_id, es.sample_display_name, es.longitude, es.latitude, es.altitude, es.geo_location
@@ -1896,12 +1814,16 @@ sub googleMap_new {
     # flag=1 -> show only those genomes in the cart
     # flag=0 or missing -> show all genomes
     my $flag_mapCart = param('mapcart');
+    my $type = param('type');
+    $type = 'metagenome' if $type eq '';
 
     my $hmpMetagenomeCnt = 748;    # no metadata
-    if ($include_metagenomes) {
+    if ($type eq 'metagenome') {
         print "<h1>Metagenome Projects Map</h1>";
-    } else {
+    } elsif($type eq 'genome') {
         print "<h1>Projects Map</h1>";
+    } elsif($type eq 'cart') {
+        print "<h1>Genome Cart Map</h1>";
     }
 
     # get Oids for genomes in cart
@@ -1910,36 +1832,29 @@ sub googleMap_new {
     # number of oids in cart
     my $count_cart = $#$oidsInCart_ref + 1;
 
-    if ( ( $flag_mapCart ne 1 ) && ( $count_cart ne 0 ) ) {
+    if (  !$flag_mapCart   &&  $count_cart  ) {
         print qq{
-            <p>Showing all genomes.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap&mapcart=1">Map genomes in cart</a>
+            <p>
+            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap&mapcart=1&type=cart">Map genomes in cart</a>
             </p>
         };
-    }
-
-    if ( ( $flag_mapCart eq 1 ) && ( $count_cart eq 0 ) ) {
-        print qq{
-            <p>There is no genome in cart.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap">Map all genomes</a>
-            </p>
-        };
-    }
-
-    if ( ( $flag_mapCart eq 1 ) && $count_cart ne 0 ) {
+    } elsif ( $flag_mapCart && $count_cart ) {
         print qq{
             <p>Showing genomes in cart&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap">Map all genomes</a>
+            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap&type=genome">Map all genomes</a>
+            &nbsp;&nbsp;
+            <a href="$main_cgi?section=ImgStatsOverview&page=googlemap&type=metagenome">Map all metagenomes</a>
             </p>
-        };
+        };            
     }
 
-    print qq{
-          <p>
-          Only public projects that have longitude/latitude coordinates in 
-          GOLD are displayed on this map.
-          </p>  
-    };
+
+#    print qq{
+#          <p>
+#          Only public projects that have longitude/latitude coordinates in 
+#          GOLD are displayed on this map.
+#          </p>  
+#    };
 
     printStatusLine("Loading ...");
     my $dbh = dbLogin();
@@ -1950,7 +1865,7 @@ sub googleMap_new {
     # recs of
     # "$taxon_oid\t$name\t$geo_location\t$latitude\t$longitude\t$altitude"
     # only public genomes
-    my ( $recs_aref, $count_rejected_getEnvSample ) = getEnvSample_v20($dbh);
+    my ( $recs_aref, $count_rejected_getEnvSample ) = getEnvSample_v20($dbh, $type);
 
     # count_rejected_getEnvSample returned by getEnvSample contains the
     # number of genomes out of the whole database with missing coords data.
@@ -1958,7 +1873,7 @@ sub googleMap_new {
     #$dbh->disconnect();
 
     my $tmp = $#$recs_aref + 1;
-    if ($include_metagenomes) {
+    if ($type eq 'metagenome') {
         print qq{
         <p>
         $tmp samples. <br/>
@@ -1968,7 +1883,7 @@ sub googleMap_new {
         <br/>
         Map pins represent location counts. Some pins may have multiple samples.
         };
-    } else {
+    } elsif($type eq 'genome') {
         print qq{
         <p>
         $tmp projects. <br/>
@@ -1977,6 +1892,14 @@ sub googleMap_new {
         Map pins represent location counts. Some pins may have multiple genomes.
         </p>
         };
+    } elsif($type eq 'cart') {
+        print qq{
+        <p>
+        Some projects maybe rejected via Google Maps because of bad location coordinates. 
+        See rejected count above. <br/>
+        Map pins represent location counts. Some pins may have multiple genomes.
+        </p>
+        };        
     }
 
     ### prepare data to be mapped

@@ -1,6 +1,6 @@
 ############################################################################
 # WorkspaceUtil.pm
-# $Id: WorkspaceUtil.pm 33895 2015-08-04 21:18:25Z klchu $
+# $Id: WorkspaceUtil.pm 33944 2015-08-09 02:19:24Z jinghuahuang $
 ############################################################################
 package WorkspaceUtil;
 
@@ -24,14 +24,18 @@ $| = 1;
 my $env      = getEnv();
 my $main_cgi = $env->{main_cgi};
 my $verbose  = $env->{verbose};
+my $base_dir = $env->{base_dir};
 my $base_url = $env->{base_url};
+my $cgi_url  = $env->{cgi_url};
 my $YUI      = $env->{yui_dir_28};
 my $in_file  = $env->{in_file};
 my $user_restricted_site = $env->{user_restricted_site};
 my $public_nologin_site  = $env->{public_nologin_site};
+my $enable_genomelistJson = $env->{enable_genomelistJson};
 my $enable_workspace = $env->{enable_workspace};
 my $workspace_dir        = $env->{workspace_dir};
 my $img_group_share = $env->{img_group_share};
+my $include_metagenomes  = $env->{include_metagenomes};
 
 my $GENE_FOLDER   = "gene";
 my $FUNC_FOLDER   = "function";
@@ -739,6 +743,19 @@ sub getOidsFromFile {
     return (%oids_hash);
 }
 
+sub printSaveSelectedGenomeToWorkspace {
+    my ( $saveSelectedName ) = @_;
+
+    ## save to workspace
+    if ($user_restricted_site) {
+        printCartSaveToWorkspace(
+            "Save <b>selected genomes</b> to",
+            "$saveSelectedName", 
+            '', '', '', '', '', ''
+        );
+    }
+}
+
 sub printSaveGenomeToWorkspace {
     my ( $select_id_name ) = @_;
 
@@ -1431,7 +1448,8 @@ sub printCartSaveToWorkspace {
     {
 
         my $folder = '';
-        if ( $saveSelectedName eq "_section_Workspace_saveGenomeCart" ) {
+        if ( $saveSelectedName eq "_section_Workspace_saveGenomeCart" 
+        || $saveSelectedName eq "_section_Workspace_saveGenomeSetCreation" ) {
             $folder = $GENOME_FOLDER;
         }
         elsif ($saveSelectedName eq "_section_Workspace_saveGeneCart"
@@ -1471,7 +1489,7 @@ sub printCartSaveToWorkspace {
 
         my $workspace =
           "<a href=\"$main_cgi?section=Workspace\">My Workspace</a>";
-        print "<h2><a href='#' name='Save2Workspace'>Save " . $what . "to My Workspace</a></h2>";
+        print "<h2>Save " . $what . "to My Workspace</h2>";
         printHint(
             "Even though you can save large amount of data into workspace, many profile functions will timeout for extremely large workspace datasets"
         );
@@ -1566,12 +1584,22 @@ sub printCartSaveToWorkspace {
                 }
             }
             else {
-                print submit(
-                    -name    => $saveSelectedName,
-                    -value   => $saveSelectButtonName,
-                    -class   => "medbutton",
-                    -onClick => "return checkFileName('$workspacefilename', '$radioBtnGrp');"
-                );
+                if ( $saveSelectedName eq "_section_Workspace_saveGenomeSetCreation" ) {
+                    print submit(
+                        -name    => $saveSelectedName,
+                        -value   => $saveSelectButtonName,
+                        -class   => "medbutton",
+                        -onClick => "return myValidationBeforeSubmit1('$workspacefilename', '$radioBtnGrp', 'selectedGenome1', '1', '', '');"
+                    );                    
+                }
+                else {
+                    print submit(
+                        -name    => $saveSelectedName,
+                        -value   => $saveSelectButtonName,
+                        -class   => "medbutton",
+                        -onClick => "return checkFileName('$workspacefilename', '$radioBtnGrp');"
+                    );                    
+                }
             }
         }
 
@@ -1954,5 +1982,55 @@ sub getAllInputFiles {
 
     return (@all_files);
 }
+
+###############################################################################
+# printGenomeListForm
+###############################################################################
+sub printGenomeListForm {
+    my ($numTaxon, $maxSelected, $noMetagenome) = @_;
+    $maxSelected = -1 if $maxSelected eq "";
+
+    my $hideViruses = getSessionParam("hideViruses");
+    $hideViruses = ($hideViruses eq "" || $hideViruses eq "Yes") ? 0 : 1;
+    my $hidePlasmids = getSessionParam("hidePlasmids");
+    $hidePlasmids = ($hidePlasmids eq "" || $hidePlasmids eq "Yes") ? 0 : 1;
+    my $hideGFragment = getSessionParam("hideGFragment");
+    $hideGFragment = ($hideGFragment eq "" || $hideGFragment eq "Yes") ? 0 : 1;
+
+    if ( $enable_genomelistJson ) {
+        my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
+        $template->param( base_url => $base_url );
+        $template->param( YUI      => $YUI );
+        print $template->output;
+    }
+
+    my $xml_cgi = $cgi_url . '/xml.cgi';
+    my $template = HTML::Template->new
+        ( filename => "$base_dir/genomeJsonOneDiv.html" );
+
+    $template->param( isolate      => 1 );
+    $template->param( gfr          => $hideGFragment );
+    $template->param( pla          => $hidePlasmids );
+    $template->param( vir          => $hideViruses );
+    $template->param( isolate      => 1 );
+    $template->param( all          => 1 );
+    $template->param( cart         => 1 );
+    $template->param( xml_cgi      => $xml_cgi );
+    $template->param( prefix       => '' );
+    $template->param( maxSelected1 => $maxSelected );
+
+    if ( $include_metagenomes && !$noMetagenome ) {
+        #$template->param( selectedGenome1Title => '' );
+        $template->param( include_metagenomes => 1 );
+        #$template->param( selectedAssembled1  => 1 );
+    }
+
+    my $s = "";
+    $template->param( mySubmitButton => $s );
+    print $template->output;
+
+    GenomeListJSON::showGenomeCart($numTaxon);
+}
+
 
 1;

@@ -1,6 +1,6 @@
 ###########################################################################
 # WorkspaceGeneSet.pm
-# $Id: WorkspaceGeneSet.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: WorkspaceGeneSet.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ###########################################################################
 package WorkspaceGeneSet; 
 
@@ -94,7 +94,7 @@ my $in_file          = $env->{in_file};
  
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
  
 # user's sub folder names                                                             
@@ -379,8 +379,8 @@ sub printGeneSetMainForm {
 
     require WorkspaceJob;
     my ($genomeFuncSets_ref, $genomeBlastSets_ref, $genomePairwiseANISets_ref, $geneFuncSets_ref, 
-        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, 
-        $funcScafSearchSets_ref)
+        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, $funcScafSearchSets_ref, 
+        $genomeSaveFuncGeneSets_ref, $geneSaveFuncGeneSets_ref, $scafSaveFuncGeneSets_ref)
         = WorkspaceJob::getExistingJobSets();
 
     Workspace::printSubmitComputation($sid, $folder, 'func_profile', 
@@ -2486,18 +2486,18 @@ sub showGeneFuncSetProfile {
 
     if ( $isSet ) {
         validateGeneSelection( $isSet, @all_files );
-    	print "<h1>Gene Set Function Profile ($share_func_set_name)</h1>\n";
+        print "<h1>Gene Set Function Profile ($share_func_set_name)</h1>\n";
         print
 "<p>Profile is based on gene set(s).  Counts in the data table are gene counts.<br/>\n";
         print "Selected gene set(s): ";
-    	WorkspaceUtil::printShareSetName($dbh, $sid, @all_files);
+        WorkspaceUtil::printShareSetName($dbh, $sid, @all_files);
         print "<br/>\n"; 
         HtmlUtil::printMetaDataTypeSelection( $data_type, 2 );
         print "</p>";
     }
     else {
         validateGeneSelection( $isSet, @gene_oids );
-    	print "<h1>Gene Function Profile ($share_func_set_name)</h1>\n";
+        print "<h1>Gene Function Profile ($share_func_set_name)</h1>\n";
         print
 "<p>Profile is based on individual genes in gene set(s).  Counts in the data table are gene counts.<br/>\n";
         print "Selected gene(s): <i>@gene_oids</i><br/>\n";
@@ -2527,31 +2527,43 @@ sub showGeneFuncSetProfile {
 
     my %func_names = QueryUtil::fetchFuncIdAndName( $dbh, \@func_ids );
 
-    my $rclause = WebUtil::urClause('g.taxon');
-    my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
-
     print "Computing function counts ... <br/>\n";
     my %geneOrset_cnt_h;
-    #ToDo: improve efficiency
-    #if ($isSet) {
-    #    # gene sets
-    #    for my $x (@filenames) {
-    #        my $fullname     = "$workspace_dir/$sid/$folder/$x";
-    #        my %func2count_h = getGeneFuncSetCount( $dbh, \@func_ids, $fullname, '', $data_type, $rclause, $imgClause );
-    #        $geneOrset_cnt_h{$x} = \%func2count_h;
-    #        print ".";
-    #    }
-    #}
-    #else {
-    #    # genes
-    #    for my $gene_oid (@gene_oids) {
-    #        my %func2count_h = getGeneFuncSetCount( $dbh, \@func_ids, '', $gene_oid, $data_type, $rclause, $imgClause );
-    #        $geneOrset_cnt_h{$gene_oid} = \%func2count_h;
-    #        print ".";
-    #    }
-    #}
-    #print "Computing function counts done ... <br/>\n";
-    #print "<p>\n";
+    my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( \@func_ids );
+    foreach my $func_ids_ref (@func_groups) {
+        if ($isSet) {
+            # gene sets
+            for my $x2 (@all_files) { 
+                my($c_id, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $x2 ); 
+                my $fullname = "$workspace_dir/$c_id/$folder/$x";
+                my %func2count_h = getGeneFuncSetCount( $dbh, $func_ids_ref, $fullname, '', $data_type );
+                my $geneOrset_func2count_href = $geneOrset_cnt_h{$x2};
+                if ( $geneOrset_func2count_href ) {
+                    foreach my $func_id ( keys %func2count_h ) {
+                        $geneOrset_func2count_href->{$func_id} = $func2count_h{$func_id};
+                    }
+                }
+                else {
+                    $geneOrset_cnt_h{$x2} = \%func2count_h;                    
+                }
+            }
+        }
+        else {
+            # genes
+            for my $gene_oid (@gene_oids) {
+                my %func2count_h = getGeneFuncSetCount( $dbh, $func_ids_ref, '', $gene_oid, $data_type );
+                my $geneOrset_func2count_href = $geneOrset_cnt_h{$gene_oid};
+                if ( $geneOrset_func2count_href ) {
+                    foreach my $func_id ( keys %func2count_h ) {
+                        $geneOrset_func2count_href->{$func_id} = $func2count_h{$func_id};
+                    }
+                }
+                else {
+                    $geneOrset_cnt_h{$gene_oid} = \%func2count_h;
+                }
+            }
+        }
+    }
 
     my $total_cnt = 0;
     my %funcId2geneOrset2cnt_h;
@@ -2573,12 +2585,12 @@ sub showGeneFuncSetProfile {
                     $cnt = $func_cnt_href->{$func_id};
                 }
                 else {
-                    #should not be used after finishing todo
+                    #should not be used
                     my($c_id, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $x2 );
                     my $fullname = "$workspace_dir/$c_id/$folder/$x";
                     my %gene_h;
-                    $cnt = Workspace::outputFuncGene( "", $dbh, $func_id, $folder, $fullname, $data_type, \%gene_h );        
-                    #print "call Workspace::outputFuncGene done<br/>\n";
+                    $cnt = Workspace::outputFuncGene( "", $dbh, $func_id, $folder, $fullname, $data_type, \%gene_h );
+                    #print "call Workspace::outputFuncGene() done<br/>\n";
                 }
                 $geneOrset2cnt_h{$x2} = $cnt;
                 $total_cnt += $cnt;
@@ -2592,8 +2604,8 @@ sub showGeneFuncSetProfile {
                     $cnt = $func_cnt_href->{$func_id};
                 }
                 else {
-                    #should not be used after finishing todo
-                    $cnt = getGeneFuncCount( $dbh, $func_id, $gene_oid, $data_type, $rclause, $imgClause );
+                    #should not be used
+                    $cnt = getGeneFuncCount( $dbh, $func_id, $gene_oid, $data_type );
                 }
                 $geneOrset2cnt_h{$gene_oid} = $cnt;
                 $total_cnt += $cnt;
@@ -2646,66 +2658,67 @@ sub showGeneFuncSetProfile {
     my $row_cnt = 0;
     for my $func_id (@func_ids) {
 
-        my $r = $func_id . $sd . $func_id . "\t";
+        my $r = $sd . "<input type='checkbox' name='func_id' value='$func_id' />" . " \t";
+        $r .= $func_id . $sd . $func_id . "\t";
         $r .= $func_names{$func_id} . $sd . $func_names{$func_id} . "\t";
 
         my $geneOrset2cnt_href = $funcId2geneOrset2cnt_h{$func_id};
-    	if ( $isSet ) {
-    	    my $has_cnt = 0;
+        if ( $isSet ) {
+            my $has_cnt = 0;
             for my $x2 (@all_files) {
                 my $cnt = $geneOrset2cnt_href->{$x2};
-        		if ($cnt) {
-        		    my $url = "$section_cgi&page=profileGeneList"
-        			. "&input_file=$x2&func_id=$func_id";
-        		    $url .= "&data_type=$data_type" if ( $data_type );
-        		    $url = alink( $url, $cnt );
-        		    $r .= $cnt . $sd . $url . "\t";
-        		    $has_cnt = 1;
-        		}
-        		else {
-        		    $r .= "0" . $sd . "0\t";
-        		}
-    	    }
+                if ($cnt) {
+                    my $url = "$section_cgi&page=profileGeneList"
+                    . "&input_file=$x2&func_id=$func_id";
+                    $url .= "&data_type=$data_type" if ( $data_type );
+                    $url = alink( $url, $cnt );
+                    $r .= $cnt . $sd . $url . "\t";
+                    $has_cnt = 1;
+                }
+                else {
+                    $r .= "0" . $sd . "0\t";
+                }
+            }
 
-    	    if ( $has_cnt ) {
-        		$r = $sd . "<input type='checkbox' name='func_id' value='$func_id' />" . " \t" . $r;
-    	    }
-    	    else {
-        		$r = $sd . " \t" . $r;
-    	    }
-    	}
-    	else {
-    	    my $has_cnt = 0;
-    	    for my $gene_oid ( @gene_oids ) {
+            #if ( $has_cnt ) {
+            #    $r = $sd . "<input type='checkbox' name='func_id' value='$func_id' />" . " \t" . $r;
+            #}
+            #else {
+            #    $r = $sd . " \t" . $r;
+            #}
+        }
+        else {
+            my $has_cnt = 0;
+            for my $gene_oid ( @gene_oids ) {
                 my $cnt = $geneOrset2cnt_href->{$gene_oid};        
-        		if ($cnt) {
+                if ($cnt) {
                     my $url;
-        		    if ( WebUtil::isInt($gene_oid) ) {
-            			$url = "$main_cgi?section=GeneDetail"
-            			    . "&page=geneDetail&gene_oid=$gene_oid";
-        		    }
-        		    else {
-            			my ($taxon_oid, $data_type, $g2) = split(/ /, $gene_oid);
-            			$url = "$main_cgi?section=MetaGeneDetail"
-            			    . "&page=metaGeneDetail&taxon_oid=$taxon_oid" 
-            			    . "&data_type=$data_type&gene_oid=$g2";
-        		    } 
-        		    $url = alink( $url, $cnt );
-        		    $r .= $cnt . $sd . $url . "\t";
-        		    $has_cnt = 1;
-        		}
-        		else {
-        		    $r .= "0" . $sd . "0\t";
-        		}
-    	    }   # end for $gene_oid
+                    if ( WebUtil::isInt($gene_oid) ) {
+                        $url = "$main_cgi?section=GeneDetail"
+                            . "&page=geneDetail&gene_oid=$gene_oid";
+                    }
+                    else {
+                        my ($taxon_oid, $data_type, $g2) = split(/ /, $gene_oid);
+                        $url = "$main_cgi?section=MetaGeneDetail"
+                            . "&page=metaGeneDetail&taxon_oid=$taxon_oid" 
+                            . "&data_type=$data_type&gene_oid=$g2";
+                    } 
+                    $url = alink( $url, $cnt );
+                    $r .= $cnt . $sd . $url . "\t";
+                    $has_cnt = 1;
+                }
+                else {
+                    $r .= "0" . $sd . "0\t";
+                }
+            }   # end for $gene_oid
     
-    	    if ( $has_cnt ) {
-        		$r = $sd . "<input type='checkbox' name='func_id' value='$func_id' />" . " \t" . $r;
-    	    }
-    	    else {
-        		$r = $sd . " \t" . $r;
-    	    }
-    	}
+            #if ( $has_cnt ) {
+            #    $r = $sd . "<input type='checkbox' name='func_id' value='$func_id' />" . " \t" . $r;
+            #}
+            #else {
+            #    $r = $sd . " \t" . $r;
+            #}
+        }
         $it->addRow($r);
         $row_cnt++;
     }
@@ -2803,71 +2816,63 @@ sub getGeneFuncCount {
 }
 
 sub getGeneFuncSetCount {
-    my ( $dbh, $func_ids_ref, $input_file, $input_gene, $data_type, $rclause, $imgClause ) = @_;
+    my ( $dbh, $func_ids_ref, $input_file, $input_gene, $data_type ) = @_;
+
+    my @func_ids = @$func_ids_ref;
 
     my ($db_genes_ref, $file_genes_ref) 
-        = findDbAndMetaGenes( $dbh, $input_file, $input_gene );
-
-    # function types list
-    my (
-        $go_ids_ref,    $cog_ids_ref,     $kog_ids_ref,   $pfam_ids_ref,    $tigr_ids_ref,
-        $ec_ids_ref,    $ko_ids_ref,      $ipr_ids_ref,   $tc_fam_nums_ref, $bc_ids_ref,
-        $np_ids_ref,    $metacyc_ids_ref, $iterm_ids_ref, $ipway_ids_ref,   $plist_ids_ref,
-        $netwk_ids_ref, $icmpd_ids_ref,   $irexn_ids_ref, $prule_ids_ref,   $unrecognized_ids_ref
-      )
-      = QueryUtil::groupFuncIds($func_ids_ref);
+        = findDbAndMetaGenes( $input_file, $input_gene );
+    #print "getGeneFuncSetCount() db_genes_ref=@$db_genes_ref<br/>\n";
+    #print "getGeneFuncSetCount() file_genes_ref=@$file_genes_ref<br/>\n";
 
     my %func2count_h;
+    my $func_id = $func_ids[0];
     
     # database
     if ( scalar(@$db_genes_ref) > 0 ) {
-        if (!$rclause && !$imgClause) {
-            $rclause = WebUtil::urClause('g.taxon');
-            $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');        
+        my $rclause = WebUtil::urClause('g.taxon');
+        my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
+        my $gene_str = OracleUtil::getNumberIdsInClause( $dbh, @$db_genes_ref );
+        
+        my ( $sql, @bindList ) = WorkspaceQueryUtil::getDbGeneFuncsCountSql(
+            $dbh, \@func_ids, $gene_str, $rclause, $imgClause);
+        #print "getGeneFuncSetCount() sql=$sql<br/>\n";
+        if ( $sql ) {
+            my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
+            for ( ; ; ) {
+                my ( $func, $cnt1 ) = $cur->fetchrow();
+                last if !$func;
+                
+                $func = WorkspaceQueryUtil::addBackFuncIdPrefix( $func_id, $func );
+                if ( $func2count_h{$func} ) {
+                    $func2count_h{$func} += $cnt1;
+                }
+                else {
+                    $func2count_h{$func} = $cnt1;
+                }
+            }
+            $cur->finish();
         }
 
-        my $gene_str = OracleUtil::getNumberIdsInClause( $dbh, @$db_genes_ref );
-        if ( scalar(@$cog_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'COG', $cog_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$pfam_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'PFAM', $pfam_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$tigr_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'TIGR', $tigr_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$ko_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'KO', $ko_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$ec_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'EC', $ec_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$metacyc_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'MetaCyc', $metacyc_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$ipr_ids_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'IPR', $ipr_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$tc_fam_nums_ref) > 0 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'TC', $tc_fam_nums_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$iterm_ids_ref) > -1 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'ITERM', $iterm_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$ipway_ids_ref) > -1 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'IPWAY', $ipway_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-        if ( scalar(@$plist_ids_ref) > -1 ) {
-            execDbGeneFuncsCount( $dbh, \%func2count_h, 'PLIST', $plist_ids_ref, $gene_str, $rclause, $imgClause );
-        }
-            
         OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
             if ( $gene_str =~ /gtt_num_id/i );        
     }
 
     # file
     if ( scalar(@$file_genes_ref) > 0 ) {
+        my $func_tag = MetaUtil::getFuncTagFromFuncId( $func_id );
+        if ( !$func_tag ) {
+            print "<p>Unknown function ID $func_id\n";
+            next;
+        }
 
+        my ( $metacyc2ec_href, $ec2metacyc_href );
+        if ( $func_id =~ /MetaCyc\:/i ) {
+            ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, \@func_ids );
+            my @ec_ids = keys %$ec2metacyc_href;
+            @func_ids = @ec_ids;
+        }
+                                
         my %taxon_datatype_h;
         for my $line (@$file_genes_ref) {           
             my ($taxon_oid, $d2, $gene_oid)  = split( / /, $line );
@@ -2883,10 +2888,10 @@ sub getGeneFuncSetCount {
                 } else {
                     my %hash2;
                     $hash2{$gene_oid} = 1;
-                    $taxon_datatype_h{$key}  = \%hash2;
+                    $taxon_datatype_h{$key} = \%hash2;
                 }
             }
-        }    # end while line
+        }   # end while line
 
         for my $key ( keys %taxon_datatype_h ) {
             my $genes_href = $taxon_datatype_h{$key};
@@ -2896,41 +2901,34 @@ sub getGeneFuncSetCount {
             }
     
             my ( $taxon_oid, $d2 ) = split( / /, $key );
-            if ( scalar(@$cog_ids_ref) > 0 ) {
-                execMetaGeneFuncsCount( \%func2count_h, $taxon_oid, $d2, 'cog', $cog_ids_ref, $genes_href );
-            }
-            if ( scalar(@$pfam_ids_ref) > 0 ) {
-                execMetaGeneFuncsCount( \%func2count_h, $taxon_oid, $d2, 'pfam', $pfam_ids_ref, $genes_href );
-            }
-            if ( scalar(@$tigr_ids_ref) > 0 ) {
-                execMetaGeneFuncsCount( \%func2count_h, $taxon_oid, $d2, 'tigr', $pfam_ids_ref, $genes_href );
-            }
-            if ( scalar(@$ko_ids_ref) > 0 ) {
-                execMetaGeneFuncsCount( \%func2count_h, $taxon_oid, $d2, 'ko', $pfam_ids_ref, $genes_href );
-            }
-            if ( scalar(@$ec_ids_ref) > 0 ) {
-                execMetaGeneFuncsCount( \%func2count_h, $taxon_oid, $d2, 'ec', $pfam_ids_ref, $genes_href );
-            }
-            if ( scalar(@$metacyc_ids_ref) > 0 ) {
-                my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $metacyc_ids_ref );
-                my @ec_ids = keys %$ec2metacyc_href;
-                my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $d2, 'ec', \@ec_ids, $genes_href );
-                if ( scalar( keys %func_genes ) > 0 ) {
-                    for my $metacyc_id (@$metacyc_ids_ref) {
-                        my $ecids_ref = $metacyc2ec_href->{$metacyc_id};
-                        for my $ec_id (@$ecids_ref) {
-                            if ( $func_genes{$metacyc_id} ) {
-                                my @func_genes = split( /\t/, $func_genes{$metacyc_id} );
-                                for my $func_gene ( @func_genes ) {
-                                    if ( $genes_href && $genes_href->{$func_gene} ) {
-                                        my $func = "MetaCyc:$metacyc_id";
-                                        if ( $func2count_h{$func} ) {
-                                            $func2count_h{$func} += 1;
-                                        }
-                                        else {
-                                            $func2count_h{$func} = 1;
-                                        }
-                                    }
+            my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $d2, $func_tag, \@func_ids, $genes_href );
+            #print "getGeneFuncSetCount() func_genes:<br/>\n";
+            #print Dumper(\%func_genes);
+            #print "<br/>\n";
+            if ( scalar( keys %func_genes ) > 0 ) {
+                for my $func2 (keys %func_genes) {
+                    my @func_genes = split( /\t/, $func_genes{$func2} );
+
+                    my @func2s;
+                    if ( $func_id =~ /MetaCyc/i ) {
+                        my $metacyc_ids_ref = $ec2metacyc_href->{$func2};
+                        @func2s = @$metacyc_ids_ref;
+                    }
+                    else {
+                        @func2s = ( $func2 );
+                    }
+                    #print "getGeneFuncSetCount() func2s=@func2s<br/>\n";
+
+                    foreach my $func ( @func2s ) {
+                        $func = WorkspaceQueryUtil::addBackFuncIdPrefix( $func_id, $func );
+                        #print "getGeneFuncSetCount() func=$func func_genes=@func_genes<br/>\n";
+                        for my $func_gene ( @func_genes ) {
+                            if ( $genes_href && $genes_href->{$func_gene} ) {
+                                if ( $func2count_h{$func} ) {
+                                    $func2count_h{$func} += 1;
+                                }
+                                else {
+                                    $func2count_h{$func} = 1;
                                 }
                             }
                         }
@@ -2941,71 +2939,11 @@ sub getGeneFuncSetCount {
         }
 
     }
+    #print "getGeneFuncSetCount() func2count_h:<br/>\n";
+    #print Dumper(\%func2count_h);
+    #print "<br/>\n";
 
     return %func2count_h;
-}
-
-sub execDbGeneFuncsCount {
-    my ( $dbh, $func2count_href, $func_type, $func_ids_ref, $gene_str, $rclause, $imgClause ) = @_;
-
-    my ( $sql, @bindList ) = WorkspaceQueryUtil::getDbGeneFuncsCountSql(
-        $dbh, $func_type, $func_ids_ref, $gene_str, $rclause, $imgClause);
-    if ( $sql ) {
-        my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
-        for ( ; ; ) {
-            my ( $func_id, $cnt1 ) = $cur->fetchrow();
-            last if !$func_id;
-            
-            my $func;
-            if ( $func_type =~ /^MetaCyc/i ) {
-                $func = "MetaCyc:$func_id";
-            }
-            elsif ( $func_type =~ /^ITERM/i ) { 
-                $func = "ITERM:$func_id";
-            }
-            elsif ( $func_type =~ /^IPWAY/i ) { 
-                $func = "IPWAY:$func_id";
-            }
-            elsif ( $func_type =~ /^PLIST/i ) {
-                $func = "PLIST:$func_id";
-            }
-            else {
-                $func = $func_id;
-            }
-            
-            if ( $func2count_href->{$func} ) {
-                $func2count_href->{$func} += $cnt1;
-            }
-            else {
-                $func2count_href->{$func} = $cnt1;
-            }
-        }
-        $cur->finish();
-    }
-}
-
-sub execMetaGeneFuncsCount {
-    my ( $func2count_href, $taxon_oid, $d2, $func_type, $func_ids_ref, $genes_href ) = @_;
-
-    my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $d2, $func_type, $func_ids_ref, $genes_href );
-    if ( scalar( keys %func_genes ) > 0 ) {
-        for my $func (keys %func_genes) {
-            if ( $func_genes{$func} ) {
-                my @func_genes = split( /\t/, $func_genes{$func} );
-                for my $func_gene ( @func_genes ) {
-                    if ( $genes_href && $genes_href->{$func_gene} ) {
-                        if ( $func2count_href->{$func} ) {
-                            $func2count_href->{$func} += 1;
-                        }
-                        else {
-                            $func2count_href->{$func} = 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
 }
 
 

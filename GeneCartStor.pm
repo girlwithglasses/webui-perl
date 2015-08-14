@@ -16,7 +16,7 @@
 #    12: scaffold read depth
 #    --es 03/22/2007
 #
-# $Id: GeneCartStor.pm 33880 2015-08-03 19:49:22Z jinghuahuang $
+# $Id: GeneCartStor.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package GeneCartStor;
 my $section = "GeneCartStor";
@@ -97,7 +97,7 @@ my $fixedColIDs = "gene_oid,locus_tag,desc,desc_orig,taxon_oid,taxon_display_nam
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 my $GENE_FOLDER = "gene";

@@ -2,7 +2,7 @@
 # AbundanceComparisons.pm - Tool to allow for multiple pairwise
 #   genome abundance comparisons.
 #        --es 06/11/2007
-# $Id: AbundanceComparisons.pm 33284 2015-04-29 00:28:32Z aratner $
+# $Id: AbundanceComparisons.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package AbundanceComparisons;
 
@@ -45,7 +45,7 @@ my $mer_data_dir         = $env->{mer_data_dir};
 my $default_timeout_mins = $env->{default_timeout_mins};
 my $merfs_timeout_mins   = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 my $fdr       = 0.05;    # false discovery rate
@@ -67,6 +67,7 @@ my $contact_oid = WebUtil::getContactOid();
 sub dispatch {
     my ($numTaxon) = @_;
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( paramMatch("abundanceResults") ne "" ) {
         printAbundanceResults();
@@ -98,9 +99,9 @@ sub printQueryForm {
 
     print "<p style='width: 800px;'>\n";
     print qq{
-        The <b>Function Comparison</b> tool displays pairwise 
-        comparisons between <u>one query</u> (meta)genome and 
-        <u>multiple reference</u> (meta)genomes, 
+        The <b>Function Comparison</b> tool displays pairwise
+        comparisons between <u>one query</u> (meta)genome and
+        <u>multiple reference</u> (meta)genomes,
         including estimates of the statistical significance
         of the observed differences.
     };
@@ -171,7 +172,7 @@ sub printQueryForm {
     print "<input type='radio' name='xcopy' value='est_copy' />\n";
     WebUtil::printInfoTipLink
 	("Estimated by multiplying by read depth when available.",
-	 "Estimated Gene Copies","Estimated Gene Copies", 
+	 "Estimated Gene Copies","Estimated Gene Copies",
 	 "Estimated Gene Copies");
     print "</p>\n";
 
@@ -223,7 +224,7 @@ sub printQueryForm {
     my $name = "_section_${section}_abundanceResults";
     GenomeListJSON::printHiddenInputType( $section, 'abundanceResults' );
     my $button = GenomeListJSON::printMySubmitButtonXDiv
-       ( 'go', $name, 'Go', '', $section, 'abundanceResults', 
+       ( 'go', $name, 'Go', '', $section, 'abundanceResults',
 	 'smdefbutton', 'selectedGenome1', 1, 'selectedGenome2', 1 );
     print $button;
 
@@ -321,7 +322,7 @@ sub printAbundanceResults {
     } else {
         $outTypeTxt = "D-score";
     }
-    
+
     print "<h1>Function Comparisons ($outTypeTxt)</h1>\n";
 
     print "<p>\n";
@@ -334,7 +335,7 @@ sub printAbundanceResults {
         my $url = "$section_cgi&page=dscoreNote";
         my $link = alink( $url, "D-score unsigned" );
         print "Output type: $link<br/>\n";
-        
+
     } elsif ( $outType eq "zlor" ) {
         my $url = "$section_cgi&page=zlorNote";
         my $link = alink( $url, "Z-LOR" );
@@ -349,7 +350,7 @@ sub printAbundanceResults {
         my $url = "$section_cgi&page=skellamNote";
         my $link = alink( $url, "Skellam" );
         print "Output type: $link<br/>\n";
-            
+
     } elsif ( $outType eq "pvalue" ) {
         print "Output P-value.<br/>\n";
     } elsif ( $outType eq "rfreq" ) {
@@ -453,7 +454,7 @@ sub printAbundanceResults {
 
     my %refTaxonResults;
     #my %refTaxonLors;
-        
+
     my %refTaxonRfreqs;
     my %refTaxonFlags;
 
@@ -468,7 +469,7 @@ sub printAbundanceResults {
     	my $n2;
         if ( $outType eq "skellam" ) {
             # use %rfreqs as \%pvalues
-            ($n1, $n2) = getSkellamVals( $queryProfile_ref, $referenceProfile_ref, \%results, \%rfreqs, \%flags ); 
+            ($n1, $n2) = getSkellamVals( $queryProfile_ref, $referenceProfile_ref, \%results, \%rfreqs, \%flags );
         } elsif ( $outType eq "zlor" ) {
             my %lors;
             ($n1, $n2) = getZlors( $outType, $queryProfile_ref, $referenceProfile_ref, \%lors, \%results, \%rfreqs, \%flags );
@@ -499,7 +500,7 @@ sub printAbundanceResults {
 
     my %refTaxonPvalues;
     my %refTaxonPvalueCutoffs;
-    
+
     if ( $outType eq "skellam" ) {
         %refTaxonPvalues = %refTaxonRfreqs;
     }
@@ -509,7 +510,7 @@ sub printAbundanceResults {
             my %h;
             $refTaxonPvalues{$taxon_oid} = \%h;
         }
-    
+
         # ken - get p-value all the time
         #if( $outType eq "pvalue" ) {
         print "Get p-values for d-scores or Z-LOR's ...\n";
@@ -518,24 +519,24 @@ sub printAbundanceResults {
     }
 
     if($img_ken) {
-        printEndWorkingDiv('',1);    
+        printEndWorkingDiv('',1);
     } else {
         printEndWorkingDiv();
     }
-    
+
 
     #print "<p>*** time2: " . currDateTime() . "\n";
 
     my $pagerFileRoot = getPagerFileRoot( $function, $xcopy, $estNormalization, $normalization, $outType );
     webLog("pagerFileRoot $pagerFileRoot'\n");
-    
+
     my $nFuncs = writePagerFiles(
         $dbh,                 $pagerFileRoot,           $funcId2Name_href,
         \%queryTaxonProfiles, \%referenceTaxonProfiles, \%refTaxonResults,
         \%refTaxonRfreqs,     \%refTaxonPvalues,        \%refTaxonFlags,
         \%refTaxonPvalueCutoffs
     );
-    
+
     printOnePage(1);
 
     printStatusLine( "$nFuncs functions loaded.", 2 );
@@ -556,10 +557,10 @@ sub writePagerFiles {
     	$taxonPvalues_ref, $taxonFlags_ref, $taxonPvalueCutoffs_ref
       )
       = @_;
-      
+
     my $funcsPerPage  = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     my $function      = param("function");
     my $xcopy         = param("xcopy");
     my $estNormalization = param("estNormalization");
@@ -663,7 +664,7 @@ sub writePagerFiles {
             }
         }
 
-        print $Fmeta "$colIdx : $abbrName<br/>$xcopy_text<br/>(Q) : " 
+        print $Fmeta "$colIdx : $abbrName<br/>$xcopy_text<br/>(Q) : "
 	    . "DN : right : $name ($taxon_oid) $xcopy_text\n";
         $colIdx++;
     }
@@ -692,7 +693,7 @@ sub writePagerFiles {
         $colIdx++;
 
         # gene count column
-        print $Fmeta "$colIdx : $abbrName<br/>$xcopy_text<br/>(R) : " 
+        print $Fmeta "$colIdx : $abbrName<br/>$xcopy_text<br/>(R) : "
 	    . "DN : right : $name ($taxon_oid) $xcopy_text\n";
         $colIdx++;
     }
@@ -1054,7 +1055,7 @@ sub printOnePage {
     my $outType               = param("outType");
     my $funcsPerPage          = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     my $doGenomeNormalization = 0;
     $doGenomeNormalization = 1               if $normalization eq "genomeSize";
     $pageNo                = param("pageNo") if $pageNo        eq "";
@@ -1477,7 +1478,7 @@ sub getCumGeneCount {
 #    funcId / taxon_oid.
 ############################################################################
 sub printGeneList {
-    
+
     my $func_type = param("function");
     my $funcId    = param("funcId");
     my $taxon_oid = param("taxon_oid");
@@ -1490,20 +1491,20 @@ sub printGeneList {
     my $dbh = dbLogin();
     printStatusLine( "Loading ...", 1 );
 
-    my $isTaxonInFile = AbundanceToolkit::printAbundanceGeneListSubHeader( 
+    my $isTaxonInFile = AbundanceToolkit::printAbundanceGeneListSubHeader(
         $dbh, $func_type, $funcId, $taxon_oid, $data_type);
-    
+
     if ( $isTaxonInFile ) {
         AbundanceToolkit::printMetaGeneList( $funcId, $taxon_oid, $data_type, $est_copy );
     }
     else {
-        
+
         require FuncCartStor;
         my $sql = FuncCartStor::getDtGeneFuncQuery1($funcId);
         my @binds = ( $taxon_oid, $funcId);
         AbundanceToolkit::printDbGeneList(  $dbh, $sql, \@binds, $est_copy );
     }
-    
+
     print end_form();
 }
 
@@ -1718,7 +1719,7 @@ sub getDScores {
         my $x1    = $q_ref->{$id};
         my $x2    = $r_ref->{$id};
         $x2 = 0 if ($x2 eq '');
-        
+
         my $p1    = $x1 / $n1;
         my $p2    = $x2 / $n2;
         my $rfreq = $p1 - $p2;
@@ -1738,10 +1739,10 @@ sub getDScores {
             $flags_ref->{$id} = "undersized";
             $undersized++;
         }
-        
+
         if($img_ken && $id eq 'pfam00015') {
             print "<b>id=$id x1=$x1 x2=$x2 n1=$n1 n2=$n2 p1=$p1 p2=$p2 p=$p q=$q num=$num den=$den d=$d</b><br>\n";
-            
+
         }
     }
     webLog("$undersized / $nKeys2 undersized\n");
@@ -1788,7 +1789,7 @@ sub getZlors {
     if ( $nKeys1 != $nKeys2 ) {
         #webDie("getZlors - getDScores: nKeys1=$nKeys1 nKeys2=$nKeys2 do not match\n");
         webLog("Warning: getDScores: nKeys1=$nKeys1 nKeys2=$nKeys2 do not match\n ");
-        print "Warning: getDScores: nKeys1=$nKeys1 nKeys2=$nKeys2 do not match<br/>\n";        
+        print "Warning: getDScores: nKeys1=$nKeys1 nKeys2=$nKeys2 do not match<br/>\n";
     }
     if ( $n1 < 1 || $n2 < 1 ) {
         webLog("getZlors: n1=$n1 n2=$n2: no hits to calculate\n");
@@ -1802,7 +1803,7 @@ sub getZlors {
         my $x1    = $q_ref->{$id};
         my $x2    = $r_ref->{$id};
         $x2 = 0 if ($x2 eq '');
-                
+
         my $p1    = $x1 / $n1;
         my $p2    = $x2 / $n2;
         my $rfreq = $p1 - $p2;
@@ -2094,11 +2095,11 @@ sub printDScoreNote {
        <b>Qualifications:</b><br/><br/>
        A test is valid if it is of sufficient size for a normal distribution:<br/><br/>
        <i>x1 >= 5 and x2 >= 5</i><br/><br/>
-       It is assumed that the gene to function assignments are independent. 
+       It is assumed that the gene to function assignments are independent.
        Alternatively, the $zlor_link test is available.<br/><br/>
 
        <b>Z-Rank:</b><br/>
-       <br/>The sum of independent random variables that are normally distributed 
+       <br/>The sum of independent random variables that are normally distributed
             is also normally distributed.<br/><br/>
        Z-Rank = (sum of z-scores of selected genomes) / sqrt(N)<br/>
        where N is the number of protein families including those without hits.
@@ -2153,7 +2154,7 @@ sub printZlorNote {
        </tr>
        </table>
 
-     
+
        <p>
        (This shows how counts are converted to probabilities,
         "odds" as probability of occurring over not probability of not
@@ -2196,7 +2197,7 @@ sub printSkellamNote {
     print "<p>\n";
     print qq{
        A Skellam distribution is a discrete probability distribution
-       of the difference between  two random variables having a 
+       of the difference between  two random variables having a
        Poisson distribution.  The variables, in this case, is
        the count of genes between two groups for a given function.
        These variables are binomially distributed, but when certain
@@ -2213,9 +2214,9 @@ sub printSkellamNote {
           in reference group.<br/>
        <i>lambda1</i> = <i>n1 * p1</i>, Poisson approximation.<br/>
        <i>lambda2</i> = <i>n2 * p2</i>, Poisson approximation.<br/>
-       <i>mu1</i> = <i>lambda1</i>, mean1 for Skellam distribution 
+       <i>mu1</i> = <i>lambda1</i>, mean1 for Skellam distribution
            (<i>x1</i>).<br/>
-       <i>mu2</i> = <i>lambda2</i>, mean2 for Skellam distribution 
+       <i>mu2</i> = <i>lambda2</i>, mean2 for Skellam distribution
            (<i>x2</i>).<br/>
        <br/>
        <b>Computations:</b><br/>

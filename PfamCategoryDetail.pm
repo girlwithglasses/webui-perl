@@ -4,7 +4,7 @@
 #     was put into perl modules.
 #    --es 10/06/2007
 #
-# $Id: PfamCategoryDetail.pm 33689 2015-07-06 07:49:51Z jinghuahuang $
+# $Id: PfamCategoryDetail.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package PfamCategoryDetail;
 my $section = "PfamCategoryDetail";
@@ -53,7 +53,7 @@ if ( getSessionParam("maxGeneListResults") ne "" ) {
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 ############################################################################

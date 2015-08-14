@@ -1,6 +1,6 @@
 ############################################################################
 # MetaDetail.pm - Show taxon detail page. (use files)
-# $Id: MetaDetail.pm 33900 2015-08-04 23:34:19Z klchu $
+# $Id: MetaDetail.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 # *** THIS CODE needs to be merged into TaxonDetail ***
 ############################################################################
 package MetaDetail;
@@ -131,7 +131,7 @@ my $max_scaffold_results = 20000;
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 ############################################################################

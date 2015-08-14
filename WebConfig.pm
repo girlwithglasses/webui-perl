@@ -254,7 +254,7 @@ sub getEnv {
     $e->{ scriptEnv_script } = $e->{ cgi_dir } . "/bin/scriptEnv.sh";
 
     # new for 3.3 - ken
-    $e->{dblock_file } = $e->{dbLock_dir} . $dbTag;
+    $e->{ dblock_file } = $e->{dbLock_dir} . $dbTag;
 
     # to put a special message in the message area below the menu
     # leave it blank to display no message
@@ -375,6 +375,8 @@ sub getEnv {
   wsimHomologs_bin => $base . "/webUI/webui.cgi/bin/x86_64-linux/wsimHomologs",
 
   merfs_timeout_mins => 0,
+
+  dev_site => 1
 
 	);
 

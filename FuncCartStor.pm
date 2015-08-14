@@ -6,7 +6,7 @@
 #     1: func_name
 #     2: batch_id
 #    --es 01/06/2007
-# $Id: FuncCartStor.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
+# $Id: FuncCartStor.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package FuncCartStor;
 my $section = "FuncCartStor";
@@ -72,7 +72,7 @@ my $maxProfileOccurIds     = 300;
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 ############################################################################

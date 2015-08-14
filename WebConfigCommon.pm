@@ -97,7 +97,7 @@ sub common {
     # Environmental Blast databases.
     #
     # --------------------------------------------------------------------------------------------
-    my %dbs = (
+    $e->{env_blast_dbs} = {
                 "amd"              => "Acid Mine Drainage",
                 "us_sludge"        => "Sludge/US",
                 "oz_sludge"        => "Sludge/Australian",
@@ -151,21 +151,39 @@ sub common {
                 "apWin"            => "Anarctic Marin Bacterioplankton, winter",
                 "apSum"            => "Anarctic Marin Bacterioplankton, summer",
                 "bisonPool14jan08" => "Bison Pool (14JAN08)",
-    );
-    $e->{env_blast_dbs} = \%dbs;
+    };
 
     # --------------------------------------------------------------------------------------------
     #
     # Robot patterns to block.
     #
     # --------------------------------------------------------------------------------------------
-    my @bot_patterns;
-    push( @bot_patterns,
-          "FirstGov", "Jeeves",    "BecomeBot",     "AI-Agent",  "ysearch", "crawler",
-          "Slurp",    "accelobot", "NimbleCrawler", "Java",      "bot",     "slurp",
-          "libwww",   "lwp",       "LWP",           "Mechanize", "Sphider", "Wget",
-          "wget",     "Axel",      "Python",        "Darwin",    'curl' );
-    $e->{bot_patterns}          = \@bot_patterns;
+    $e->{bot_patterns} = [ qw(
+accelobot
+AI-Agent
+Axel
+BecomeBot
+bot
+crawler
+curl
+Darwin
+FirstGov
+Java
+Jeeves
+libwww
+lwp
+LWP
+Mechanize
+NimbleCrawler
+Python
+slurp
+Slurp
+Sphider
+wget
+Wget
+ysearch
+) ];
+
     $e->{block_ip_address_file} = $e->{dbLock_dir} . "blockIps.txt";
 
     # --------------------------------------------------------------------------------------------
@@ -173,57 +191,56 @@ sub common {
     #
     #
     # --------------------------------------------------------------------------------------------
-    my %ornlSpeciesCode2Db = (
-                               sludgePhrap      => 'us_sludge',
-                               sludgeOz         => 'oz_sludge',
-                               sludgeJazz       => 'us_sludge',
-                               amd              => 'amd',
-                               soil             => 'soil',
-                               wf1              => 'wf1',
-                               wf2              => 'wf2',
-                               wf3              => 'wf3',
-                               tgut             => 'tgut',
-                               tgut2b           => 'tgut2b',
-                               tgut3            => 'tgut3',
-                               saf1             => 'saf1',
-                               saf2             => 'saf2',
-                               lwm1             => 'lwm1',
-                               tm7c32           => 'tm7c32',
-                               tm7c33           => 'tm7c33',
-                               mgutPt2          => 'mgutPt2',
-                               mgutPt3          => 'mgutPt3',
-                               mgutPt4          => 'mgutPt4',
-                               mgutPt6          => 'mgutPt6',
-                               mgutPt8          => 'mgutPt8',
-                               hsmat01          => 'hsmat01',
-                               hsmat02          => 'hsmat02',
-                               hsmat03          => 'hsmat03',
-                               hsmat04          => 'hsmat04',
-                               hsmat05          => 'hsmat05',
-                               hsmat06          => 'hsmat06',
-                               hsmat07          => 'hsmat07',
-                               hsmat08          => 'hsmat08',
-                               hsmat09          => 'hsmat09',
-                               hsmat10          => 'hsmat10',
-                               biz              => 'biz',
-                               saani            => 'saani',
-                               ucgw2            => 'ucgw2',
-                               lwComb           => 'lwComb',
-                               lwMethane        => 'lwMethane',
-                               lwMethanol       => 'lwMethanol',
-                               lwMethylamine    => 'lwMethylamine',
-                               lwFormaldehyde   => 'lwFormaldehyde',
-                               lwFormate        => 'lwFormate',
-                               taComm           => 'taComm',
-                               taComm3          => 'taComm3',
-                               taCommComb       => 'taCommComb',
-                               taCommFgenes     => 'taCommFgenes',
-                               orpgwFw301       => 'orpgw',
-                               apWin            => 'apWin',
-                               apSum            => 'apSum',
-                               bisonPool14jan08 => 'bisonPool14jan08'
-    );
-    $e->{env_blast_defaults} = \%ornlSpeciesCode2Db;
+    $e->{env_blast_defaults} = {
+		sludgePhrap      => 'us_sludge',
+		sludgeOz         => 'oz_sludge',
+		sludgeJazz       => 'us_sludge',
+		amd              => 'amd',
+		soil             => 'soil',
+		wf1              => 'wf1',
+		wf2              => 'wf2',
+		wf3              => 'wf3',
+		tgut             => 'tgut',
+		tgut2b           => 'tgut2b',
+		tgut3            => 'tgut3',
+		saf1             => 'saf1',
+		saf2             => 'saf2',
+		lwm1             => 'lwm1',
+		tm7c32           => 'tm7c32',
+		tm7c33           => 'tm7c33',
+		mgutPt2          => 'mgutPt2',
+		mgutPt3          => 'mgutPt3',
+		mgutPt4          => 'mgutPt4',
+		mgutPt6          => 'mgutPt6',
+		mgutPt8          => 'mgutPt8',
+		hsmat01          => 'hsmat01',
+		hsmat02          => 'hsmat02',
+		hsmat03          => 'hsmat03',
+		hsmat04          => 'hsmat04',
+		hsmat05          => 'hsmat05',
+		hsmat06          => 'hsmat06',
+		hsmat07          => 'hsmat07',
+		hsmat08          => 'hsmat08',
+		hsmat09          => 'hsmat09',
+		hsmat10          => 'hsmat10',
+		biz              => 'biz',
+		saani            => 'saani',
+		ucgw2            => 'ucgw2',
+		lwComb           => 'lwComb',
+		lwMethane        => 'lwMethane',
+		lwMethanol       => 'lwMethanol',
+		lwMethylamine    => 'lwMethylamine',
+		lwFormaldehyde   => 'lwFormaldehyde',
+		lwFormate        => 'lwFormate',
+		taComm           => 'taComm',
+		taComm3          => 'taComm3',
+		taCommComb       => 'taCommComb',
+		taCommFgenes     => 'taCommFgenes',
+		orpgwFw301       => 'orpgw',
+		apWin            => 'apWin',
+		apSum            => 'apSum',
+		bisonPool14jan08 => 'bisonPool14jan08'
+    };
 
     # --------------------------------------------------------------------------------------------
     #
@@ -231,39 +248,36 @@ sub common {
     #
     # --------------------------------------------------------------------------------------------
     ## Google Map Keys
-    my %googleMapKeys = (
+    $e->{google_map_keys} = {
           'jgi-psf.org' => 'ABQIAAAAYxJnF8y-nhPss9h0Mp_SmBRudsuYU0E-IvTrpz0eeItbCuKkEBQYbqxO7d1kC-KDKb1JTl78SHX6Cg',
           'jgi.doe.gov' => 'ABQIAAAAYxJnF8y-nhPss9h0Mp_SmBTg30WwySNRyLvcO7oFZfs2Agm6xRTuB05OZiGo4MATGpJmYVYP4vxVHQ',
           'hmpdacc-resources.org' => 'ABQIAAAAoyF356P0_F8RJgEsRg73bBSvpfy4IrTf2S0Jpw1e1K8i8S6yrxSlI4YBFXgRBnDNPn81Jl5m4_Ki5w'
-    );
-    $e->{google_map_keys} = \%googleMapKeys;
+    };
 
     # Google Analytics
     #
     $e->{enable_google_analytics} = 1;
-    my %googleAnalyticsKeys = (
+    $e->{google_analytics_keys} = {
                                 'jgi-psf.org'           => 'UA-15689341-3',
                                 'jgi.doe.gov'           => 'UA-15689341-4',
                                 'hmpdacc-resources.org' => 'UA-15689341-5',
-    );
-    $e->{google_analytics_keys} = \%googleAnalyticsKeys;
+    };
 
     # Google Recaptcha
     #
     # http://www.google.com/recaptcha
     # http://code.google.com/apis/recaptcha/intro.html
-    my %recaptcha_private_key = (
+	$e->{google_recaptcha_private_key} = {
                                   'jgi-psf.org'           => '6LfPjr4SAAAAAG6P8xA9VK0RTKgmAGrfk9A2c4i5',
                                   'jgi.doe.gov'           => '6LfQjr4SAAAAAI18Ydpv5Xb9Z-QOPl9x1MUc14Yl',
                                   'hmpdacc-resources.org' => '6LfRjr4SAAAAACHJ9oF3IAzpsQI69AJxbwJXiiyz',
-    );
-    my %recaptcha_public_key = (
+    };
+
+	$e->{google_recaptcha_public_key} = {
                                  'jgi-psf.org'           => '6LfPjr4SAAAAAEcnSNPTE-GtiPYTdUqkYK07BzYC',
                                  'jgi.doe.gov'           => '6LfQjr4SAAAAAHKn-Yd-QR55idf73Pnnxt6avsBh',
                                  'hmpdacc-resources.org' => '6LfRjr4SAAAAAD1o2hZI5nbSPydG00pb1b7Mb92S',
-    );
-    $e->{google_recaptcha_private_key} = \%recaptcha_private_key;
-    $e->{google_recaptcha_public_key}  = \%recaptcha_public_key;
+    };
 
     # --------------------------------------------------------------------------------------------
     #

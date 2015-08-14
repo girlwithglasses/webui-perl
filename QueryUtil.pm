@@ -1,6 +1,6 @@
 ############################################################################
 # Utility subroutines for queries
-# $Id: QueryUtil.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: QueryUtil.pm 33951 2015-08-09 17:08:52Z jinghuahuang $
 ############################################################################
 package QueryUtil;
 
@@ -592,7 +592,7 @@ sub getAllTaxonsOidAndNameFileSql {
 # fetchTaxonsOidAndNameFile
 ############################################################################
 sub fetchTaxonsOidAndNameFile {
-    my ($dbh, $taxon_oids_ref, $rclause, $imgClause) = @_;
+    my ($dbh, $taxon_oids_ref, $needTaxonStr, $rclause, $imgClause) = @_;
 
     my %taxon2name_h;
     my %taxon_in_file;
@@ -613,6 +613,10 @@ sub fetchTaxonsOidAndNameFile {
         }
     }
     $cur->finish();
+    if ( ! $needTaxonStr ) {
+        OracleUtil::truncTable( $dbh, "gtt_num_id" )
+          if ( $taxon_oid_str =~ /gtt_num_id/i );
+    }
 
     return (\%taxon2name_h, \%taxon_in_file, \%taxon_db, $taxon_oid_str);
 }
@@ -2194,7 +2198,7 @@ sub fetchGeneNames {
             $imgClause
         };
     
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id, $name) = $cur->fetchrow();
             last if ( !$id );
@@ -2338,7 +2342,7 @@ sub fetchScaffoldNameHash {
             $rclause
             $imgClause
         };
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id, $name) = $cur->fetchrow();
             last if ( !$id );
@@ -2433,7 +2437,7 @@ sub fetchValidTaxonOidHash {
             $imgClause
         };
             
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($oid) = $cur->fetchrow();
             last if ( !$oid );
@@ -2471,7 +2475,7 @@ sub fetchGeneGenomeOidsHash {
             $imgClause
         };
     
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id) = $cur->fetchrow();
             last if ( !$id );
@@ -2508,7 +2512,7 @@ sub fetchScaffoldGenomeOidsHash {
             $imgClause
         };
     
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id) = $cur->fetchrow();
             last if ( !$id );
@@ -2547,7 +2551,7 @@ sub fetchGeneScaffoldOidsHash {
             $imgClause
         };
     
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id) = $cur->fetchrow();
             last if ( !$id );
@@ -2586,20 +2590,21 @@ sub fetchGenomeScaffoldOidsHash {
             $imgClause
         };
         
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($taxon, $id, $name) = $cur->fetchrow();
             last if ( !$taxon );
             $oid_h{$id} = 1;
             $oid2name_h{$id} = $name;
             
-            my $oids_ref = $taxon_oid_h{$taxon};
-            if ( $oids_ref && scalar(@$oids_ref) > 0 ) {
-                push( @$oids_ref, $id );
+            my $ids_href = $taxon_oid_h{$taxon};
+            if ( $ids_href ) {
+                $ids_href->{$id} = 1;
             }
             else {
-                my @ids = ( $id );
-                $taxon_oid_h{$taxon} = \@ids;
+                my %ids_h;
+                $ids_h{$id} = 1;
+                $taxon_oid_h{$taxon} = \%ids_h;
             }
         }
         $cur->finish();
@@ -2634,7 +2639,7 @@ sub fetchScaffoldGeneOidsHash {
             $rclause
             $imgClause
     	};
-        my $cur = execSql( $dbh, $sql, 1 );
+        my $cur = execSql( $dbh, $sql, $verbose );
         for ( ; ; ) {
             my ($id) = $cur->fetchrow();
             last if ( !$id );

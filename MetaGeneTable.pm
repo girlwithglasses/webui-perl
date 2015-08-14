@@ -60,7 +60,7 @@ if ( getSessionParam("maxGeneListResults") ne "" ) {
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 #######################################################################################

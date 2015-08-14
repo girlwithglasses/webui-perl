@@ -1,6 +1,6 @@
 ###########################################################################
 # RadialPhyloTree.pm - draws a radial phylogenetic tree as seen on MG-RAST
-# $Id: RadialPhyloTree.pm 33566 2015-06-11 10:47:36Z jinghuahuang $
+# $Id: RadialPhyloTree.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package RadialPhyloTree;
 my $section = "RadialPhyloTree";
@@ -87,6 +87,7 @@ my %treeParam = (
 sub dispatch {
     my ($numTaxon) = @_;
     my $sid = getContactOid();
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( paramMatch("runTree") || paramMatch("viewBy") ) {
         HtmlUtil::cgiCacheInitialize($section);
@@ -212,7 +213,7 @@ sub runTree {
     my $domain         = param("domain");
 
     if ($do_bodysites) {
-        @oids = ( "Airways", "Oral", "Gastrointestinal tract", 
+        @oids = ( "Airways", "Oral", "Gastrointestinal tract",
 		  "Skin", "Urogenital tract" );
         $viewBy    = "phylum" if !$viewBy;
         $graphType = "bar"    if !$graphType;
@@ -436,7 +437,7 @@ sub runTree {
         In the current view, the tree is rendered by <b>$viewByText</b> and
         colored by <b>$colorByText</b>. To change these settings, click on
         the <i>\"Customize Tree\"</i> button. Clicking on a node in the tree
-        brings up the details for that node on the right of the tree. 
+        brings up the details for that node on the right of the tree.
         $domain_str
         </p>
         </div>
@@ -701,7 +702,7 @@ sub getAllBodySiteGeneCounts {
 
         my $rclause   = WebUtil::urClause('t');
         my $imgClause = WebUtil::imgClause('t');
-        my $sql       = qq{  
+        my $sql       = qq{
             select dt.domain, dt.phylum, dt.ir_class, t.ir_order, t.family,
                    dt.taxon_oid, count (dt.taxon_oid)
  	    from dt_phylum_dist_genes dt, taxon t
@@ -826,8 +827,8 @@ sub getGeneCounts {
           . "'$base_url/images/ajax-loader.gif'>" )
       if ( $type eq "metagenome" );
 
-    my ($taxon2name_href, $merfs_taxons_href, $taxon_db_href, $taxon_oid_str) 
-        = QueryUtil::fetchTaxonsOidAndNameFile($dbh, $taxon_oid_ref);
+    my ($taxon2name_href, $merfs_taxons_href, $taxon_db_href, $taxon_oid_str)
+        = QueryUtil::fetchTaxonsOidAndNameFile($dbh, $taxon_oid_ref, 1);
     my @mer_fs_taxons = keys %$merfs_taxons_href;
 
     for my $taxon_oid (@$taxon_oid_ref) {
@@ -859,7 +860,7 @@ sub getGeneCounts {
             select t.phylum, t.ir_class, t.ir_order, t.family, t.genus,
                 dt.homolog_taxon, count (dt.taxon_oid)
             from dt_phylum_dist_genes dt, gene g, taxon t, gene mg, taxon mt
-            where  dt.gene_oid = mg.gene_oid 
+            where  dt.gene_oid = mg.gene_oid
             and dt.taxon_oid = mg.taxon
             and mg.taxon = mt.taxon_oid
             and dt.taxon_oid = mt.taxon_oid
@@ -874,12 +875,12 @@ sub getGeneCounts {
             $virusClause
             $plasmidClause
             $gFragmentClause
-            group by t.phylum, t.ir_class, t.ir_order, 
+            group by t.phylum, t.ir_class, t.ir_order,
                 t.family, t.genus, dt.homolog_taxon, dt.taxon_oid
         };
     } else {
         $sql = qq{
-            select dt.domain, dt.phylum, dt.ir_class, t.ir_order, 
+            select dt.domain, dt.phylum, dt.ir_class, t.ir_order,
                 t.family, dt.taxon_oid, count (dt.taxon_oid)
             from dt_phylum_dist_genes dt, taxon t
             where dt.taxon_oid in ($taxon_oid_str)
@@ -889,7 +890,7 @@ sub getGeneCounts {
             $virusClause
             $plasmidClause
             $gFragmentClause
-            group by dt.domain, dt.phylum, dt.ir_class, 
+            group by dt.domain, dt.phylum, dt.ir_class,
                  t.ir_order, t.family, dt.taxon_oid
         };
     }
@@ -1156,7 +1157,7 @@ sub printTreeHTML {
         for my $tx (@$oids_ref) {
             $options .= hiddenVar( "taxon_filter_oid", $tx );
             $options .= hiddenVar( "selectedGenome1", $tx );
-            
+
         }
     }
 

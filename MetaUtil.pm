@@ -1,6 +1,6 @@
 ############################################################################
 #   Misc. web utility functions for file system
-# $Id: MetaUtil.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
+# $Id: MetaUtil.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package MetaUtil;
 require Exporter;
@@ -6334,9 +6334,9 @@ sub getAllMetaGeneInfo {
     }
 
     if ( scalar(@metaOids) > 0 ) {
-        if ($print_msg) {
-            print "<p>Retrieving gene information from filesystem ... <br/>\n";
-        }
+        #if ($print_msg) {
+        #    print "<p>Retrieving gene information from filesystem ... <br/>\n";
+        #}
 
         my %taxon_genes;
         if ( $taxon_genes_href eq '' ) {
@@ -6389,9 +6389,9 @@ sub getAllMetaGeneInfo {
 
                     for my $geneInfoFile ( keys %geneInfoFile_genes ) {
 
-                        if ($print_msg) {
-                            print "$maxCounter gene file $geneInfoFile<br/>\n";
-                        }
+                        #if ($print_msg) {
+                        #    print "$maxCounter gene file $geneInfoFile<br/>\n";
+                        #}
 
                         my $file_oids_ref = $geneInfoFile_genes{$geneInfoFile};
                         my $cnt0          = scalar(@$file_oids_ref);
@@ -6484,9 +6484,9 @@ sub getAllMetaGeneInfo {
 
     #print "MetaUtil::getAllMetaGeneInfo() 2 " . currDateTime() . "<br/>\n";
 
-    if ($print_msg) {
-        print "Done MetaUtil::getAllMetaGeneInfo()<br/>\n";
-    }
+    #if ($print_msg) {
+    #    print "Done MetaUtil::getAllMetaGeneInfo()<br/>\n";
+    #}
 
 }
 
@@ -8301,14 +8301,14 @@ sub fetchGeneInfoForTaxonFromSqlite {
         } else {
             webLog("MetaUtil::fetchGeneInfoForTaxonFromSqlite() do not exist $sdb_name");
         }
-        if ( $sdbh ne '' && defined($sdbh) ) {
+        if ( $sdbh && defined($sdbh) ) {
 
             #print "MetaUtil::fetchGeneInfoForTaxonFromSqlite() sql: $sql<br/>\n";
             #print "MetaUtil::fetchGeneInfoForTaxonFromSqlite() bind: $bind<br/>\n";
             webLog("MetaUtil::fetchGeneInfoForTaxonFromSqlite() sql: $sql\n");
 
             my $sth = $sdbh->prepare($sql);
-            if ( $bind ne '' && defined($bind) ) {
+            if ( $bind && defined($bind) ) {
                 $sth->execute($bind);
             } else {
                 $sth->execute();

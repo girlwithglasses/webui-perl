@@ -1,7 +1,5 @@
 package IMG::IO::File;
 
-use FindBin qw/ $Bin /;
-use lib "$Bin/../lib";
 use IMG::Util::Base;
 use Role::Tiny;
 

@@ -1,6 +1,6 @@
 ############################################################################
 #
-# $Id: GenomeList.pm 33900 2015-08-04 23:34:19Z klchu $
+# $Id: GenomeList.pm 33935 2015-08-07 18:26:22Z klchu $
 ############################################################################
 package GenomeList;
 
@@ -754,6 +754,17 @@ my $select_id_name = 'taxon_filter_oid';
 #
 # ======================================================================================================
 
+sub getPageTitle {
+    return 'Genome List';
+}
+
+sub getAppHeaderData {
+    my ($self) = @_;
+
+    my @a = ('FindGenomes');
+    return @a;
+}
+
 sub dispatch {
     my $page = param('page');
 
@@ -1048,10 +1059,10 @@ sub printGenomes {
             @a                      = hashKeyToArray($href);
             @projectMetadataColumns = @a;
 
-
             $href         = Workspace::loadUserPreferences($myTaxonStatsPrefs);
             @a            = hashKeyToArray($href);
             @statsColumns = @a;
+            
         }
     }
 

@@ -77,7 +77,7 @@ my $in_file          = $env->{in_file};
  
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 } 
  
 # user's sub folder names                                                             

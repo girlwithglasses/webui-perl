@@ -1,7 +1,7 @@
 ############################################################################
 # Artemis.pm - Handle web artemis start up.
 #     --es 09/13/2007
-# $Id: Artemis.pm 33566 2015-06-11 10:47:36Z jinghuahuang $
+# $Id: Artemis.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package Artemis;
 use strict;
@@ -35,7 +35,7 @@ my $artemis_link             = alink( $artemis_url, "Artemis" );
 my $verbose                  = $env->{verbose};
 my $max_export_scaffold_list = 1000;
 my $include_img_terms        = 0;
-my $include_metagenomes      = $env->{include_metagenomes}; 
+my $include_metagenomes      = $env->{include_metagenomes};
 
 # mega blast location
 my $megablast_bin = $env->{megablast_bin};
@@ -52,6 +52,7 @@ my $USE_YUI = 0;
 sub dispatch {
     my ($numTaxon) = @_;
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( paramMatch("processArtemisFile") ) {
         processArtemisFile();
@@ -68,7 +69,7 @@ sub dispatch {
     } elsif ( $page eq "processACT" ) {
         processACT();
     } elsif ( $page eq "reorder" ) {
-        # reoreder contigs
+        # reorder contigs
         if ($USE_YUI) {
             printReorderForm_yui();
         } else {
@@ -94,7 +95,7 @@ sub printACTWebStart {
     codebase="$base_url">
     <information>
         <title>Artemis Comparison Tool - ACT</title>
-        <vendor>Sanger Institute</vendor> 
+        <vendor>Sanger Institute</vendor>
         <homepage href="http://www.sanger.ac.uk/Software/ACT/"/>
         <description>ACT</description>
         <description kind="short">DNA sequence viewer and annotation tool.
@@ -129,8 +130,8 @@ sub printACTWebStart {
     }
 
     print $fh qq{
-          </application-desc>         
-       </jnlp>        
+          </application-desc>
+       </jnlp>
     };
 
     close $fh;
@@ -139,7 +140,7 @@ sub printACTWebStart {
 
 sub printACTGenomeForm {
     my ($numTaxon) = @_;
-    my $act_link = 
+    my $act_link =
 	"<a href=http://bioinformatics.oxfordjournals.org/cgi/content/"
       . "abstract/21/16/3422>Artemis Comparison Tool</a>";
     my $artemis_link =
@@ -149,22 +150,22 @@ sub printACTGenomeForm {
       . "javawebstart/index.jsp>Java Web Start</a>";
     my $citation = getActCitation();
 
-    my $text = 
+    my $text =
 	"$act_link (ACT) is a viewer based on Artemis for pairwise genome "
       . "DNA sequence comparisons. Sequence comparisons displayed by ACT "
       . "are the result of running Mega BLAST search. "
       . "Artemis $artemis_link application requires $webstart and 1 GB of RAM.";
 
     my $description = "$text<br/>$citation";
-    if ($include_metagenomes) { 
-	WebUtil::printHeaderWithInfo 
-	    ("Artemis Comparison Tool", $description, 
-	     "show description for this tool", "ACT Info", 1); 
-    } else { 
-	WebUtil::printHeaderWithInfo 
-	    ("Artemis Comparison Tool", $description, 
-	     "show description for this tool", "ACT Info"); 
-    } 
+    if ($include_metagenomes) {
+	WebUtil::printHeaderWithInfo
+	    ("Artemis Comparison Tool", $description,
+	     "show description for this tool", "ACT Info", 1);
+    } else {
+	WebUtil::printHeaderWithInfo
+	    ("Artemis Comparison Tool", $description,
+	     "show description for this tool", "ACT Info");
+    }
 
     print "<p style='width: 650px;'>$text</p>";
     print "<p><font color='#003366'>Please select 2 to 5 genomes.</font></p>";
@@ -175,7 +176,7 @@ sub printACTGenomeForm {
     my $dbh = dbLogin();
     #$dbh->disconnect();
 
-    printForm();        
+    printForm();
     my $name = "_section_Artemis_pairwise";
     GenomeListJSON::printHiddenInputType( $section, 'pairwise' );
     my $button = GenomeListJSON::printMySubmitButtonXDiv
@@ -233,18 +234,18 @@ sub printJS {
 	    var f = document.mainForm;
 	    for ( var i = 0; i < f.length; i++) {
 		var e = f.elements[i];
-		if (e.type == "checkbox" && 
+		if (e.type == "checkbox" &&
 		    (e.value.indexOf('_' + taxon_oid) > -1) ) {
 		    e.checked = (select == 0 ? false : true);
 		}
-	    }    
+	    }
         }
 
-    
+
         function mySubmit(page) {
 	    document.mainForm.page.value = page;
 	    document.mainForm.submit();
-	} 
+	}
 
 
 /*
@@ -276,10 +277,10 @@ function numbersonly(e) {
         return false;
     }
 }
-   
-    
+
+
     </script>
-    
+
 EOF
 
 }
@@ -289,7 +290,7 @@ sub printACTPairwise {
     my @order       = param("order");
     my @orderTaxons = param("taxon_oid");
     #print "printACTPairwise \@taxon_oids: @taxon_oids <br\> \@order: @order";
-    
+
     if ( $#taxon_oids < 1 && $#order < 1 ) {
         webError("Please select at least 2 genomes.\n");
     } elsif ( $#taxon_oids > 4 ) {
@@ -377,37 +378,37 @@ YUI
 
     # get genome names
     my $dbh = dbLogin();
-    my %taxon_names = QueryUtil::fetchTaxonOid2NameHash($dbh, \@taxon_oids);    
+    my %taxon_names = QueryUtil::fetchTaxonOid2NameHash($dbh, \@taxon_oids);
     #$dbh->disconnect();
 
     my $rowcnt = 1;
     foreach my $id (@taxon_oids) {
         my $name = $taxon_names{$id};
     	my $classStr;
-    
+
     	if ($yui_tables) {
     	    $classStr = !$rowcnt ? "yui-dt-first ":"";
     	    $classStr .= ($rowcnt % 2 == 0) ? "yui-dt-even" : "yui-dt-odd";
     	} else {
     	    $classStr = "img";
     	}
-    
+
     	print "<tr class='$classStr'>\n";
-    
+
     	# Order
     	print "<td class='$classStr'>\n";
     	print "<div class='yui-dt-liner'>" if $yui_tables;
     	print "<input type='text' onKeyPress='return numbersonly(event)' size='4' name='order' value='$rowcnt' class='txtBox' />";
     	print "</div>\n" if $yui_tables;
     	print "</td>\n";
-    
+
     	# Genome ID
     	print "<td class='$classStr'>\n";
     	print "<div class='yui-dt-liner'>" if $yui_tables;
     	print "<input type='text' name='taxon_oid' value='$id' readonly='readonly' class='txtBox'/>";
     	print "</div>\n" if $yui_tables;
     	print "</td>\n";
-    
+
     	# Genome Name
     	print "<td class='$classStr'>\n";
     	print "<div class='yui-dt-liner'>" if $yui_tables;
@@ -488,7 +489,7 @@ sub printACTPairwise_yui {
 
     # get genome names
     my $dbh    = dbLogin();
-    my %taxon_names = QueryUtil::fetchTaxonOid2NameHash($dbh, \@taxon_oids);    
+    my %taxon_names = QueryUtil::fetchTaxonOid2NameHash($dbh, \@taxon_oids);
     #$dbh->disconnect();
 
     my $rowcnt = 1;
@@ -560,25 +561,25 @@ EOF
 # test to see if java web start is installed
 sub printWebstartTest {
     print <<EOF;
-<SCRIPT LANGUAGE="JavaScript"> 
-var javawsInstalled = 0;  
+<SCRIPT LANGUAGE="JavaScript">
+var javawsInstalled = 0;
 var javaws142Installed=0;
 var javaws150Installed=0;
 var javaws160Installed = 0;
-isIE = "false"; 
-if (navigator.mimeTypes && navigator.mimeTypes.length) { 
-   x = navigator.mimeTypes['application/x-java-jnlp-file']; 
-   if (x) { 
-      javawsInstalled = 1; 
+isIE = "false";
+if (navigator.mimeTypes && navigator.mimeTypes.length) {
+   x = navigator.mimeTypes['application/x-java-jnlp-file'];
+   if (x) {
+      javawsInstalled = 1;
       javaws142Installed=1;
       javaws150Installed=1;
-      javaws160Installed = 1; 
-  } 
-} 
-else { 
-   isIE = "true"; 
-} 
-</SCRIPT> 
+      javaws160Installed = 1;
+  }
+}
+else {
+   isIE = "true";
+}
+</SCRIPT>
 
 <SCRIPT LANGUAGE="VBScript">
 on error resume next
@@ -592,32 +593,32 @@ If isIE = "true" Then
      javaws142Installed = 0
   Else
      javaws142Installed = 1
-  End If 
+  End If
   If Not(IsObject(CreateObject("JavaWebStart.isInstalled.1.5.0.0"))) Then
      javaws150Installed = 0
   Else
      javaws150Installed = 1
-  End If  
+  End If
   If Not(IsObject(CreateObject("JavaWebStart.isInstalled.1.6.0.0"))) Then
      javaws160Installed = 0
   Else
      javaws160Installed = 1
-  End If  
+  End If
 End If
 </SCRIPT>
 
 
-<SCRIPT LANGUAGE="JavaScript"> 
+<SCRIPT LANGUAGE="JavaScript">
 if (javawsInstalled == 0 && javaws142Installed == 0 &&
     javaws150Installed == 0 && javaws160Installed == 0) {
-    alert("Please install Java Web Start before continuing.");      
+    alert("Please install Java Web Start before continuing.");
 }  else {
     //alert(javawsInstalled + " " + javaws142Installed + " " +
     //javaws150Installed + " " + javaws160Installed );
 }
 
-</SCRIPT> 
-    
+</SCRIPT>
+
 EOF
 
 }
@@ -678,7 +679,7 @@ sub printReorderForm {
         Press <i>Update</i> button to update order and remove any selected contigs.
         <br/>
         Press <i>Next</i> button to create files for ACT.
-        </p>        
+        </p>
     };
     printMainForm();
     printJS();
@@ -726,7 +727,7 @@ sub printReorderForm {
             if(!-e "$taxon_fna_dir/$toid.fna") {
                 webError("$toid.fna file is missing.");
             }
-    
+
             # get order from file
             ( $taxon_href, $scaffold_order_aref ) =
               loadSeqCount("$taxon_fna_dir/$toid.fna");
@@ -826,7 +827,7 @@ print "<br/>";
         Press <i>Update</i> button to update order and remove any selected contigs.
         <br/>
         Press <i>Next</i> button to create files for ACT.
-        </p>        
+        </p>
     };
     printMainForm();
     printJS();
@@ -913,7 +914,7 @@ sub getTaxonScaffoldDetail {
     my ( $dbh, $taxon_oid ) = @_;
 
     my $sql = getSingleTaxonScaffoldStatSql();
-    
+
     my %hash;
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid );
     for ( ; ; ) {
@@ -930,7 +931,7 @@ sub printReorderTable {
     my ( $scaffold_order_aref, $order, $sdetail_href, $taxon_oid ) = @_;
 
     print qq{
-        <input  class="smbutton" type='button' onclick="contigSelect(1, $taxon_oid)" value='Select All'/> 
+        <input  class="smbutton" type='button' onclick="contigSelect(1, $taxon_oid)" value='Select All'/>
     };
     print nbsp(1);
     print qq{
@@ -1090,10 +1091,10 @@ sub printReorderCommonJS {
     print <<EOF;
 <script language="javascript" type="text/javascript">
 
-// Override the built-in formatter 
-YAHOO.widget.DataTable.formatCheckbox = function(elLiner, oRecord, oColumn, oData) { 
+// Override the built-in formatter
+YAHOO.widget.DataTable.formatCheckbox = function(elLiner, oRecord, oColumn, oData) {
               elLiner.innerHTML =  oData;
-};    
+};
 
 
 </script>
@@ -1105,18 +1106,18 @@ sub datatableReorder {
     my ( $datatable_div, $order ) = @_;
 
     print <<EOF;
-   
+
 function foo$order() {
     YAHOO.example.ReorderRows$order = function() {
-        
+
 var rowNumbering$order = function(elCell, oRecord, oColumn) {
     var i = this.getRecordIndex(oRecord) + 1;
     var t = "<input type='text' size='4' readonly='readonly' name='order$order' value='"
             + i + "'>"
     elCell.innerHTML = t;
 };
-YAHOO.widget.DataTable.Formatter.myCustom$order = rowNumbering$order;            
-  
+YAHOO.widget.DataTable.Formatter.myCustom$order = rowNumbering$order;
+
 
 var myColumnDefs = [
                 {
@@ -1143,8 +1144,8 @@ var myColumnDefs = [
                     label : "Seq. Length",
                     sortable : true
                 }];
-  
-        
+
+
         var Dom = YAHOO.util.Dom, Event = YAHOO.util.Event, DDM = YAHOO.util.DragDropMgr;
 
         var myDataSource = new YAHOO.util.LocalDataSource(
@@ -1300,10 +1301,10 @@ var myColumnDefs = [
         myDataTable.subscribe("columnSortEvent", initDragDrop);
         myDataTable.subscribe("initEvent", initDragDrop);
         myDataTable.subscribe("renderEvent", initDragDrop);
-        
-        myDataTable.subscribe("checkboxClickEvent", function(oArgs){ 
-                 var elCheckbox = oArgs.target; 
-                 var oRecord = this.getRecord(elCheckbox); 
+
+        myDataTable.subscribe("checkboxClickEvent", function(oArgs){
+                 var elCheckbox = oArgs.target;
+                 var oRecord = this.getRecord(elCheckbox);
 
                  var checked = "";
                  if(elCheckbox.checked) {
@@ -1312,9 +1313,9 @@ var myColumnDefs = [
 
                  var value = elCheckbox.value;
                  var text = "<input type='checkbox' name='ignore' value='" + value + "' " + checked +  "/>"
-                 
-                 oRecord.setData("ignore",text); 
-           });          
+
+                 oRecord.setData("ignore",text);
+           });
 
     }();
 }
@@ -1333,7 +1334,7 @@ EOF
 sub ignoreExtaccession {
     my($taxon_oid, $ext_accession_aref, $ignore_aref) = @_;
 
-    my @array;    
+    my @array;
     for(my $i=0; $i <= $#$ext_accession_aref; $i++) {
         my $id = $ext_accession_aref->[$i] . "_" . $taxon_oid;
         my $found = 0;
@@ -1347,7 +1348,7 @@ sub ignoreExtaccession {
             push(@array, $ext_accession_aref->[$i]);
         }
     }
-    
+
     return \@array;
 }
 
@@ -1372,10 +1373,10 @@ sub processACT {
         push( @orders, \@tmp_order ) if ( $#tmp_order > -1 );
         push( @ext_accessions, \@tmp_ext_accession )
           if ( $#tmp_ext_accession > -1 );
-        
+
         my $aref = ignoreExtaccession($taxon_oids[$i],\@tmp_ext_accession,\@ignore);
         push(@filter_ext_accessions, $aref);
-        
+
     }
     if ($USE_YUI) {
         print Dumper \@orders;
@@ -1390,7 +1391,7 @@ sub processACT {
     my $dbh = dbLogin();
     my $sid = getSessionId();
 
-    WebUtil::printHeaderWithInfo 
+    WebUtil::printHeaderWithInfo
 	("Artemis - ACT", getActCitation(),
 	 "show citation", "ACT Info");
 
@@ -1527,9 +1528,9 @@ YUI
     my $file = printACTWebStart( \@genebankfiles, \@mbalstfiles );
 
     print qq{
-        <p>       
-        <input class='smdefbutton' type='button' value="Run ACT" 
-        onclick="window.location.href='$tmp_url/$file'"> 
+        <p>
+        <input class='smdefbutton' type='button' value="Run ACT"
+        onclick="window.location.href='$tmp_url/$file'">
         </p>
     };
 
@@ -1639,23 +1640,23 @@ sub printACTformTest {
     };
 
     print qq{
-       
-        
+
+
         <p>
         this uses 3 example data files from <a href="http://www.sanger.ac.uk/Software/ACT/Examples/">Sanger</a>
         <br/>
         <a href='$tmp_url/$file'> Run ACT </a>
         </p>
-        
+
         <p>
 <table border="0">
 <tr >
-<td c><b>ACT: the Artemis Comparison Tool.</b><br /> <i>Carver TJ, 
+<td c><b>ACT: the Artemis Comparison Tool.</b><br /> <i>Carver TJ,
 Rutherford KM, Berriman M, Rajandream MA, Barrell BG, Parkhill J</i>
-<br />Bioinformatics. 2005;21;3422-3. PMID: 
-<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=15976072&dopt=Abstract" target="external">15976072</a> 
+<br />Bioinformatics. 2005;21;3422-3. PMID:
+<a href="http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=PubMed&list_uids=15976072&dopt=Abstract" target="external">15976072</a>
 DOI: <a href="http://dx.doi.org/10.1093/bioinformatics/bti553">10.1093/bioinformatics/bti553</a>
-<br /> 
+<br />
 </td></tr>
 </table>
         </p>
@@ -1788,7 +1789,7 @@ sub processArtemisFile {
       <applet code='DianaApplet.class' archive='$archive'
         width='600' height='300'>
        <param name='entries' value='$$.art'>
-       If you are reading this it means your web browser 
+       If you are reading this it means your web browser
        doesn't support java or you
        have java disabled.
        <p>
@@ -1797,9 +1798,9 @@ sub processArtemisFile {
        Suitable browsers include Netscape Navigator version 4.06 or better and
        Microsoft Internet Explorer version 4 or better.
        <p>
-       You might like to try the standalone version of Artemis instead.  
+       You might like to try the standalone version of Artemis instead.
        Go to <a href="http://www.sanger.ac.uk/Software/Artemis">
-       Sanger</a> for more information. 
+       Sanger</a> for more information.
        </applet>
    };
 
@@ -1976,10 +1977,10 @@ sub getSingleTaxonScaffoldStatSql {
         and s.taxon = ss.taxon
         and s.scaffold_oid = ss.scaffold_oid
         $rclause
-        $imgClause       
+        $imgClause
         order by ss.seq_length desc, s.ext_accession
     };
-        
+
     return $sql;
 }
 

@@ -2,7 +2,7 @@
 #   for displaying appropriate CGI pages.
 #      --es 09/19/2004
 #
-# $Id: main.pl 33838 2015-07-29 19:24:06Z aireland $
+# $Id: main.pl 33935 2015-08-07 18:26:22Z klchu $
 ##########################################################################
 use strict;
 use warnings;
@@ -27,7 +27,11 @@ use Number::Format;
 use WebConfig;
 use WebUtil qw();
 use Template;
+<<<<<<< .mine
 use GenomeCart;
+=======
+use Module::Load;
+>>>>>>> .r33963
 
 #use IMG::Views::ViewMaker;
 
@@ -108,7 +112,6 @@ my $sso_url         = $env->{sso_url};
 my $sso_domain      = $env->{sso_domain};
 my $sso_cookie_name = $env->{sso_cookie_name};    # jgi_return cookie name
 
-my $jgi_return_url = "";
 my $homePage       = 0;
 my $pageTitle      = "IMG";
 
@@ -210,7 +213,7 @@ $env->{session} = $session;
 # +1y   1 year from now
 #$session->expire("+1d");
 #
-# TODO Can this be the problem with NAtalia always getting logged out - ken June 1, 2015 ???
+# Can this be the problem with NAtalia always getting logged out - ken June 1, 2015 ???
 #resetContactOid();
 
 my $session_id  = $session->id();
@@ -435,6 +438,8 @@ print $output->{output};
 ############################################################
 if ( $cgi->param() ) {
 
+
+<<<<<<< .mine
     my $page = $cgi->param('page');
     my $section = $cgi->param('section');
 
@@ -442,21 +447,40 @@ if ( $cgi->param() ) {
         WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
         require AbundanceProfileSearch;
         $pageTitle = "Abundance Profile Search";
+=======
+    # TODO - for generic section loading new a section checker to ensure no one 
+    # tries to enter a bad section name :) - ken
+    my %validSections = (
+        WorkspaceBcSet => 'WorkspaceBcSet',
+        AbundanceProfileSearch => 'AbundanceProfileSearch',
+        GenomeList => 'GenomeList',
+        ImgStatsOverview => 'ImgStatsOverview',
+    );
+>>>>>>> .r33963
 
-        require GenomeListJSON;
-        my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
-        $template->param( base_url => $base_url );
-        $template->param( YUI      => $YUI );
-        my $js = $template->output;
+    if ( param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
+        # this must before  the "} elsif (exists $validSections{ $section}) { "
+        # s.t. the genome cart is display after the usr presses add to genome cart
+        #
+        # add to genome cart - ken
+        require GenomeList;
+        GenomeList::clearCache();
 
-        my $numTaxon;
-        if ($include_metagenomes) {
-            $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', "userGuide_m.pdf#page=19" );
-        } else {
-            $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', "userGuide.pdf#page=51" );
-        }
-        AbundanceProfileSearch::dispatch($numTaxon);
+        require GenomeCart;
+        $pageTitle = "Genome Cart";
+        setSessionParam( "lastCart", "genomeCart" );
+        printAppHeader("AnaCart");
+        GenomeCart::dispatch();
+    } elsif (exists $validSections{ $section}) {  
 
+        # TODO a better section loader  - ken
+        $section = $validSections{$section}; # we need to untaint the $section..so get it from valid hash
+        load $section;
+        $pageTitle = $section->getPageTitle();
+        my @appArgs = $section->getAppHeaderData();
+        my $numTaxons = printAppHeader(@appArgs) if $#appArgs > -1;
+        $section->dispatch($numTaxons);
+    
     } elsif ( $section eq 'StudyViewer' ) {
         my $yuijs = qq{
 <link rel="stylesheet" type="text/css" href="$YUI/build/treeview/assets/skins/sam/treeview.css" />
@@ -1172,6 +1196,7 @@ if ( $cgi->param() ) {
         my $js = $template->output;
         my $numTaxon = printAppHeader( "FindGenes", '', '', $js );
         GeneCassetteProfiler::dispatch($numTaxon);
+<<<<<<< .mine
     } elsif ( $section eq "ImgStatsOverview" ) {
         require ImgStatsOverview;
         if ( $cgi->param('excel') eq 'yes' ) {
@@ -1183,6 +1208,18 @@ if ( $cgi->param() ) {
             printAppHeader("ImgStatsOverview");
             ImgStatsOverview::dispatch();
         }
+=======
+#    } elsif ( $section eq "ImgStatsOverview" ) {
+#        require ImgStatsOverview;
+#        if ( param('excel') eq 'yes' ) {
+#            printExcelHeader("stats_export$$.xls");
+#            ImgStatsOverview::dispatch();
+#        } else {
+#            $pageTitle = "IMG Stats Overview";
+#            printAppHeader("ImgStatsOverview");
+#            ImgStatsOverview::dispatch();
+#        }
+>>>>>>> .r33963
     } elsif ( $section eq "TaxonEdit" ) {
         require TaxonEdit;
         $pageTitle = "Taxon Edit";
@@ -1387,6 +1424,7 @@ if ( $cgi->param() ) {
         printAppHeader("AnaCart")
           if WebUtil::paramMatch("noHeader") eq "";
         GenomeCart::dispatch();
+<<<<<<< .mine
     } elsif ( $cgi->param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
 
         # add to genome cart - ken
@@ -1398,6 +1436,19 @@ if ( $cgi->param() ) {
         $session->param( "lastCart", "genomeCart" );
         printAppHeader("AnaCart");
         GenomeCart::dispatch();
+=======
+#    } elsif ( param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
+#
+#        # add to genome cart - ken
+#        require GenomeList;
+#        GenomeList::clearCache();
+#
+#        require GenomeCart;
+#        $pageTitle = "Genome Cart";
+#        setSessionParam( "lastCart", "genomeCart" );
+#        printAppHeader("AnaCart");
+#        GenomeCart::dispatch();
+>>>>>>> .r33963
     } elsif ( $section eq "MetagenomeHits" ) {
         require MetagenomeHits;
         $pageTitle = "Genome Hits";
@@ -1530,12 +1581,16 @@ if ( $cgi->param() ) {
             printAppHeader("MyIMG", '', '', '', '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceJob::dispatch();
+<<<<<<< .mine
 
     } elsif ( $section eq "WorkspaceBcSet" ) {
         require WorkspaceBcSet;
         $pageTitle = "Workspace";
         printAppHeader("MyIMG") if WebUtil::paramMatch("noHeader") eq "";
         WorkspaceBcSet::dispatch();
+=======
+        
+>>>>>>> .r33963
     } elsif ( $section eq "MyBins" ) {
         require MyBins;
         $pageTitle = "My Bins";
@@ -1679,11 +1734,7 @@ if ( $cgi->param() ) {
         require GenerateArtemisFile;
         printAppHeader("FindGenomes");
         GenerateArtemisFile::dispatch();
-    } elsif ( $section eq "GenomeList" ) {
-        require GenomeList;
-        $pageTitle = "Genome List";
-        printAppHeader("FindGenomes");
-        GenomeList::dispatch();
+
     } elsif ( $section eq "TaxonDetail" || $page eq "taxonDetail" ) {
         require TaxonDetail;
         $pageTitle = "Taxon Details";
@@ -2295,7 +2346,7 @@ sub printMenuDiv {
 #
 # 3rd div - for other pages - not home page
 #
-# TODO - loading and help
+# loading and help
 #
 # $current - menu
 # $help - help links - if blank do not display
@@ -2651,40 +2702,23 @@ sub printStatsTableDiv {
 
     # latest genomes added
     my $tmp;
-    if ($img_er) {
-        $tmp = qq{
-           <span style="font-family: Arial; font-size: 12px; color: black;">
-           &nbsp;&nbsp;&nbsp; Last updated: <a href='main.cgi?section=TaxonList&page=lastupdated'> $maxErDate </a> <br/>
-           </span>
-       };
-    } elsif ( $include_metagenomes && ( $public_login || $user_restricted_site ) ) {
+
         $tmp = qq{
 <table>
 <tr>
-    <td style="font-size:10px">
-    Last Genome updated:
+    <td style="font-size:10px;">
+    Last Datasets Added On:<br>
+    &nbsp;&nbsp;Genome<br>
+    &nbsp;&nbsp;Metagenome
     </td>
-    <td style="font-size:10px">
-    <a href='main.cgi?section=TaxonList&page=lastupdated&erDate=true'>$maxErDate</a>
-    </td>
-</tr>
-<tr>
-    <td style="font-size:10px">
-    Last Sample updated:
-    </td>
-    <td style="font-size:10px">
+    <td style="font-size:10px;">
+    &nbsp;<br>
+    <a href='main.cgi?section=TaxonList&page=lastupdated&erDate=true'>$maxErDate</a><br>
     <a href='main.cgi?section=TaxonList&page=lastupdated'>$maxAddDate</a>
     </td>
 </tr>
 </table>
        };
-    } else {
-        $tmp = qq{
-           <span style="font-family: Arial; font-size: 12px; color: black;">
-           &nbsp;&nbsp;&nbsp; Last updated: <a href='main.cgi?section=TaxonList&page=lastupdated'> $maxAddDate </a> <br/>
-           </span>
-       };
-    }
 
     print qq{
  $tmp
@@ -2699,21 +2733,10 @@ sub printStatsTableDiv {
     }
 
     # google map link
-    if ($include_metagenomes) {
-        print qq{
-        <a href="main.cgi?section=ImgStatsOverview&page=googlemap">Metagenome Projects Map</a><br/>
-        };
-    } elsif ($use_img_gold) {
-        print qq{
-        <a href="main.cgi?section=ImgStatsOverview&page=googlemap">Project Map</a><br/>
-        };
-    }
-
     print qq{
-<a href="$base_url/doc/systemreqs.html">System Requirements</a>  <br/>
-    };
-
-    print qq{
+     <a href="main.cgi?section=ImgStatsOverview&page=googlemap&type=genome">Project Map</a><br>
+     <a href="main.cgi?section=ImgStatsOverview&page=googlemap&type=metagenome">Metagenome Projects Map</a><br>
+     <a href="$base_url/doc/systemreqs.html">System Requirements</a><br>
 <p style="width: 175px;">
         <img width="80" height="50"  style="float:left; padding-right: 5px;" src="$base_url/images/imguser.jpg"/>
             Hands on training available at the
@@ -2986,8 +3009,6 @@ in particular, the workspace and background computation capabilities  available 
 
         printAbcNavBar() if $abc;
         printContentOther();
-
-        #cookieTest();
     }
 
     return $numTaxons;
@@ -3020,12 +3041,9 @@ sub printNewsDiv {
     }
 }
 =cut
-sub cookieTest {
 
-    # cookie test - ken 2013-12-23
-    # lets see if I can read the cookie that I just wrote
-    return if ($img_edu);
 
+<<<<<<< .mine
     if ( !$user_restricted_site && !$public_login ) {
 
     	my $session = WebUtil::getSession();
@@ -3046,6 +3064,8 @@ sub cookieTest {
     }
 }
 =cut
+=======
+>>>>>>> .r33963
 #
 # gets genome's max add date
 #

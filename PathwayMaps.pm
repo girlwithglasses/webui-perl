@@ -1,6 +1,6 @@
 ###########################################################################
 # PathwayMaps.pm - for display of pathway maps
-# $Id: PathwayMaps.pm 33178 2015-04-15 17:58:29Z aratner $
+# $Id: PathwayMaps.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package PathwayMaps;
 my $section = "PathwayMaps";
@@ -44,13 +44,13 @@ my $preferences_url    = "$main_cgi?section=MyIMG&page=preferences";
 my $maxGeneListResults = 1000;
 if (getSessionParam("maxGeneListResults") ne "") {
     $maxGeneListResults = getSessionParam("maxGeneListResults");
-} 
+}
 
 my $pngDir = "$kegg_data_dir";
 my $max_gene_batch = 100;
 my $nvl = getNvl();
 my %roiDone;
-my $YUI = $env->{yui_dir_28}; 
+my $YUI = $env->{yui_dir_28};
 
 
 ############################################################################
@@ -58,6 +58,7 @@ my $YUI = $env->{yui_dir_28};
 ############################################################################
 sub dispatch {
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
     if ( $page eq "mapGenesKo" ) {
         printMapGenesKo();
     } elsif ( $page eq "mapGenesSamples" ) {
@@ -72,9 +73,9 @@ sub dispatch {
     } elsif ( $page eq "keggMapSamples" ||
 	      paramMatch("keggMapSamples") ne "" ) {
         showMapForSamples();
-    } elsif ( $page eq "exprGraph" || 
+    } elsif ( $page eq "exprGraph" ||
 	      paramMatch("exprGraph") ne "" ) {
-        printExpressionForGenes(); 
+        printExpressionForGenes();
     } elsif ( $page eq "selectedFns" ||
 	      paramMatch("selectedFns") ne "" ) {
 	pathwaysForSelectedFns();
@@ -103,7 +104,7 @@ sub pathwaysForSelectedGeneFns {
         webError("Please select some genes.");
     }
 
-    my ($dbOids_ref, $metaOids_ref) = 
+    my ($dbOids_ref, $metaOids_ref) =
         MerFsUtil::splitDbAndMetaOids(@gene_oids);
     my @dbOids = @$dbOids_ref;
     my @metaOids = @$metaOids_ref;
@@ -150,7 +151,7 @@ sub pathwaysForSelectedGeneFns {
     	    }
         }
         $cur->finish();
-	
+
         OracleUtil::truncTable($dbh, "gtt_num_id")
 	    if ($inClause =~ /gtt_num_id/i);
     }
@@ -158,7 +159,7 @@ sub pathwaysForSelectedGeneFns {
     if (scalar(@metaOids) > 0) {
         foreach my $mOid (@metaOids) {
     	    my ($taxon_oid, $data_type, $g2) = split(/ /, $mOid);
-    	    
+
     	    # KO only:
     	    my @g_func1 = MetaUtil::getGeneKoId($g2, $taxon_oid, $data_type);
     	    push( @kofuncs, @g_func1 );
@@ -169,10 +170,10 @@ sub pathwaysForSelectedGeneFns {
                     $func2genes{ $func } .= ",".$g2;
                 }
             }
-    	    
+
             # EC only:
     	    my @g_func2 = MetaUtil::getGeneEc($g2, $taxon_oid, $data_type);
-    	    push( @ecfuncs, @g_func2 );    
+    	    push( @ecfuncs, @g_func2 );
     	    foreach my $func( @g_func2 ) {
 		if ( !defined($func2genes{ $func }) ) {
 		    $func2genes{ $func } = $g2;
@@ -182,11 +183,11 @@ sub pathwaysForSelectedGeneFns {
     	    }
     	}
     }
-    
+
     if ( scalar(@kofuncs) == 0 && scalar(@ecfuncs) == 0 ) {
 	webError("Selected genes do not map to KO or EC functions.");
     }
-    
+
     pathwaysForFunctions(\@kofuncs, \@ecfuncs, \%func2genes);
 }
 
@@ -212,9 +213,9 @@ sub pathwaysForSelectedFns {
     	    push @ecids, $func_id;
     	} elsif ( $func_id =~ /^KO:/ ) {
     	    push @koids, $func_id;
-    	} 
+    	}
     }
-    
+
     if ( scalar(@koids) == 0 && scalar(@ecids) == 0 ) {
         webError("Please select some KO or EC functions.");
     }
@@ -239,7 +240,7 @@ sub pathwaysForFunctions {
     if ( scalar @koids > 0 ) {
     	my $inClause = OracleUtil::getFuncIdsInClause($dbh, @koids);
     	my $kosql = qq{
-            select distinct pw.pathway_name, pw.image_id, pw.pathway_oid, 
+            select distinct pw.pathway_name, pw.image_id, pw.pathway_oid,
                    irk.ko_terms
             from kegg_pathway pw, image_roi_ko_terms irk, image_roi ir
             where pw.pathway_oid = ir.pathway
@@ -259,7 +260,7 @@ sub pathwaysForFunctions {
                 $pathway2count{ $k } = 0;
             }
             $pathway2count{ $k }++;
-    	    
+
     	    if ( !defined($pathway2func{ $k }) ) {
 		$pathway2func{ $k } = $ko;
     	    } else {
@@ -293,7 +294,7 @@ sub pathwaysForFunctions {
                 $pathway2count{ $k } = 0;
             }
             $pathway2count{ $k }++;
-    
+
     	    if ( !defined($pathway2func{ $k }) ) {
 		$pathway2func{ $k } = $ec;
     	    } else {
@@ -301,7 +302,7 @@ sub pathwaysForFunctions {
     	    }
     	}
     }
-    
+
     print qq{
         <table border=0>
         <tr>
@@ -319,7 +320,7 @@ sub pathwaysForFunctions {
     	if ($func2genes_ref ne "") {
     	    my @genes;
     	    my %unique_genes;
-    	    
+
     	    my @fns = split(",", $fn_str);
     	    foreach my $f (@fns) {
 		my $genes_str = $func2genes_ref->{ $f };
@@ -362,7 +363,7 @@ sub showMapForFunctions {
             push @ecids, $func_id;
         } elsif ( $func_id =~ /^KO:/ ) {
             push @koids, $func_id;
-        } 
+        }
     }
     if ( scalar(@koids) == 0 && scalar(@ecids) == 0  ) {
         webDie("showMapForFunctions: no KO or EC funcs\n");
@@ -405,14 +406,14 @@ sub showMapForFunctions {
             my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
 		 $roi_label, $ko_id, $ko_name, $ko_defn ) = $cur->fetchrow();
             last if !$roi_label;
-    
+
             my $s = "$shape\t$x_coord\t$y_coord\t$coord_str\t$width\t$height"
 		  . "\t$roi_label\t$ko_id\t$ko_name\t$ko_defn";
             push @recs, ( $s );
         }
         $cur->finish();
-        OracleUtil::truncTable( $dbh, "gtt_func_id" ) 
-            if ( $ids_str =~ /gtt_func_id/i );        
+        OracleUtil::truncTable( $dbh, "gtt_func_id" )
+            if ( $ids_str =~ /gtt_func_id/i );
     }
 
     # EC items:
@@ -422,7 +423,7 @@ sub showMapForFunctions {
            select distinct ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
                   ir.width, ir.height, ir.roi_label,
                   ez.ec_number, ez.enzyme_name, ez.systematic_name
-           from enzyme ez, image_roi ir, 
+           from enzyme ez, image_roi ir,
                 image_roi_ko_terms irkt, ko_term_enzymes kte
            where kte.enzymes in ( $ids_str )
            and ir.pathway = ?
@@ -444,8 +445,8 @@ sub showMapForFunctions {
             push @recs, ( $s );
         }
         $cur->finish();
-        OracleUtil::truncTable( $dbh, "gtt_func_id" ) 
-            if ( $ids_str =~ /gtt_func_id/i );        
+        OracleUtil::truncTable( $dbh, "gtt_func_id" )
+            if ( $ids_str =~ /gtt_func_id/i );
     }
 
     my $old_roi;
@@ -538,36 +539,36 @@ sub showMapForFunctions {
     printStatusLine( "Done.", 2 );
 }
 
-############################################################################ 
+############################################################################
 # printRelatedCoords -  show link to related KEGG pathway
-############################################################################ 
-sub printRelatedCoords { 
-    my ( $dbh, $map_id, $url_fragm ) = @_; 
- 
-    my $sql = qq{ 
-	select distinct pw.image_id, roi.x_coord, roi.y_coord, 
-	       roi.width, roi.height 
-          from kegg_pathway pw, image_roi roi, kegg_pathway pw0 
-         where pw0.image_id = ? 
-           and pw0.pathway_oid = roi.pathway 
-	   and roi.related_pathway = pw.pathway_oid 
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose, $map_id ); 
-    for ( ;; ) { 
+############################################################################
+sub printRelatedCoords {
+    my ( $dbh, $map_id, $url_fragm ) = @_;
+
+    my $sql = qq{
+	select distinct pw.image_id, roi.x_coord, roi.y_coord,
+	       roi.width, roi.height
+          from kegg_pathway pw, image_roi roi, kegg_pathway pw0
+         where pw0.image_id = ?
+           and pw0.pathway_oid = roi.pathway
+	   and roi.related_pathway = pw.pathway_oid
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $map_id );
+    for ( ;; ) {
         my ( $image_id, $x_coord, $y_coord, $width, $height ) =
 	    $cur->fetchrow();
         last if !$image_id;
 
         my $x1 = $x_coord;
-        my $y1 = $y_coord; 
+        my $y1 = $y_coord;
 
-        my $x2 = $x1 + $width; 
-        my $y2 = $y1 + $height; 
+        my $x2 = $x1 + $width;
+        my $y2 = $y1 + $height;
 
         print "<area shape='rect' coords='$x1,$y1,$x2,$y2' ";
 	my $url = "$section_cgi&map_id=$image_id" . $url_fragm;
 	print "href=\"$url\"" . " target='_blank' />";
-    } 
+    }
     $cur->finish();
 }
 
@@ -578,7 +579,7 @@ sub printRelatedCoords {
 ############################################################################
 sub showMap {
     my $pathway_oid = param("pathway_oid");
-    my $map_id = param("map_id"); 
+    my $map_id = param("map_id");
     my @oids = param("selectedGenome1");
     my $nTaxons = @oids;
 
@@ -587,18 +588,18 @@ sub showMap {
     }
     if ( $nTaxons < 1 ) {
         webError("Please select at least 1 genome.<br/>\n");
-    } 
+    }
     my $dbh = dbLogin();
     if ( $nTaxons == 1 ) {
-    	my $sql = qq{ 
+    	my $sql = qq{
     	    select is_pangenome
-    	    from taxon 
-    	    where taxon_oid = ? 
+    	    from taxon
+    	    where taxon_oid = ?
     	};
     	my $cur = execSql( $dbh, $sql, $verbose, $oids[0] );
     	my ( $is_pangenome ) = $cur->fetchrow();
-    	$cur->finish(); 
-     
+    	$cur->finish();
+
     	if (lc($is_pangenome) ne "yes") {
     	    my $mapType = param("mapType");
 	    if ( $mapType eq "missingEnzymes" ) {
@@ -615,41 +616,41 @@ sub showMap {
 
     my $oids_str = OracleUtil::getNumberIdsInClause( $dbh, @oids );
     my $taxons_str = "where taxon_oid in ( $oids_str )";
-    my $sql = qq{ 
+    my $sql = qq{
        select is_pangenome, taxon_oid
-       from taxon 
+       from taxon
        $taxons_str
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose ); 
+    };
+    my $cur = execSql( $dbh, $sql, $verbose );
 
     my @newoids;
-    my @pangenomeids;    
+    my @pangenomeids;
     for ( ;; ) {
-    	my ( $is_pangenome, $taxon_oid ) = $cur->fetchrow(); 
+    	my ( $is_pangenome, $taxon_oid ) = $cur->fetchrow();
     	last if !$taxon_oid;
-    	if (lc($is_pangenome) eq "yes") { 
+    	if (lc($is_pangenome) eq "yes") {
     	    push @pangenomeids, $taxon_oid;
     	} else {
     	    push @newoids, $taxon_oid;
     	}
     }
-    $cur->finish(); 
-    OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
+    $cur->finish();
+    OracleUtil::truncTable( $dbh, "gtt_num_id" )
         if ( $oids_str =~ /gtt_num_id/i );
 
     if (scalar @pangenomeids > 0) {
         my $oids_str = OracleUtil::getNumberIdsInClause( $dbh, @pangenomeids );
     	my $pangenomes_str = "where taxon_oid in ( $oids_str ) ";
 
-    	my $sql = qq{ 
-    	    select pangenome_composition, taxon_oid 
-    	    from taxon_pangenome_composition 
+    	my $sql = qq{
+    	    select pangenome_composition, taxon_oid
+    	    from taxon_pangenome_composition
     	    $pangenomes_str
-        }; 
-    	my $cur = execSql($dbh, $sql, $verbose); 
+        };
+    	my $cur = execSql($dbh, $sql, $verbose);
     	my $old_id;
     	for ( ;; ) {
-    	    my ( $pcomp, $taxon_oid ) = $cur->fetchrow(); 
+    	    my ( $pcomp, $taxon_oid ) = $cur->fetchrow();
     	    last if !$taxon_oid;
     	    if ($old_id ne $taxon_oid) {
         		push @newoids, $taxon_oid;
@@ -657,8 +658,8 @@ sub showMap {
     	    }
     	    push @newoids, $pcomp;
     	}
-    	$cur->finish(); 
-        OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
+    	$cur->finish();
+        OracleUtil::truncTable( $dbh, "gtt_num_id" )
             if ( $oids_str =~ /gtt_num_id/i );
     }
     #$dbh->disconnect();
@@ -672,21 +673,21 @@ sub showMap {
 #      whether the genes for the given ROI are found in up to 25%, >25%,
 #      >50%, >75%, or in all (100%) of selected genomes
 ############################################################################
-sub showMapForTaxons { 
+sub showMapForTaxons {
     my ( $map_id, $taxon_oid_str ) = @_;
     if ( $map_id eq "" ) {
 	$map_id = param("map_id");
 	$taxon_oid_str = param("taxons");
     }
 
-    my $dbh = dbLogin(); 
-    my $sql = qq{ 
-        select pathway_name, pathway_oid 
-        from kegg_pathway 
-        where image_id = ? 
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose, $map_id ); 
-    my ( $pathway_name, $pathway_oid ) = $cur->fetchrow(); 
+    my $dbh = dbLogin();
+    my $sql = qq{
+        select pathway_name, pathway_oid
+        from kegg_pathway
+        where image_id = ?
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $map_id );
+    my ( $pathway_name, $pathway_oid ) = $cur->fetchrow();
     $cur->finish();
 
     my @taxons = split( ',', $taxon_oid_str );
@@ -696,13 +697,13 @@ sub showMapForTaxons {
     if (OracleUtil::useTempTable($nTaxons + 1)) {
         OracleUtil::insertDataArray($dbh, "gtt_num_id", \@taxons);
         $taxon_oid_str2 = "select id from gtt_num_id";
-    }    
+    }
 
     printMainForm();
     print "<h1>KEGG Map: $pathway_name</h1>";
 
     print "<p>";
-    print "$nTaxons genomes selected<br/>\n"; 
+    print "$nTaxons genomes selected<br/>\n";
     print "<image src='$base_url/images/blue-square.gif' "
 	. "width='10' height='10' />\n";
     print "Genes found in all selected genomes";
@@ -740,7 +741,7 @@ sub showMapForTaxons {
     printHint($hintstr);
     print "<br/>";
 
-    printStartWorkingDiv(); 
+    printStartWorkingDiv();
     print "<p>Retrieving pathway information from database ...";
 
     ## Taxon genes (blue)
@@ -748,7 +749,7 @@ sub showMapForTaxons {
            select distinct ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
                   ir.width, ir.height, ir.roi_label,
                   dt.taxon, kt.ko_id, kt.ko_name, kt.definition
-           from dt_gene_ko_module_pwys dt, ko_term kt, 
+           from dt_gene_ko_module_pwys dt, ko_term kt,
                 image_roi ir, image_roi_ko_terms irk
            where dt.taxon in ($taxon_oid_str2)
            and dt.image_id = ?
@@ -780,7 +781,7 @@ sub showMapForTaxons {
 	my %ko_names;
 	$sql = qq{
             select ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
-                   ir.width, ir.height, ir.roi_label, 
+                   ir.width, ir.height, ir.roi_label,
                    ko.ko_id, ko.ko_name, ko.definition
             from image_roi ir, image_roi_ko_terms rk, ko_term ko
             where ir.pathway = ?
@@ -788,13 +789,13 @@ sub showMapForTaxons {
             and ir.roi_type in ('ko_term', 'enzyme')
             and rk.ko_terms = ko.ko_id
         };
-        $cur = execSql( $dbh, $sql, $verbose, $pathway_oid ); 
+        $cur = execSql( $dbh, $sql, $verbose, $pathway_oid );
 	for ( ;; ) {
 	    my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
 		 $roi_label, $ko_id, $ko_name, $ko_defn ) = $cur->fetchrow();
 	    last if !$roi_label;
 
-	    $ko_rois{ $ko_id } = 
+	    $ko_rois{ $ko_id } =
 		"$shape\t$x_coord\t$y_coord\t$coord_str\t" .
 		"$width\t$height\t$roi_label";
 	    $ko_names{ $ko_id } = "$ko_name\t$ko_defn";
@@ -802,34 +803,34 @@ sub showMapForTaxons {
 	$cur->finish();
 
 	my $imgClause = WebUtil::imgClause("tx");
-        my $rclause = WebUtil::urClause("tx.taxon_oid"); 
+        my $rclause = WebUtil::urClause("tx.taxon_oid");
         $sql = qq{
-            select tx.taxon_oid 
-            from taxon tx 
+            select tx.taxon_oid
+            from taxon tx
             where tx.in_file = 'Yes'
             and tx.taxon_oid in ($taxon_oid_str2)
 	    $rclause
             $imgClause
-        }; 
-        $cur = execSql( $dbh, $sql, $verbose ); 
-        for ( ;; ) { 
-            my ( $tx_oid ) = $cur->fetchrow(); 
-            last if ! $tx_oid; 
- 
-            print ". "; 
+        };
+        $cur = execSql( $dbh, $sql, $verbose );
+        for ( ;; ) {
+            my ( $tx_oid ) = $cur->fetchrow();
+            last if ! $tx_oid;
+
+            print ". ";
             my %funcs = MetaUtil::getTaxonFuncCount($tx_oid, '', 'ko');
 
-            for my $ko_id (keys %ko_names) { 
+            for my $ko_id (keys %ko_names) {
 		next if (!$funcs{$ko_id});
 
-		my $s = $ko_rois{ $ko_id } . 
+		my $s = $ko_rois{ $ko_id } .
 		        "\t$tx_oid\t$ko_id\t" .
 			$ko_names{ $ko_id };
 		push @recs, ( $s );
             }
-         } 
-        $cur->finish(); 
-        print "<br/>"; 
+         }
+        $cur->finish();
+        print "<br/>";
     }
 
     my @blueRecs;
@@ -845,16 +846,16 @@ sub showMapForTaxons {
     my $group3 = floor( $nTaxons * 3 / 4 );
 
     my $old_roi;
-    my %unique_tx; 
+    my %unique_tx;
     my %unique_ko;
-    my $koStr; 
+    my $koStr;
 
     my %ko2tx;
 
     print "<br/>Getting ROI info ...";
     foreach my $s ( sort @recs ) {
         my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
-	     $roi_label, $taxon, $ko_id, $ko_name, $ko_defn ) 
+	     $roi_label, $taxon, $ko_id, $ko_name, $ko_defn )
 	    = split( /\t/, $s );
 
 	next if $shape eq "line";
@@ -867,10 +868,10 @@ sub showMapForTaxons {
 	    $height = $coord_str;
 	}
         #if ($shape eq "line") {
-        #    $width = 10; 
+        #    $width = 10;
         #    $height = 10;
-	#    $shape = "rect"; 
-        #} 
+	#    $shape = "rect";
+        #}
         my $r = "$x_coord\t";
         $r .= "$y_coord\t";
         $r .= "$width\t";
@@ -880,7 +881,7 @@ sub showMapForTaxons {
 	next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	next if ($height <= 0); # can't display this roi
 
-        my $ko = "$roi_label"; 
+        my $ko = "$roi_label";
         my $koLabel = "$roi_label, $ko_name";
  	$koLabel .= ", $ko_defn" if $ko_defn ne "";
 
@@ -913,9 +914,9 @@ sub showMapForTaxons {
 	    my $koLabelStr = join("; ", sort(@labels));
 
 	    my $count = scalar keys (%unique_tx);
-	    $old_roi .= "\t$koStr" . "\t$koLabelStr"; 
+	    $old_roi .= "\t$koStr" . "\t$koLabelStr";
 
-            %unique_tx = (); 
+            %unique_tx = ();
 	    %unique_ko = ();
 	    %ko2tx = ();
 
@@ -940,7 +941,7 @@ sub showMapForTaxons {
 		}
             }
 	    $unique_ko{$ko} = $koLabel;
-	    $unique_tx{$taxon} = 1; 
+	    $unique_tx{$taxon} = 1;
 	    $ko2tx{$ko}++;
         }
         $old_roi = $r;
@@ -948,14 +949,14 @@ sub showMapForTaxons {
 
     OracleUtil::truncTable($dbh, "gtt_num_id"); # clean up temp table
 
-    printEndWorkingDiv(); 
+    printEndWorkingDiv();
 
     my @kos = keys(%unique_ko);
     my $allblue = 1;
     my $allsame = 1;
     my @labels;
     my $mycnt;
-    
+
     foreach my $k (@kos) {
 	my $koLabelStr = $unique_ko{ $k };
 	my $cnt = $ko2tx{$k};
@@ -966,18 +967,18 @@ sub showMapForTaxons {
 	push @labels, $koLabelStr;
 	$allblue = 0 if $cnt < $nTaxons;
     }
-    
+
     my $koStr = join(",", sort(keys(%unique_ko)));
     my $koLabelStr = join("; ", sort(@labels));
-    
+
     my $count = scalar keys (%unique_tx);
     $old_roi .= "\t$koStr" . "\t$koLabelStr";
-    
+
     if ( $allblue ) {
 	push( @blueRecs, $old_roi );
     } else {
 	push( @orangeRecs, $old_roi );
-	
+
 	if (scalar @kos > 1 && !$allsame) {
 	    push( @box5, $old_roi);
 	} else {
@@ -1022,47 +1023,47 @@ sub showMapForTaxons {
     printImageMapCoords( \@orangeRecs, $map_id, $taxon_oid_str );
 
     my $url_fragm = "&page=keggMapTaxons&taxons=$taxon_oid_str";
-    printRelatedCoords( $dbh, $map_id, $url_fragm ); 
+    printRelatedCoords( $dbh, $map_id, $url_fragm );
     print "</map>\n";
 
     #$dbh->disconnect();
     printStatusLine( "Done.", 2 );
 }
 
-############################################################################ 
+############################################################################
 # showMapForSamples - displays the kegg map with coloring based on:
 #      whether the genes for the given ROI are found in up to 25%, >25%,
 #      >50%, >75%, or in all (100%) of selected samples
-############################################################################ 
-sub showMapForSamples { 
+############################################################################
+sub showMapForSamples {
     my $map_id = param("map_id");
     my $study = param("study");
     my $sample_oid_str = param("samples");
     my @sample_oids = split(',', $sample_oid_str);
-    my $nSamples = @sample_oids; 
+    my $nSamples = @sample_oids;
 
-    if ( $map_id eq "" ) { 
-        webError("Please select a pathway to display.<br/>\n"); 
-    } 
+    if ( $map_id eq "" ) {
+        webError("Please select a pathway to display.<br/>\n");
+    }
     if ($nSamples < 1) {
         webError( "Please select at least 1 sample." );
     } elsif ($nSamples == 1) {
 	showMapForOneSample($map_id, @sample_oids[0], $study);
 	return;
     }
- 
-    printStatusLine( "Loading ...", 1 ); 
-    my $dbh = dbLogin(); 
- 
-    my $sql = qq{ 
+
+    printStatusLine( "Loading ...", 1 );
+    my $dbh = dbLogin();
+
+    my $sql = qq{
         select pathway_name, pathway_oid
         from kegg_pathway
         where image_id = ?
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose, $map_id ); 
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $map_id );
     my ( $pathway_name, $pathway_oid ) = $cur->fetchrow();
-    $cur->finish(); 
-    print "<h1>KEGG Map: $pathway_name</h1>"; 
+    $cur->finish();
+    print "<h1>KEGG Map: $pathway_name</h1>";
 
     my $clusterFileName = param("file");   # cluster id mapping
     my $dataFileName = param("dataFile");  # expression data
@@ -1156,7 +1157,7 @@ sub showMapForSamples {
 		for ( ;; ) {
 		    my ( $gid, $name, $locus_tag ) = $cur->fetchrow();
 		    last if !$gid;
-		    push @genes, $gid;    
+		    push @genes, $gid;
 		    $gene2info{ $gid } = $gid."\t".$name."\t".$locus_tag;
 		}
 	    }
@@ -1233,7 +1234,7 @@ sub showMapForSamples {
 	print "Getting ROI info for pathway $pathway_oid <br/>";
 	$sql = qq{
             select distinct ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
-                   ir.width, ir.height, ir.roi_label, 
+                   ir.width, ir.height, ir.roi_label,
                    ko.ko_id, ko.ko_name, ko.definition
             from image_roi ir, image_roi_ko_terms rk, ko_term ko
             where ir.pathway = ?
@@ -1244,7 +1245,7 @@ sub showMapForSamples {
 	$cur = execSql( $dbh, $sql, $verbose, $pathway_oid );
 	my %done;
 	for ( ;; ) {
-	    my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height, 
+	    my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
 		 $roi_label, $ko_id, $ko_name, $ko_defn ) = $cur->fetchrow();
 	    last if !$roi_label;
 	    #next if (!$all_kos{$ko_id});
@@ -1285,7 +1286,7 @@ sub showMapForSamples {
 		    @gene_group = keys %ko_genes;
 		}
 		next TX if scalar @gene_group == 0;
-		
+
 	        SAMPLE: foreach my $s (@sample_oids) {
 		    my $g2is_ref = $sample2geneInfo{ $tx.$s };
 		    GENE: foreach my $gene_oid (@gene_group) {
@@ -1341,23 +1342,23 @@ sub showMapForSamples {
                    ir.width, ir.height, ir.roi_label,
 	           dt.sample_oid, dt.sample_desc,
                    kt.ko_id, kt.ko_name, kt.definition
-    	      from image_roi_ko_terms irk, 
+    	      from image_roi_ko_terms irk,
 	           image_roi ir,
                    ko_term kt,
-	           gene_ko_terms gkt, 
+	           gene_ko_terms gkt,
                    dt_img_gene_prot_pep_sample dt
              where ir.roi_id= irk.roi_id
                and ir.roi_type in ('ko_term', 'enzyme')
 	       and irk.ko_terms = gkt.ko_terms
-	       and gkt.gene_oid = dt.gene_oid 
-  	       and dt.sample_oid in ($sample_oid_str) 
-               and ir.pathway = ? 
-               and gkt.ko_terms = kt.ko_id 
+	       and gkt.gene_oid = dt.gene_oid
+  	       and dt.sample_oid in ($sample_oid_str)
+               and ir.pathway = ?
+               and gkt.ko_terms = kt.ko_id
           order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
-        }; 
+        };
 
 	print "Retrieving information from database ... <br/>\n";
-	my $cur = execSql( $dbh, $sql, $verbose, $pathway_oid ); 
+	my $cur = execSql( $dbh, $sql, $verbose, $pathway_oid );
 	for ( ;; ) {
             my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
 		 $roi_label, $sample, $sname, $ko_id, $ko_name, $ko_defn )
@@ -1374,19 +1375,19 @@ sub showMapForSamples {
 
     printEndWorkingDiv("samples");
 
-    my @blueRecs; 
-    my @orangeRecs; 
-    my @box1; 
+    my @blueRecs;
+    my @orangeRecs;
+    my @box1;
     my @box2;
-    my @box3; 
-    my @box4; 
-    my @box5; 
- 
-    my $group1 = floor( $nSamples / 4 ); 
-    my $group2 = floor( $nSamples / 2 ); 
-    my $group3 = floor( $nSamples * 3 / 4 ); 
- 
-    my $old_roi; 
+    my @box3;
+    my @box4;
+    my @box5;
+
+    my $group1 = floor( $nSamples / 4 );
+    my $group2 = floor( $nSamples / 2 );
+    my $group3 = floor( $nSamples * 3 / 4 );
+
+    my $old_roi;
     my %unique_ss;
     my %unique_ko;
     my $koStr;
@@ -1394,8 +1395,8 @@ sub showMapForSamples {
     my %allKo;
     my %roi2ko;
     my %ko2ss;
-    my %sampleNames; 
- 
+    my %sampleNames;
+
     foreach my $s ( sort @recs) {
         my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
 	     $roi_label, $sample, $sname, $ko_id, $ko_name, $ko_defn )
@@ -1416,12 +1417,12 @@ sub showMapForSamples {
 	#if ($shape eq "line") {
 	#    $width = 10;
 	#    $height = 10;
-	#    $shape = "rect"; 
+	#    $shape = "rect";
 	#}
-        my $r = "$x_coord\t"; 
-        $r .= "$y_coord\t"; 
-        $r .= "$width\t"; 
-        $r .= "$height\t"; 
+        my $r = "$x_coord\t";
+        $r .= "$y_coord\t";
+        $r .= "$width\t";
+        $r .= "$height\t";
 	$r .= "$shape";
 
         next if ($width <= 0 || $height <= 0) && $shape eq "rect";
@@ -1434,13 +1435,13 @@ sub showMapForSamples {
 	$roi2ko{$r} .= $ko."#";
 
         if ( $old_roi eq "" ) {
-            $old_roi = $r; 
-        } 
+            $old_roi = $r;
+        }
         if ( $old_roi eq $r ) {
-	    $unique_ko{$ko} = $koLabel; 
-	    $unique_ss{$sample} = 1; 
+	    $unique_ko{$ko} = $koLabel;
+	    $unique_ss{$sample} = 1;
 	    $ko2ss{$ko}++;
-        } else { 
+        } else {
             my @kos = keys(%unique_ko);
             my $allblue = 1;
             my $allsame = 1;
@@ -1458,7 +1459,7 @@ sub showMapForSamples {
                 $allblue = 0 if $cnt < $nSamples;
             }
 
-	    my $koStr = join(",", sort(keys(%unique_ko))); 
+	    my $koStr = join(",", sort(keys(%unique_ko)));
 	    my $koLabelStr = join("; ", sort(@labels));
 
             my $count = scalar keys (%unique_ss);
@@ -1469,19 +1470,19 @@ sub showMapForSamples {
 	    %ko2ss = ();
 
             if ( $count == $nSamples ) {
-                push( @blueRecs, $old_roi ); 
-            } else { 
-                push( @orangeRecs, $old_roi ); 
+                push( @blueRecs, $old_roi );
+            } else {
+                push( @orangeRecs, $old_roi );
 
                 if (scalar @kos > 1 && !$allsame) {
                     push( @box5, $old_roi);
                 } else {
                     $count = $mycnt if @kos > 1;
 		    if ( $count > $group3 ) {
-			push( @box4, $old_roi ); 
-		    } elsif ( $count > $group2 ) { 
+			push( @box4, $old_roi );
+		    } elsif ( $count > $group2 ) {
 			push( @box3, $old_roi );
-		    } elsif ( $count > $group1 ) { 
+		    } elsif ( $count > $group1 ) {
 			push( @box2, $old_roi );
 		    } else {
 			push( @box1, $old_roi );
@@ -1491,10 +1492,10 @@ sub showMapForSamples {
 	    $unique_ko{$ko} = $koLabel;
 	    $unique_ss{$sample} = 1;
 	    $ko2ss{$ko}++;
-        } 
+        }
         $old_roi = $r;
-    } 
-  
+    }
+
     my @kos = keys(%unique_ko);
     my $allblue = 1;
     my $allsame = 1;
@@ -1527,30 +1528,30 @@ sub showMapForSamples {
             push( @box5, $old_roi);
         } else {
             $count = $mycnt if @kos > 1;
-	    if ( $count > $group3 ) { 
-		push( @box4, $old_roi ); 
+	    if ( $count > $group3 ) {
+		push( @box4, $old_roi );
 	    } elsif ( $count > $group2 ) {
 		push( @box3, $old_roi );
 	    } elsif ( $count > $group1 ) {
 		push( @box2, $old_roi );
-	    } else { 
+	    } else {
 		push( @box1, $old_roi );
-	    } 
+	    }
 	}
-    } 
+    }
 
     my $inFile = "$pngDir/$map_id.png";
     GD::Image->trueColor(1);
     my $im = new GD::Image($inFile);
-    if ( !$im ) { 
+    if ( !$im ) {
         webDie("showMap: cannot read '$inFile'\n");
-    } 
+    }
 
     my %ko2genes;
     my %allGenes; # get genes for this image
-    if ($clusterFileName ne "" && 
+    if ($clusterFileName ne "" &&
 	($study eq "rnaseq" || $study eq "proteomics")) {
-	my $hintstr = 
+	my $hintstr =
               "Samples have been clustered into cluster groups. "
 	    . "Functions with genes belonging to the same cluster are colored "
 	    . "by the color of that cluster group (see Cluster ID).<br/>"
@@ -1560,28 +1561,28 @@ sub showMapForSamples {
 	    . "to different clusters.";
 	printHint($hintstr);
 
-	print qq{ 
+	print qq{
 	    <script type='text/javascript'
             src='$YUI/build/yahoo-dom-event/yahoo-dom-event.js'>
-	    </script> 
- 
-	    <script language='JavaScript' type='text/javascript'>
-	    function showColors(type) { 
-            if (type == 'nocolors') { 
-                document.getElementById('showcolors').style.display = 'none'; 
-                document.getElementById('hidecolors').style.display = 'block'; 
-            } else { 
-                document.getElementById('showcolors').style.display = 'block'; 
-                document.getElementById('hidecolors').style.display = 'none'; 
-            } 
-            } 
+	    </script>
 
-	    function getUrl(url) { 
-                var els = document.getElementsByName('gene_oid'); 
+	    <script language='JavaScript' type='text/javascript'>
+	    function showColors(type) {
+            if (type == 'nocolors') {
+                document.getElementById('showcolors').style.display = 'none';
+                document.getElementById('hidecolors').style.display = 'block';
+            } else {
+                document.getElementById('showcolors').style.display = 'block';
+                document.getElementById('hidecolors').style.display = 'none';
+            }
+            }
+
+	    function getUrl(url) {
+                var els = document.getElementsByName('gene_oid');
                 var found = 0;
                 for (var i = 0; i < els.length; i++) {
-                    var e = els[i]; 
-                    if (e.checked == true) { 
+                    var e = els[i];
+                    if (e.checked == true) {
 			if (found == 0) {
                             url = url+"&genes="+e.id;
 			} else {
@@ -1589,12 +1590,12 @@ sub showMapForSamples {
 			}
 			found++;
 			if (found == 5) break; // only 5 genes allowed
-                    } 
+                    }
 		}
 		return url;
 	    }
-            </script> 
-	}; 
+            </script>
+	};
 
         # read the cluster id for each gene:
 	my $clusterFile = $tmp_dir."/".$clusterFileName;
@@ -1606,74 +1607,74 @@ sub showMapForSamples {
         my $rfh = newReadFileHandle( $clusterFile, "loadClusters" );
 	my %uniqueClusters;
 	my %clusteredData;
-	my %color_hash; 
+	my %color_hash;
 	my $i = 0;
         while( my $s = $rfh->getline() ) {
 	    $i++;
 	    next if $i == 1; # header line
-            chomp $s; 
+            chomp $s;
 
             my( $gid, $value ) = split( / /, $s );
-            $gid =~ s/"//g; 
+            $gid =~ s/"//g;
             $clusteredData{ $gid } = $value;
             $uniqueClusters{ $value } = 1;
-        } 
+        }
         close $rfh;
 
         # load color array
-	my $colors; 
-	my $color_array_file = $env->{ large_color_array_file }; 
+	my $colors;
+	my $color_array_file = $env->{ large_color_array_file };
 	my @color_array = RNAStudies::loadMyColorArray
             ($im, $color_array_file);
 
 	my @clusters = sort keys( %uniqueClusters );
 	my $nClusters = scalar @clusters;
 	my $n = ceil($nClusters/255);
-	my $i = 0; 
-	
+	my $i = 0;
+
 	foreach my $cluster (@clusters) {
 	    #my $idx = ceil($i/$n);
 	    #$color_hash{ $cluster } = $color_array[ $idx ];
             if ($i == 246) { $i = 0; }
 	    $color_hash{ $cluster } = $color_array[ $i ];
-	    $i++; 
-	} 
+	    $i++;
+	}
 
         # map gene to koterm
         my @ko = sort keys(%allKo);
         my $allKoStr;
         if (OracleUtil::useTempTable($#ko + 1)) {
-            OracleUtil::insertDataArray($dbh, "gtt_func_id", \@ko); 
-            $allKoStr = "select id from gtt_func_id"; 
-        } else { 
+            OracleUtil::insertDataArray($dbh, "gtt_func_id", \@ko);
+            $allKoStr = "select id from gtt_func_id";
+        } else {
             $allKoStr = joinSqlQuoted(",", @ko);
-            $allKoStr =~ s/KO://g; 
-        } 
+            $allKoStr =~ s/KO://g;
+        }
 
         if (scalar @ko == 0) {
             my $tmpPngFile = "$tmp_dir/$map_id.$$.png";
             my $tmpPngUrl  = "$tmp_url/$map_id.$$.png";
             my $wfh = newWriteFileHandle( $tmpPngFile, "showMapForSamples" );
-            binmode $wfh; 
+            binmode $wfh;
             print $wfh $im->png;
-            close $wfh; 
+            close $wfh;
 
             print "<br/>";
             print "<image src='$tmpPngUrl' usemap='#mapdata' border='0' />\n";
             print "<map id='mapdata' name='mapdata'>\n";
             my $url_fragm = "&page=keggMapSamples"
                           . "&study=$study&samples=$sample_oid_str";
-            #if ($clusterFileName ne "") { 
+            #if ($clusterFileName ne "") {
                 $url_fragm .= "&file=$clusterFileName";
                 if ($dataFileName ne "") {
                     $url_fragm .= "&dataFile=$dataFileName";
-                } 
-            #} 
+                }
+            #}
             printRelatedCoords( $dbh, $map_id, $url_fragm );
-            print "</map>\n"; 
+            print "</map>\n";
 
-            #$dbh->disconnect(); 
-            printStatusLine( "Done.", 2 ); 
+            #$dbh->disconnect();
+            printStatusLine( "Done.", 2 );
             return;
         }
 
@@ -1686,7 +1687,7 @@ sub showMapForSamples {
 
 	if ($study eq "rnaseq") {
 	    foreach my $ko (@ko) {
-		$ko =~ s/KO://g; 
+		$ko =~ s/KO://g;
 
 		my $gstr = $allKo2genes{ $ko };
 		my @kogenes = split("#", $gstr);
@@ -1747,7 +1748,7 @@ sub showMapForSamples {
 		    $allGenes{ $gene } =
 			$gene_name."\t".$locus_tag."\t".$koterm;
 		}
-		$ko2genes{ $koterm } .= 
+		$ko2genes{ $koterm } .=
 		    $gene."\t".$gene_name."\t".$locus_tag."\t".$clusterID;
 		$ko2genes{ $koterm } .= "#";
 	    }
@@ -1755,7 +1756,7 @@ sub showMapForSamples {
 	}
 
 	webLog("\nTOTAL GENES (for IMAGE $map_id): "
-	       . scalar (keys %allGenes) ."\n");	
+	       . scalar (keys %allGenes) ."\n");
 
 	printEndWorkingDiv("genes");
 
@@ -1773,7 +1774,7 @@ sub showMapForSamples {
 		if ($i == 1) {
 		    @samples = split( /\t/, $s );
 		    splice(@samples, 0, 4); # starts with the 4th element
-		} 
+		}
  		next if $i < 4;
 
 		my( $idx, $gid, $name, $weightx, $valuesStr )
@@ -1789,25 +1790,25 @@ sub showMapForSamples {
 	$it->disableSelectButtons();
         $it->{ pageSize } = "10";
 
-        my $sd = $it->getSdDelim(); 
-	$it->addColSpec( "Select" ); 
-        $it->addColSpec( "Gene ID", "asc", "right" ); 
-        $it->addColSpec( "Cluster ID", "asc", "right" ); 
-        $it->addColSpec( "Locus Tag", "asc", "left" ); 
-        $it->addColSpec( "Product Name", "asc", "left" ); 
-        $it->addColSpec( "KO", "asc", "left" ); 
+        my $sd = $it->getSdDelim();
+	$it->addColSpec( "Select" );
+        $it->addColSpec( "Gene ID", "asc", "right" );
+        $it->addColSpec( "Cluster ID", "asc", "right" );
+        $it->addColSpec( "Locus Tag", "asc", "left" );
+        $it->addColSpec( "Product Name", "asc", "left" );
+        $it->addColSpec( "KO", "asc", "left" );
 
-        foreach my $s( @samples ) { 
+        foreach my $s( @samples ) {
 	    $s=~s/^\s+//;
 	    $s=~s/\s+$//;
-	    $it->addColSpec 
-                ( $sampleNames{$s}." [".$s."]", "desc", "right", "", 
+	    $it->addColSpec
+                ( $sampleNames{$s}." [".$s."]", "desc", "right", "",
                   "Normalized Expression Data<br/>for: "
                   . $sampleNames{$s}, "wrap" );
         }
 
 	printJSForExpression();
-        foreach my $gene( keys %allGenes ) { 
+        foreach my $gene( keys %allGenes ) {
             my $url1 = "$main_cgi?section=GeneDetail"
 		     . "&page=geneDetail&gene_oid=$gene";
 	    if ($in_file eq "Yes") {
@@ -1826,86 +1827,86 @@ sub showMapForSamples {
 	    my $row = $sd."<input type='checkbox' id='$gene' "
 		    . "onclick=\"javascript:draw('$gene', '$ko')\" "
                     . "name='gene_oid' value='$ko'/>\t";
-            $row .= $gene.$sd.alink($url1, $gene, "_blank")."\t"; 
+            $row .= $gene.$sd.alink($url1, $gene, "_blank")."\t";
 
-            $row .= $clusterid.$sd; 
+            $row .= $clusterid.$sd;
             $row .= "<span style='border-right:1em solid rgb($r, $g, $b); "
                  . "padding-right:0.5em; margin-right:0.5em'> "
                  . "$clusterid</span>";
-            $row .= "\t"; 
- 
-            $row .= $locus.$sd.$locus."\t"; 
+            $row .= "\t";
+
+            $row .= $locus.$sd.$locus."\t";
             $row .= $product.$sd.$product."\t";
 
             $row .= $ko.$sd.$ko."\t";
 
 	    my @values = split(",", $gene2data{ $gene });
-	    foreach my $expr (@values) { 
+	    foreach my $expr (@values) {
 		$expr = sprintf("%.3f", $expr);
 		$row .= $expr.$sd;
 
 		my $ff0;
-		if ( $expr < 0.00 ) { 
-		    $ff0 = -1 * $expr; 
-		} else { 
-		    $ff0 = $expr; 
-		} 
+		if ( $expr < 0.00 ) {
+		    $ff0 = -1 * $expr;
+		} else {
+		    $ff0 = $expr;
+		}
 		if ($ff0 > 1.0000000) { # should not really happen ...
 		    $ff0 = 1.0;
-		} 
- 
-		my ($r, $g, $b); 
-		if ($expr < 0.00) { 
-		    $r = 0; 
+		}
+
+		my ($r, $g, $b);
+		if ($expr < 0.00) {
+		    $r = 0;
 		    $g = int(205*$ff0 + 50);
-		    $b = 0; 
-		} else { 
-		    $r = int(205*$ff0 + 50);
-		    $g = 0; 
 		    $b = 0;
-		} 
+		} else {
+		    $r = int(205*$ff0 + 50);
+		    $g = 0;
+		    $b = 0;
+		}
 
 		$row .= "<span style='border-right:1em solid rgb($r, $g, $b); "
 		    . "padding-right:0.5em; margin-right:0.5em'> "
-		    . "$expr</span>"; 
+		    . "$expr</span>";
 		$row .= "\t";
 	    }
 
-            $it->addRow($row); 
+            $it->addRow($row);
         }
 
-        print "<div id='hidecolors' style='display: none;'>"; 
-        print "<input type='button' class='medbutton' name='view'" 
-            . " value='Show Cluster Colors'" 
-            . " onclick='showColors(\"colors\")' />"; 
-        print "</div>\n"; 
- 
+        print "<div id='hidecolors' style='display: none;'>";
+        print "<input type='button' class='medbutton' name='view'"
+            . " value='Show Cluster Colors'"
+            . " onclick='showColors(\"colors\")' />";
+        print "</div>\n";
+
         print "<div id='showcolors' style='display: block;'>";
         print "<input type='button' class='medbutton' name='view'"
-            . " value='Hide Cluster Colors'" 
+            . " value='Hide Cluster Colors'"
             . " onclick='showColors(\"nocolors\")' />";
- 
+
 	print qq{
 	    <p>Selecting a gene, finds it on the map and marks it with
 	       <image src='$base_url/images/roi-marker.jpg' /><br/>
-	       Gene expression data coloring is based on 
+	       Gene expression data coloring is based on
 	       red (high) to green (low) expression.<br/>
-	       <image src='$base_url/images/colorstrip.80.png' 
+	       <image src='$base_url/images/colorstrip.80.png'
 	       width='300' height='10' /></p>
 	};
 
-        $it->printOuterTable(1); 
+        $it->printOuterTable(1);
 
 	my $url2 = "xml.cgi?section=PathwayMaps&page=exprGraph";
 	#$url2 .= "&samples=$sample_oid_str";
 	$url2 .= "&study=$study";
 	if ($dataFileName ne "") {
 	    $url2 .= "&dataFile=$dataFileName";
-	} 
+	}
 
         print "<input type='button' class='medbutton' "
-            . " id='anchor1' value='Compare Selected' " 
-            . " onclick=javascript:showImage(getUrl('$url2')) />"; 
+            . " id='anchor1' value='Compare Selected' "
+            . " onclick=javascript:showImage(getUrl('$url2')) />";
 
 	print end_form();
         print "</div>\n";
@@ -1914,31 +1915,31 @@ sub showMapForSamples {
 
     } else {
         applyHighlights( $im, \@blueRecs, "blue" );
-        applyHighlightsRGB( $im, \@box1, 255, 255,  0,  50 ); 
+        applyHighlightsRGB( $im, \@box1, 255, 255,  0,  50 );
         applyHighlightsRGB( $im, \@box2, 255, 158,  32, 50 );
         applyHighlightsRGB( $im, \@box3, 255, 64,   64, 50 );
         applyHighlightsRGB( $im, \@box4, 192, 0,    86, 50 );
 	applyHighlightsRGB( $im, \@box5, 190, 190, 190, 50 );
-    } 
+    }
 
     my $tmpPngFile = "$tmp_dir/$map_id.$$.png";
     my $tmpPngUrl  = "$tmp_url/$map_id.$$.png";
     my $wfh = newWriteFileHandle( $tmpPngFile, "showMapForSamples" );
-    binmode $wfh; 
-    print $wfh $im->png; 
-    close $wfh; 
+    binmode $wfh;
+    print $wfh $im->png;
+    close $wfh;
 
     print qq{
-	<script type="application/javascript">  
-        function draw(item, kostring) {  
+	<script type="application/javascript">
+        function draw(item, kostring) {
 	    var checked = document.getElementById(item).checked;
 	    var startElement = document.getElementById('mapdata');
-	    var els = startElement.getElementsByTagName('area'); 
+	    var els = startElement.getElementsByTagName('area');
 
 	    if (checked == false) {
 		// see if other rows with same ko are still checked
 		var kels = document.getElementsByName('gene_oid');
-		var strs = kostring.split(","); 
+		var strs = kostring.split(",");
 
 	        outer: for (var k = 0; k < strs.length; k++) {
 		    for (var i = 0; i < kels.length; i++) {
@@ -1952,14 +1953,14 @@ sub showMapForSamples {
 				   e.checked == true) {
 			    return;
 			} else {
-			    var kos = e.value.split(","); 
+			    var kos = e.value.split(",");
 			    for (var j = 0; j < kos.length; j++) {
 				if (strs[k] == kos[j] &&
 				    e.checked == true) {
 				    continue outer;
-				} 
+				}
 			    }
-		        } 
+		        }
 		    }
 		    findOnMap(strs[k], false);
 		}
@@ -1973,38 +1974,38 @@ sub showMapForSamples {
             var startElement = document.getElementById('mapdata');
             var els = startElement.getElementsByTagName('area');
 
-            for (var i = 0; i < els.length; i++) { 
-                var e = els[i]; 
-                if (e.id == kostring) { 
-                    markIt(e.coords, checked); 
-                } else { 
-                    var kos = e.id.split(","); 
-                    var strs = kostring.split(","); 
-                    matchem: for (var j = 0; j < kos.length; j++) { 
-                        for (var k = 0; k < strs.length; k++) { 
-                            if (kos[j] == strs[k]) { 
-                                markIt(e.coords, checked); 
-                                break matchem; 
-                            } 
-                        } 
-                    } 
-                } 
-            } 
+            for (var i = 0; i < els.length; i++) {
+                var e = els[i];
+                if (e.id == kostring) {
+                    markIt(e.coords, checked);
+                } else {
+                    var kos = e.id.split(",");
+                    var strs = kostring.split(",");
+                    matchem: for (var j = 0; j < kos.length; j++) {
+                        for (var k = 0; k < strs.length; k++) {
+                            if (kos[j] == strs[k]) {
+                                markIt(e.coords, checked);
+                                break matchem;
+                            }
+                        }
+                    }
+                }
+            }
 	}
 
 	function clearCanvas() {
-            var canvas = document.getElementById("imgCanvas"); 
-            if (canvas.getContext) { 
-                var ctx = canvas.getContext("2d"); 
+            var canvas = document.getElementById("imgCanvas");
+            if (canvas.getContext) {
+                var ctx = canvas.getContext("2d");
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 	    }
 	}
 
 	function markIt(coords, checked) {
-	    var canvas = document.getElementById("imgCanvas");  
-	    if (canvas.getContext) {  
-		var ctx = canvas.getContext("2d");  
-		
+	    var canvas = document.getElementById("imgCanvas");
+	    if (canvas.getContext) {
+		var ctx = canvas.getContext("2d");
+
 		var coordsArray = coords.split(",");
 		var x = parseInt(coordsArray[0]);
 		var y = parseInt(coordsArray[1]);
@@ -2016,18 +2017,18 @@ sub showMapForSamples {
 
 		//alert("markIt x: "+x+"  y: "+y1+" ? "+checked);
 		if (checked == true) {
-		    ctx.fillStyle = "rgb(0,0,0)";  
+		    ctx.fillStyle = "rgb(0,0,0)";
 		    ctx.beginPath();
 		    ctx.moveTo(x1, y1);
 		    ctx.lineTo(x2, y2);
 		    ctx.lineTo(x, y2);
 		    ctx.closePath();
 		    ctx.stroke();
-		    
-		    //ctx.fillStyle = "rgba(0,255,0, 0.5)";  
-		    //ctx.fillRect(430, 218, 46, 17);  
 
-		    ctx.fillStyle = "rgb(0,255,255)";  
+		    //ctx.fillStyle = "rgba(0,255,0, 0.5)";
+		    //ctx.fillRect(430, 218, 46, 17);
+
+		    ctx.fillStyle = "rgb(0,255,255)";
 		    ctx.beginPath();
 		    ctx.moveTo(x1, y1);
 		    ctx.lineTo(x2, y2);
@@ -2035,14 +2036,14 @@ sub showMapForSamples {
 		    ctx.fill();
 		} else {
 		    ctx.clearRect(x-5, y1-15, 20, 20);
-		}  
+		}
 	    }
-	}  
-	</script>  
+	}
+	</script>
     };
 
     # position just the image of the pathway in the layer underneath
-    print "<div style='position: relative; z-index: 8'>"; 
+    print "<div style='position: relative; z-index: 8'>";
     print "<image src='$tmpPngUrl' border='0' />\n";
 
     # add an overlay of same size as the image for the marker canvas
@@ -2053,20 +2054,20 @@ sub showMapForSamples {
 	. "Your browser does not support canvas.</canvas>";
 
     # add an outermost transparent overlay containing the imagemap
-    print "<div style='display: block; left: 0px; top: 0px; " 
+    print "<div style='display: block; left: 0px; top: 0px; "
         . "position: absolute; z-index:5'>";
-    my $im2 = new GD::Image($w, $h); 
+    my $im2 = new GD::Image($w, $h);
     my $white = $im2->colorAllocate( 255, 255, 255 );
     $im2->transparent( $white );
     $im2->interlaced('true');
     $im2->fill(0,0,$white);
 
     my $tmpPngFile2 = "$tmp_dir/overlay.$$.png";
-    my $tmpPngUrl2  = "$tmp_url/overlay.$$.png"; 
+    my $tmpPngUrl2  = "$tmp_url/overlay.$$.png";
     my $wfh2 = newWriteFileHandle( $tmpPngFile2, "showMapForSamples" );
-    binmode $wfh2; 
+    binmode $wfh2;
     print $wfh2 $im2->png;
-    close $wfh2; 
+    close $wfh2;
 
     print "<image src='$tmpPngUrl2' usemap='#mapdata' border='0' />\n";
     print "<map id='mapdata' name='mapdata'>\n";
@@ -2090,117 +2091,117 @@ sub showMapForSamples {
     print "</div>"; # middle overlay: markers
     print "</div>"; # lowest layer: image
 
-    #$dbh->disconnect(); 
-    printStatusLine( "Done.", 2 ); 
+    #$dbh->disconnect();
+    printStatusLine( "Done.", 2 );
 }
 
 sub printJSForExpression {
     ######### for expression graph
     print "<script src='$base_url/imgCharts.js'></script>\n";
-    print qq{ 
-        <link rel="stylesheet" type="text/css" 
+    print qq{
+        <link rel="stylesheet" type="text/css"
           href="$YUI/build/container/assets/skins/sam/container.css" />
         <script type="text/javascript"
           src="$YUI/build/yahoo-dom-event/yahoo-dom-event.js"></script>
         <script type="text/javascript"
           src="$YUI/build/dragdrop/dragdrop-min.js"></script>
-        <script type="text/javascript" 
+        <script type="text/javascript"
           src="$YUI/build/container/container-min.js"></script>
         <script src="$YUI/build/yahoo/yahoo-min.js"></script>
         <script src="$YUI/build/event/event-min.js"></script>
         <script src="$YUI/build/connection/connection-min.js"></script>
-    }; 
+    };
 
-    print qq{ 
+    print qq{
         <script language='JavaScript' type='text/javascript'>
-	function initPanel() { 
+	function initPanel() {
 	    if (!YAHOO.example.container.panel1) {
                 YAHOO.example.container.panel1 = new YAHOO.widget.Panel
                     ("panel1", {
-                      visible:false, 
+                      visible:false,
                       //fixedcenter:true,
                       dragOnly:true,
                       underlay:"none",
                       zindex:"10",
                       context:['anchor1','bl','tr']
-                      } ); 
+                      } );
                 YAHOO.example.container.panel1.render();
                 //alert("initPanel");
-            } 
+            }
 	}
-        </script> 
-    }; 
- 
-    # need div id for yui container 
+        </script>
+    };
+
+    # need div id for yui container
     print "<p><div id='container' class='yui-skin-sam'>";
-    print qq{ 
+    print qq{
         <script type='text/javascript'>
 	    YAHOO.namespace("example.container");
             YAHOO.util.Event.on("anchor1", "click", initPanel());
-        </script> 
+        </script>
         };
-    print "</div>\n"; 
+    print "</div>\n";
 }
 
 ############################################################################
 # printExpressionForGenes - displays a bar graph comparing expression for
 #       selected genes (over multiple samples) - limit 5 genes
 ############################################################################
-sub printExpressionForGenes { 
-    my $study = param("study"); 
+sub printExpressionForGenes {
+    my $study = param("study");
     my $geneStr = param("genes");
     my @gene_oids = split(",", $geneStr);
     my $dataFileName = param("dataFile");
 
     my $header = "Expression for selected gene(s)";
-    my $script = "$base_url/overlib.js"; 
-    if (scalar @gene_oids < 1) { 
-        my $body = "Please select up to 5 genes."; 
- 
-        print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'; 
-        print qq { 
-            <response> 
-                <header>$header</header> 
-                <text>$body</text> 
-                <script>$script</script> 
-            </response> 
-        }; 
-        return; 
-    } 
+    my $script = "$base_url/overlib.js";
+    if (scalar @gene_oids < 1) {
+        my $body = "Please select up to 5 genes.";
 
-    # read expression data for each gene and sample: 
-    my %gene2data; 
-    my @samples; 
+        print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        print qq {
+            <response>
+                <header>$header</header>
+                <text>$body</text>
+                <script>$script</script>
+            </response>
+        };
+        return;
+    }
+
+    # read expression data for each gene and sample:
+    my %gene2data;
+    my @samples;
     my @datas;
     foreach my $gene (@gene_oids) {
 	$gene2data{ $gene } = 1;
     }
 
-    if ($dataFileName ne "") { 
-	my $dataFile = $tmp_dir."/".$dataFileName; 
-	my $rfh = newReadFileHandle( $dataFile, "loadData" ); 
-	my $i = 0; 
-	while( my $s = $rfh->getline() ) { 
-	    chomp $s; 
-	    $i++; 
-	    if ($i == 1) { 
-		@samples = split( /\t/, $s ); 
-		splice(@samples, 0, 4); # starts with the 4th element 
-	    }  
-	    next if $i < 4; 
+    if ($dataFileName ne "") {
+	my $dataFile = $tmp_dir."/".$dataFileName;
+	my $rfh = newReadFileHandle( $dataFile, "loadData" );
+	my $i = 0;
+	while( my $s = $rfh->getline() ) {
+	    chomp $s;
+	    $i++;
+	    if ($i == 1) {
+		@samples = split( /\t/, $s );
+		splice(@samples, 0, 4); # starts with the 4th element
+	    }
+	    next if $i < 4;
 
-	    my( $idx, $gid, $name, $weightx, $valuesStr ) 
-		= split( /\t/, $s, 5 ); 
+	    my( $idx, $gid, $name, $weightx, $valuesStr )
+		= split( /\t/, $s, 5 );
 	    next if (!exists($gene2data{ $gid }));
-	    my @values = split( /\t/, $valuesStr ); 
-	    $gene2data{ $gid } = join(",", @values); 
-	} 
-	close $rfh; 
-    } 
+	    my @values = split( /\t/, $valuesStr );
+	    $gene2data{ $gid } = join(",", @values);
+	}
+	close $rfh;
+    }
 
     # get sample names:
-    my $dbh = dbLogin(); 
-    my %sampleNames; 
+    my $dbh = dbLogin();
+    my %sampleNames;
 
     if ($study eq "rnaseq") {
 	my $sample_oid_str = join(",", @samples);
@@ -2222,7 +2223,7 @@ sub printExpressionForGenes {
         }
         $cur->finish();
     }
-    #$dbh->disconnect(); 
+    #$dbh->disconnect();
 
     my @test = values %sampleNames;
     my $a = scalar @test;
@@ -2230,7 +2231,7 @@ sub printExpressionForGenes {
     my $idx = 0;
     my @snames;
     my %valid_genes;
-    foreach my $s (@samples) { 
+    foreach my $s (@samples) {
 	my $dataStr;
 	foreach my $g (@gene_oids) {
 	    my $valuesStr = $gene2data{ $g };
@@ -2261,7 +2262,7 @@ sub printExpressionForGenes {
         return;
     }
 
-    my $n = scalar @samples; 
+    my $n = scalar @samples;
     my $m = scalar @valid_genes;
 
     my $chartW = 200;
@@ -2271,57 +2272,57 @@ sub printExpressionForGenes {
     $chartH = 400 if ($n > 30); # no legend then
 
     # PREPARE THE BAR CHART
-    my $chart = ChartUtil::newBarChart(); 
+    my $chart = ChartUtil::newBarChart();
     $chart->WIDTH($chartW);
-    $chart->HEIGHT($chartH); 
+    $chart->HEIGHT($chartH);
     $chart->DOMAIN_AXIS_LABEL("Gene ID");
     $chart->RANGE_AXIS_LABEL("Expression");
-    $chart->INCLUDE_TOOLTIPS("yes"); 
+    $chart->INCLUDE_TOOLTIPS("yes");
     $chart->INCLUDE_LEGEND("yes");
-    $chart->INCLUDE_URLS("no"); 
+    $chart->INCLUDE_URLS("no");
     # $chart->ROTATE_DOMAIN_AXIS_LABELS("yes");
-    $chart->SERIES_NAME(\@snames); 
+    $chart->SERIES_NAME(\@snames);
     $chart->CATEGORY_NAME(\@valid_genes);
-    $chart->DATA(\@datas); 
+    $chart->DATA(\@datas);
 
     if ($n > 30) {
 	$chart->INCLUDE_LEGEND("no");
     }
 
-    if ($env->{ chart_exe } ne "") { 
-        my $st = -1; 
-        $st = ChartUtil::generateChart($chart); 
-        if ($st == 0) { 
-            my $url = "$tmp_url/".$chart->FILE_PREFIX.".png"; 
-            my $imagemap = "#".$chart->FILE_PREFIX; 
-            my $width = $chart->WIDTH; 
+    if ($env->{ chart_exe } ne "") {
+        my $st = -1;
+        $st = ChartUtil::generateChart($chart);
+        if ($st == 0) {
+            my $url = "$tmp_url/".$chart->FILE_PREFIX.".png";
+            my $imagemap = "#".$chart->FILE_PREFIX;
+            my $width = $chart->WIDTH;
             my $height = $chart->HEIGHT;
-	    #my $header = "Expression"; 
-            #my $script = "$base_url/overlib.js"; 
- 
-            print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'; 
-            print qq { 
-                <response> 
-                <header>$header</header> 
-		<script>$script</script> 
-		<maptext><![CDATA[ 
-	    }; 
+	    #my $header = "Expression";
+            #my $script = "$base_url/overlib.js";
+
+            print '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+            print qq {
+                <response>
+                <header>$header</header>
+		<script>$script</script>
+		<maptext><![CDATA[
+	    };
 	    my $FH = newReadFileHandle
 	        ($chart->FILEPATH_PREFIX.".html", "gene_expr", 1);
 	    while (my $s = $FH->getline()) {
 		print $s;
 	    }
 	    close ($FH);
- 
-	    print qq { 
-		]]></maptext> 
+
+	    print qq {
+		]]></maptext>
                 <url>$url</url>
 		<imagemap>$imagemap</imagemap>
 		<width>$width</width>
 		<height>$height</height>
                 </response>
-            }; 
-        } 
+            };
+        }
     }
 }
 
@@ -2329,21 +2330,21 @@ sub printExpressionForGenes {
 # showMapForOneSample - displays the map with coloring based on coverage
 #       of the genes for the specified sample
 ############################################################################
-sub showMapForOneSample { 
+sub showMapForOneSample {
     my ( $map_id, $sample_oid, $study ) = @_;
     if ( $map_id eq "" ) {
         webError("Please select a pathway to display.<br/>\n");
-    } 
+    }
 
-    printStatusLine( "Loading ...", 1 ); 
-    my $dbh = dbLogin(); 
- 
-    my $sql = qq{ 
-        select pathway_name, pathway_oid 
-        from kegg_pathway 
-        where image_id = ? 
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose, $map_id ); 
+    printStatusLine( "Loading ...", 1 );
+    my $dbh = dbLogin();
+
+    my $sql = qq{
+        select pathway_name, pathway_oid
+        from kegg_pathway
+        where image_id = ?
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, $map_id );
     my ( $pathway_name, $pathway_oid ) = $cur->fetchrow();
     $cur->finish();
 
@@ -2356,17 +2357,17 @@ sub showMapForOneSample {
     print "<image src='$base_url/images/colorstrip.80.png' "
 	. "width='300' height='10' />\n";
 
-    my $hintstr .= 
+    my $hintstr .=
 	"<span style='border:.1em solid rgb(0, 200, 200); "
 	. "background-color: rgb(175, 0, 0)'>&nbsp;&nbsp;&nbsp;</span> "
 	. "light blue outline indicates that more than one gene maps to "
 	. "this function.<br/>"
 	. "For any given function, the coloring is based on the coverage "
-	. "value for the highest expressing gene that maps to it."; 
-    printHint($hintstr); 
+	. "value for the highest expressing gene that maps to it.";
+    printHint($hintstr);
     print "<br/>";
 
-    printStartWorkingDiv(); 
+    printStartWorkingDiv();
 
     #$sample_oid =~ s/'//g;
     my $sample_oid2 = $sample_oid;
@@ -2391,7 +2392,7 @@ sub showMapForOneSample {
 
 	my ($total_gene_cnt, $total_read_cnt) =
 	    MetaUtil::getCountsForRNASeqSample($sample_oid2, $taxon_oid);
-	my %gene2info = 
+	my %gene2info =
 	    MetaUtil::getGenesForRNASeqSample($sample_oid2, $taxon_oid);
 	@genes4sample = keys %gene2info;
 	my %prodNames;
@@ -2418,7 +2419,7 @@ sub showMapForOneSample {
 		    $scaffold_oid, $dna_seq_length, $reads_cnt, @rest)
 		    = split("\t", $line);
 		next if $reads_cnt == 0;
-		
+
 		my $product = $prodNames{ $gene };
 		my $coverage = "0";
 		if ($dna_seq_length > 0 && $total_read_cnt > 0) {
@@ -2433,11 +2434,11 @@ sub showMapForOneSample {
 
 	} else {
 	    print "Retrieving information from database ... <br/>\n";
-	    my $sql2 = qq{ 
-	        select sum(es.reads_cnt) 
-	        from rnaseq_expression es 
+	    my $sql2 = qq{
+	        select sum(es.reads_cnt)
+	        from rnaseq_expression es
 	        where es.dataset_oid = ?
-	    }; 
+	    };
 	    my $cur = execSql( $dbh, $sql2, $verbose, $sample_oid2 );
 	    my ($total) = $cur->fetchrow();
 	    $cur->finish();
@@ -2446,29 +2447,29 @@ sub showMapForOneSample {
 		printEndWorkingDiv();
 		webError("Could not compute abundances for sample $sample_oid.");
 	    }
-	    my $sql = qq{ 
+	    my $sql = qq{
 	        select distinct es.IMG_gene_oid,
 		round(es.reads_cnt/g.DNA_seq_length/$total, 12)
-                from rnaseq_expression es, gene g 
-                where es.dataset_oid = ? 
+                from rnaseq_expression es, gene g
+                where es.dataset_oid = ?
                 and es.reads_cnt > 0.0000000
-                and g.gene_oid = es.IMG_gene_oid 
-	    }; 
-	    my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 ); 	
-	    for ( ;; ) { 
+                and g.gene_oid = es.IMG_gene_oid
+	    };
+	    my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 );
+	    for ( ;; ) {
 		my ( $gid, $coverage ) = $cur->fetchrow();
-		last if !$gid; 
-		
+		last if !$gid;
+
 		if ($study eq "rnaseq") {
 		    $coverage = $coverage * 10**9;
 		}
 		if ($coverage eq "0") {
 		    next;
 		}
-		
+
 		push @genes, $gid;
 		push @values, $coverage;
-	    } 
+	    }
 	    $cur->finish();
 	}
 
@@ -2500,7 +2501,7 @@ sub showMapForOneSample {
 	    }
 	    $cur->finish();
 
-	    my %all_kos = 
+	    my %all_kos =
 		MetaUtil::getTaxonFuncCount($taxon_oid, 'assembled', 'ko');
 	    foreach my $ko_id (keys %ko_names) {
 		print "<p>Retrieving info for KO: $ko_id  ...\n";
@@ -2518,7 +2519,7 @@ sub showMapForOneSample {
 			$scaffold_oid, $dna_seq_length, $reads_cnt, @rest)
 			= split("\t", $line);
 		    next if ($reads_cnt <= 0.0000000);
-		    
+
 		    my $product = $prodNames{ $gene };
 		    if ($ko_rois{ $ko_id } && $ko_names{ $ko_id }) {
 			my $s = $ko_rois{ $ko_id } . "\t" .
@@ -2532,27 +2533,27 @@ sub showMapForOneSample {
 
     } elsif ($study eq "proteomics") {
 	# get the coverage values for each gene in the sample
-	my $sql = qq{ 
-            select distinct 
-                   dt.gene_oid, round(sum(dt.coverage), 7) 
-            from dt_img_gene_prot_pep_sample dt, gene g 
-	    where dt.sample_oid = ? 
-	    and dt.gene_oid = g.gene_oid 
+	my $sql = qq{
+            select distinct
+                   dt.gene_oid, round(sum(dt.coverage), 7)
+            from dt_img_gene_prot_pep_sample dt, gene g
+	    where dt.sample_oid = ?
+	    and dt.gene_oid = g.gene_oid
 	    group by dt.gene_oid
-        }; 
+        };
 
-	my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 ); 	
-	for ( ;; ) { 
+	my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 );
+	for ( ;; ) {
 	    my ( $gid, $coverage ) = $cur->fetchrow();
-	    last if !$gid; 
-	    
+	    last if !$gid;
+
 	    if ($coverage eq "0") {
 		next;
 	    }
-	    
+
 	    push @genes, $gid;
 	    push @values, $coverage;
-	} 
+	}
 	$cur->finish();
     }
 
@@ -2562,56 +2563,56 @@ sub showMapForOneSample {
     my @nvalues = @$nvalues_ref;
 
     my $idx = 0;
-    my %profile; 
+    my %profile;
     foreach my $gene (@genes) {
 	$profile{ $gene } = $nvalues[$idx];
 	$idx++;
     }
 
-    my $sql = qq{ 
+    my $sql = qq{
         select distinct ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
                ir.width, ir.height, ir.roi_label,
-               g.gene_oid, g.gene_display_name, g.locus_tag, 
-               kt.ko_id, kt.ko_name, kt.definition 
-          from image_roi_ko_terms irk, 
-               image_roi ir, 
-               ko_term kt, 
-               gene_ko_terms gkt, 
+               g.gene_oid, g.gene_display_name, g.locus_tag,
+               kt.ko_id, kt.ko_name, kt.definition
+          from image_roi_ko_terms irk,
+               image_roi ir,
+               ko_term kt,
+               gene_ko_terms gkt,
                gene g,
-               dt_img_gene_prot_pep_sample dt 
-         where ir.roi_id= irk.roi_id 
+               dt_img_gene_prot_pep_sample dt
+         where ir.roi_id= irk.roi_id
            and ir.roi_type in ('ko_term', 'enzyme')
-           and irk.ko_terms = gkt.ko_terms 
-           and gkt.gene_oid = dt.gene_oid 
-           and dt.gene_oid = g.gene_oid 
-           and dt.sample_oid = ? 
-           and ir.pathway = ? 
-           and gkt.ko_terms = kt.ko_id 
-      order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label 
-    }; 
+           and irk.ko_terms = gkt.ko_terms
+           and gkt.gene_oid = dt.gene_oid
+           and dt.gene_oid = g.gene_oid
+           and dt.sample_oid = ?
+           and ir.pathway = ?
+           and gkt.ko_terms = kt.ko_id
+      order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
+    };
 
     if ( $study eq "rnaseq" ) {
-        $sql = qq{ 
+        $sql = qq{
             select distinct ir.shape, ir.x_coord, ir.y_coord, ir.coord_string,
                    ir.width, ir.height, ir.roi_label,
 	           g.gene_oid, g.gene_display_name, g.locus_tag,
-                   kt.ko_id, kt.ko_name, kt.definition 
-              from image_roi_ko_terms irk, 
-                   image_roi ir, 
-                   ko_term kt, 
-                   gene_ko_terms gkt, 
+                   kt.ko_id, kt.ko_name, kt.definition
+              from image_roi_ko_terms irk,
+                   image_roi ir,
+                   ko_term kt,
+                   gene_ko_terms gkt,
 		   gene g,
-                   rnaseq_expression es 
-             where ir.roi_id= irk.roi_id 
+                   rnaseq_expression es
+             where ir.roi_id= irk.roi_id
                and ir.roi_type in ('ko_term', 'enzyme')
-               and irk.ko_terms = gkt.ko_terms 
-               and gkt.gene_oid = es.IMG_gene_oid 
-	       and g.gene_oid = es.IMG_gene_oid 
+               and irk.ko_terms = gkt.ko_terms
+               and gkt.gene_oid = es.IMG_gene_oid
+	       and g.gene_oid = es.IMG_gene_oid
                and es.dataset_oid = ?
                and ir.pathway = ?
-               and gkt.ko_terms = kt.ko_id 
+               and gkt.ko_terms = kt.ko_id
           order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
-        };  
+        };
 
 	if (scalar @genes4sample > 0 && $in_file ne "Yes") {
 	    my $idsInClause =
@@ -2638,7 +2639,7 @@ sub showMapForOneSample {
           order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
             };
 	}
-    } 
+    }
 
     if ($in_file eq "Yes") {
 	# already computed
@@ -2650,9 +2651,9 @@ sub showMapForOneSample {
         } else {
 	    $cur = execSql($dbh, $sql, $verbose, $sample_oid2, $pathway_oid);
         }
-	for ( ;; ) { 
+	for ( ;; ) {
 	    my ( $shape, $x_coord, $y_coord, $coord_str, $width, $height,
-		 $roi_label, $gene_oid, $name, $locus, 
+		 $roi_label, $gene_oid, $name, $locus,
 		 $ko_id, $ko_name, $ko_defn ) = $cur->fetchrow();
 	    last if !$roi_label;
 	    my $s = "$shape\t$x_coord\t$y_coord\t$coord_str\t" .
@@ -2664,11 +2665,11 @@ sub showMapForOneSample {
 	$cur->finish();
 	OracleUtil::truncTable($dbh, "gtt_num_id");
     }
-    
-    my %unique_ko; 
+
+    my %unique_ko;
     my $old_roi;
     my %roi2gene;
-    my $koStr; 
+    my $koStr;
     my @allRecs;
 
     foreach my $s ( sort @recs ) {
@@ -2690,8 +2691,8 @@ sub showMapForOneSample {
         #    $height = 10;
         #    $shape = "rect";
         #}
-	my $r = "$x_coord\t"; 
-	$r .= "$y_coord\t"; 
+	my $r = "$x_coord\t";
+	$r .= "$y_coord\t";
 	$r .= "$width\t";
 	$r .= "$height\t";
 	$r .= "$shape";
@@ -2706,13 +2707,13 @@ sub showMapForOneSample {
 	$roi2gene{$r} .= "$gene_oid\t$name\t$locus"."#";
 
 	if ( $old_roi eq "" ) {
-	    $old_roi = $r; 
-	} 
+	    $old_roi = $r;
+	}
 	if ( $old_roi eq $r ) {
-	    $unique_ko{$ko} = $koLabel; 
-	} else { 
-	    my $koStr = join(",", sort(keys(%unique_ko))); 
-	    my $koLabelStr = join("; ", sort(values(%unique_ko))); 
+	    $unique_ko{$ko} = $koLabel;
+	} else {
+	    my $koStr = join(",", sort(keys(%unique_ko)));
+	    my $koLabelStr = join("; ", sort(values(%unique_ko)));
 
 	    %unique_ko = ();
 	    $old_roi .= "\t$koStr" . "\t$koLabelStr";
@@ -2720,41 +2721,41 @@ sub showMapForOneSample {
 	    $unique_ko{$ko} = $koLabel;
 	}
 	$old_roi = $r;
-    } 
+    }
 
     my $koStr = join(",", keys(%unique_ko));
     my $koLabelStr = join("; ", values(%unique_ko));
     $old_roi .= "\t$koStr" . "\t$koLabelStr";
     push( @allRecs, $old_roi );
 
-    printEndWorkingDiv(); 
+    printEndWorkingDiv();
 
-    my $inFile = "$pngDir/$map_id.png"; 
+    my $inFile = "$pngDir/$map_id.png";
     GD::Image->trueColor(1);
-    my $im = new GD::Image($inFile); 
-    if ( !$im ) { 
+    my $im = new GD::Image($inFile);
+    if ( !$im ) {
         webDie("showMapForOneSample: cannot read '$inFile'\n");
-    } 
+    }
     colorByAbundance( $im, \%roi2gene, \%profile );
- 
+
     my $tmpPngFile = "$tmp_dir/$map_id.$$.png";
     my $tmpPngUrl  = "$tmp_url/$map_id.$$.png";
     my $wfh = newWriteFileHandle( $tmpPngFile, "showMapForOneSample" );
-    binmode $wfh; 
-    print $wfh $im->png; 
-    close $wfh; 
- 
+    binmode $wfh;
+    print $wfh $im->png;
+    close $wfh;
+
     print "<image src='$tmpPngUrl' usemap='#mapdata' border='0' />\n";
-    print "<map name='mapdata'>\n"; 
+    print "<map name='mapdata'>\n";
     printMapCoordsForOneSample
 	( \@allRecs, $map_id, \%roi2gene, $sample_oid, $study );
 
     my $url_fragm = "&page=keggMapSamples"
 	          . "&study=$study&samples=$sample_oid";
     printRelatedCoords( $dbh, $map_id, $url_fragm );
-    print "</map>\n"; 
+    print "</map>\n";
 
-    #$dbh->disconnect(); 
+    #$dbh->disconnect();
     printStatusLine( "Done.", 2 );
 }
 
@@ -2775,7 +2776,7 @@ sub applyHighlights {
         my $coord_str;
         my $poly;
 
-        if ($shape eq "rect") { 
+        if ($shape eq "rect") {
 	    highlightRect( $im, $x, $y, $w, $h, $colorName );
             my $black = $im->colorClosest( 0, 0, 0 );
 	    $im->rectangle( $x, $y, $x+$w, $y+$h, $black );
@@ -2854,7 +2855,7 @@ sub applyHighlightsRGB {
 
             my $black = $im->colorClosest( 0, 0, 0 );
 	    $im->polygon($poly, $black);
-        } 
+        }
 
 	my @kos = split(",", $koStr);
         if (scalar @kos > 1) { # show these outlined in red
@@ -2875,23 +2876,23 @@ sub applyHighlightsRGB {
 ############################################################################
 # colorByCluster - overlays cluster-based coloring on the map
 ############################################################################
-sub colorByCluster { 
+sub colorByCluster {
     my ( $im, $roi2ko_ref, $ko2genes_ref, $color_hash_ref ) = @_;
-    if (!$roi2ko_ref || !$ko2genes_ref || $color_hash_ref eq "") { 
-        return; 
-    } 
- 
+    if (!$roi2ko_ref || !$ko2genes_ref || $color_hash_ref eq "") {
+        return;
+    }
+
     my @rois = keys(%$roi2ko_ref);
-    foreach my $roi (@rois) { 
+    foreach my $roi (@rois) {
         my ( $x, $y, $w, $h, $shape ) = split( /\t/, $roi );
         next if ($w <= 0 || $h <= 0) && $shape eq "rect";
 
         my $coord_str;
         my $poly;
 
-        my $koStr = $roi2ko_ref->{$roi}; 
+        my $koStr = $roi2ko_ref->{$roi};
         chop $koStr;
- 
+
 	my @kos = split("#", $koStr);
 	my %allGenes;
 	foreach my $ko (@kos) {
@@ -2902,22 +2903,22 @@ sub colorByCluster {
 	    }
 	}
 
-        my $color0; 
+        my $color0;
 	my $n = 0;
         foreach my $gene (keys %allGenes) {
             my ( $gene_oid, $name, $locus, $clusterid )
-		= split( /\t/, $gene ); 
-            my $color = $color_hash_ref->{ $clusterid }; 
+		= split( /\t/, $gene );
+            my $color = $color_hash_ref->{ $clusterid };
 	    if ($color ne $color0) {
 		$n++;
 		$color0 = $color;
 	    }
-	} 
-	
-	my ( $r, $g, $b ) = $im->rgb( $color0 ); 
+	}
+
+	my ( $r, $g, $b ) = $im->rgb( $color0 );
 
         if ($shape eq "rect") {
-	    my $perc = 80; 
+	    my $perc = 80;
             highlightRectRgb( $im, $x, $y, $w, $h, $r, $g, $b, $perc );
             my $black = $im->colorClosest( 0, 0, 0 );
             $im->rectangle( $x, $y, $x+$w, $y+$h, $black );
@@ -2969,11 +2970,11 @@ sub colorByAbundance {
     my ( $im, $roi2gene_ref, $profile_ref ) = @_;
     if (!$roi2gene_ref || $profile_ref eq "") {
         return;
-    } 
+    }
 
     my @rois = keys(%$roi2gene_ref);
     foreach my $roi (@rois) {
-        my ( $x, $y, $w, $h, $shape ) = split( /\t/, $roi ); 
+        my ( $x, $y, $w, $h, $shape ) = split( /\t/, $roi );
         next if ($w <= 0 || $h <= 0) && $shape eq "rect";
 
         my $coord_str;
@@ -2983,7 +2984,7 @@ sub colorByAbundance {
 	chop $genesStr;
 
 	my @genes = split("#", $genesStr);
-	my $max; 
+	my $max;
 	foreach my $gene (@genes) {
 	    my ( $gene_oid, $name, $locus ) = split( /\t/, $gene );
 	    my $val = $profile_ref->{$gene_oid};
@@ -2994,27 +2995,27 @@ sub colorByAbundance {
 		$max = $val;
 	    }
 	}
-	
+
 	my $val = 10*$max;
 	my $ff0;
 	if ( $val < 0.00 ) {
 	    $ff0 = -1 * $val;
-	} else { 
-	    $ff0 = $val; 
-	} 
+	} else {
+	    $ff0 = $val;
+	}
 	if ($ff0 > 1.0000000) { # should not really happen ...
-	    $ff0 = 1.0; 
-	} 
+	    $ff0 = 1.0;
+	}
 
 	my ($r, $g, $b);
-	if ($val < 0.00) { 
-	    $r = 0; 
+	if ($val < 0.00) {
+	    $r = 0;
 	    $g = int(205*$ff0 + 50);
-	    $b = 0; 
-	} else { 
+	    $b = 0;
+	} else {
 	    $r = int(205*$ff0 + 50);
-	    $g = 0; 
-	    $b = 0; 
+	    $g = 0;
+	    $b = 0;
 	}
 
         if ($shape eq "rect") {
@@ -3047,12 +3048,12 @@ sub colorByAbundance {
             my $black = $im->colorClosest( 0, 0, 0 );
             $im->polygon($poly, $black);
         }
-	
-        if (scalar @genes > 1) { # show these in red 
+
+        if (scalar @genes > 1) { # show these in red
             my $blue = $im->colorClosest( 0, 200, 200 );
             if ( $blue == -1 ) {
                 $blue = $im->colorAllocate( 0, 200, 200 );
-            } 
+            }
             if ($shape eq "poly") {
                 $im->polygon( $poly, $blue );
             } else {
@@ -3060,8 +3061,8 @@ sub colorByAbundance {
 	    }
         }
     }
-} 
- 
+}
+
 ############################################################################
 # printImageMapCoords - overlays the image map for the pathway map
 ############################################################################
@@ -3077,17 +3078,17 @@ sub printImageMapCoords {
         $url .= "&map_id=$map_id&ko=$koStr";
 
 	my $text = $koLabelStr;
-        my $width; 
+        my $width;
         if (length($text) > 400) {
-            $width = "WIDTH,'400',"; 
-        } 
+            $width = "WIDTH,'400',";
+        }
 
 	#my $s = "onMouseOver=\"return overlib"
 	#      . "('$text', $width FGCOLOR, '#E0FFC2')\" ";
 	#$s .= "onMouseOut=\"return nd()\" ";
 	#print "<area shape='rect' coords='$x1,$y1,$x2,$y2' href=\"$url\" "
 	#. $s . ">\n";
- 
+
 	if ($shape eq "rect") {
 	    my $x2  = $x1 + $w;
 	    my $y2  = $y1 + $h;
@@ -3102,32 +3103,32 @@ sub printImageMapCoords {
     }
 }
 
-############################################################################ 
-# printMapCoordsForSamples - overlays the image map for the pathway map 
-############################################################################ 
-sub printMapCoordsForSamples { 
-    my ( $recs_ref, $map_id, $sample_oid_str, $study, $ko2genes_ref ) = @_; 
+############################################################################
+# printMapCoordsForSamples - overlays the image map for the pathway map
+############################################################################
+sub printMapCoordsForSamples {
+    my ( $recs_ref, $map_id, $sample_oid_str, $study, $ko2genes_ref ) = @_;
 
-    print "<script src='$base_url/overlib.js'></script>\n"; 
-    foreach my $r (@$recs_ref) { 
-        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) = 
-	    split( /\t/, $r ); 
+    print "<script src='$base_url/overlib.js'></script>\n";
+    foreach my $r (@$recs_ref) {
+        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) =
+	    split( /\t/, $r );
 
 	my $text;
 	if ( $ko2genes_ref ne "" && $ko2genes_ref && $study eq "rnaseq"
 	     && scalar %$ko2genes_ref > 0 ) {
-	    my @kos = split(",", $koStr); 
-	    my %allGenes; 
+	    my @kos = split(",", $koStr);
+	    my %allGenes;
 	    foreach my $ko (@kos) {
 		my $geneStr = $ko2genes_ref->{$ko};
 		my @genes = split("#", $geneStr);
 		foreach my $gene (@genes) {
 		    $allGenes{ $gene } = 1;
-		} 
-	    } 
+		}
+	    }
 	    my %clusterHash;
 	    foreach my $gene (keys %allGenes) {
-		my ( $gene_oid, $name, $locus, $clusterid ) 
+		my ( $gene_oid, $name, $locus, $clusterid )
 		    = split( /\t/, $gene );
 		$clusterHash{ $clusterid } = 1; # if $clusterid ne "";
 	    }
@@ -3140,10 +3141,10 @@ sub printMapCoordsForSamples {
 
         my $url = "$section_cgi&page=mapGenesSamples"
 	        . "&study=$study&samples=$sample_oid_str"
-	        . "&map_id=$map_id&ko=$koStr"; 
- 
-        $text .= "$koLabelStr"; 
-	$text =~ s/'//g; 
+	        . "&map_id=$map_id&ko=$koStr";
+
+        $text .= "$koLabelStr";
+	$text =~ s/'//g;
 
 	my $width;
 	if (length($text) > 400) {
@@ -3155,8 +3156,8 @@ sub printMapCoordsForSamples {
 	    . "onMouseOut=\"return nd()\" ";
 
 	if ($shape eq "rect") {
-	    my $x2  = $x1 + $w; 
-	    my $y2  = $y1 + $h; 
+	    my $x2  = $x1 + $w;
+	    my $y2  = $y1 + $h;
 
 	    print "<area id='$koStr' name='$koStr' "
 		. "shape='rect' coords='$x1,$y1,$x2,$y2' href=\"$url\" "
@@ -3167,19 +3168,19 @@ sub printMapCoordsForSamples {
             print "<area shape='poly' coords='$coord_str' href=\"$url\" "
                 . " target='_blank' id='$koStr' name='$koStr' " . $s . ">\n";
 	}
-    } 
-} 
- 
-############################################################################ 
-# printMapCoordsForFuncs - overlays the image map for the pathway map 
-############################################################################ 
-sub printMapCoordsForFuncs { 
-    my ( $recs_ref, $map_id, $func_str ) = @_; 
+    }
+}
 
-    print "<script src='$base_url/overlib.js'></script>\n"; 
-    foreach my $r (@$recs_ref) { 
-        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) = 
-	    split( /\t/, $r ); 
+############################################################################
+# printMapCoordsForFuncs - overlays the image map for the pathway map
+############################################################################
+sub printMapCoordsForFuncs {
+    my ( $recs_ref, $map_id, $func_str ) = @_;
+
+    print "<script src='$base_url/overlib.js'></script>\n";
+    foreach my $r (@$recs_ref) {
+        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) =
+	    split( /\t/, $r );
 
 	my $roi = $x1."\t".$y1."\t".$w."\t".$h."\t".$shape;
         my $str = "$koLabelStr";
@@ -3195,8 +3196,8 @@ sub printMapCoordsForFuncs {
 	      . "onMouseOut=\"return nd()\" ";
 
         if ($shape eq "rect") {
-	    my $x2  = $x1 + $w; 
-	    my $y2  = $y1 + $h; 
+	    my $x2  = $x1 + $w;
+	    my $y2  = $y1 + $h;
 	    print "<area shape='rect' coords='$x1,$y1,$x2,$y2' " . $s . ">\n";
         } elsif ($shape eq "poly") {
             my $coord_str = $h;
@@ -3205,40 +3206,40 @@ sub printMapCoordsForFuncs {
     }
 }
 
-############################################################################ 
-# printMapCoordsForOneSample - overlays the image map for the pathway map 
-############################################################################ 
-sub printMapCoordsForOneSample { 
-    my ( $recs_ref, $map_id, $roi2gene_ref, $sample_oid, $study ) = @_; 
+############################################################################
+# printMapCoordsForOneSample - overlays the image map for the pathway map
+############################################################################
+sub printMapCoordsForOneSample {
+    my ( $recs_ref, $map_id, $roi2gene_ref, $sample_oid, $study ) = @_;
 
-    print "<script src='$base_url/overlib.js'></script>\n"; 
-    foreach my $r (@$recs_ref) { 
-        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) = 
-	    split( /\t/, $r ); 
+    print "<script src='$base_url/overlib.js'></script>\n";
+    foreach my $r (@$recs_ref) {
+        my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) =
+	    split( /\t/, $r );
 
 	my $roi = $x1."\t".$y1."\t".$w."\t".$h."\t".$shape;
         my $genesStr = $roi2gene_ref->{$roi};
-        chop $genesStr; 
-	
+        chop $genesStr;
+
         my @genes = split("#", $genesStr);
         my $count = scalar @genes;
 	#my $locusStr;
         #foreach my $gene (@genes) {
-        #    my ( $gene_oid, $name, $locus ) = split( /\t/, $gene ); 
+        #    my ( $gene_oid, $name, $locus ) = split( /\t/, $gene );
 	#    $locusStr .= $locus.",";
 	#}
 	#chop $locusStr;
- 
+
         my $url = "$section_cgi&page=mapGenesOneSample"
   	        . "&study=$study&sample=$sample_oid"
-		. "&map_id=$map_id&ko=$koStr"; 
+		. "&map_id=$map_id&ko=$koStr";
 
 	my $str = $count . " genes, ";
 	if ($count == 1) {
 	    $str = $count . " gene, ";
 	}
 	$str .= "$koLabelStr";
-	$str =~ s/'//g; 
+	$str =~ s/'//g;
 
 	my $width;
 	if (length($str) > 400) {
@@ -3250,21 +3251,21 @@ sub printMapCoordsForOneSample {
 	      . "onMouseOut=\"return nd()\" ";
 
         if ($shape eq "rect") {
-	    my $x2  = $x1 + $w; 
-	    my $y2  = $y1 + $h; 
+	    my $x2  = $x1 + $w;
+	    my $y2  = $y1 + $h;
 	    print "<area shape='rect' coords='$x1,$y1,$x2,$y2' href=\"$url\" "
 		. "target='_blank' "
-		. $s . ">\n"; 
-        #print "<area shape='rect' coords='$x1,$y1,$x2,$y2' href=\"$url\" " 
-        #    . " title='$str'" 
-        #    . " >\n"; 
+		. $s . ">\n";
+        #print "<area shape='rect' coords='$x1,$y1,$x2,$y2' href=\"$url\" "
+        #    . " title='$str'"
+        #    . " >\n";
         } elsif ($shape eq "poly") {
             my $coord_str = $h;
             print "<area shape='poly' coords='$coord_str' href=\"$url\" "
                 . " target='_blank' id='$koStr' name='$koStr' " . $s . ">\n";
         }
-    } 
-} 
+    }
+}
 
 ############################################################################
 # printMapGenesKo - prints the genes with the given ko number for
@@ -3278,26 +3279,26 @@ sub printMapGenesKo {
     print "<h1>Genes with KO: <font color='darkblue'><u>$ko_str</u></font>"
 	. " found among selected genomes</h1>\n";
     my $dbh = dbLogin();
-    
+
     $ko_str =~ s/KO://g;
-    my @ko = split(",", $ko_str); 
+    my @ko = split(",", $ko_str);
     my $ko_str2;
     if (OracleUtil::useTempTable($#ko + 1)) {
-        OracleUtil::insertDataArray($dbh, "gtt_func_id", \@ko);          
+        OracleUtil::insertDataArray($dbh, "gtt_func_id", \@ko);
         $ko_str2 = "select id from gtt_func_id";
     } else {
         $ko_str2 = joinSqlQuoted(",", @ko);
         $ko_str2 =~ s/KO://g;
     }
-    
+
     my @toids = split(",", $taxon_oid_str);
     my $taxon_oid_str2;
     if (OracleUtil::useTempTable($#toids + 1)) {
-        OracleUtil::insertDataArray($dbh, "gtt_num_id", \@toids);          
+        OracleUtil::insertDataArray($dbh, "gtt_num_id", \@toids);
         $taxon_oid_str2 = "select id from gtt_num_id";
     } else {
         $taxon_oid_str2 = $taxon_oid_str;
-    }    
+    }
 
     printMainForm();
 
@@ -3307,9 +3308,9 @@ sub printMapGenesKo {
     my %mer_fs_taxons;
     if ( $include_metagenomes ) {
 	my $imgClause = WebUtil::imgClause("tx");
-	my $rclause = WebUtil::urClause("tx.taxon_oid"); 
+	my $rclause = WebUtil::urClause("tx.taxon_oid");
 	my $sql = qq{
-            select tx.taxon_oid, tx.taxon_display_name 
+            select tx.taxon_oid, tx.taxon_display_name
             from taxon tx
             where tx.in_file = 'Yes'
             and tx.taxon_oid in ($taxon_oid_str2)
@@ -3326,19 +3327,19 @@ sub printMapGenesKo {
     }
 
     print "<br/>Retrieving pathway information from database ... \n";
-    my $sql = qq{ 
+    my $sql = qq{
 	select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
 	       g.taxon, tx.taxon_name, iroi.roi_label
         from image_roi_ko_terms irk, gene_ko_terms gk, gene g, taxon tx,
-	     image_roi iroi, kegg_pathway pw 
-        where pw.image_id = ? 
-	and irk.roi_id = iroi.roi_id 
-	and irk.ko_terms = gk.ko_terms 
-	and gk.gene_oid = g.gene_oid 
+	     image_roi iroi, kegg_pathway pw
+        where pw.image_id = ?
+	and irk.roi_id = iroi.roi_id
+	and irk.ko_terms = gk.ko_terms
+	and gk.gene_oid = g.gene_oid
 	and iroi.pathway = pw.pathway_oid
 	and g.taxon = tx.taxon_oid
 	and tx.taxon_oid in ($taxon_oid_str2)
-	and iroi.roi_label in ($ko_str2) 
+	and iroi.roi_label in ($ko_str2)
 	and g.obsolete_flag = 'No'
 	order by iroi.roi_label, g.gene_oid, g.taxon
     };
@@ -3348,11 +3349,11 @@ sub printMapGenesKo {
     my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
     $it->addColSpec( "Select" );
     $it->addColSpec( "Gene ID", "asc", "right" );
-    $it->addColSpec( "Locus Tag", "asc", "left" ); 
+    $it->addColSpec( "Locus Tag", "asc", "left" );
     $it->addColSpec( "Gene Product Name", "asc", "left" );
     $it->addColSpec( "Genome", "asc", "left" );
-    $it->addColSpec( "KO", "asc", "left" ); 
-    my $sd = $it->getSdDelim(); 
+    $it->addColSpec( "KO", "asc", "left" );
+    my $sd = $it->getSdDelim();
 
     my %txHash;
     my $gene_cnt = 0;
@@ -3365,11 +3366,11 @@ sub printMapGenesKo {
 
         my $url1 = "$main_cgi?section=GeneDetail"
                  . "&page=geneDetail&gene_oid=$gene_oid";
-        my $url2 = "$main_cgi?section=TaxonDetail" 
-                 . "&page=taxonDetail&taxon_oid=$taxon_oid"; 
-        my $url3 = "$ko_base_url$ko"; 
-	
-	my $row = $sd."<input type='checkbox' " 
+        my $url2 = "$main_cgi?section=TaxonDetail"
+                 . "&page=taxonDetail&taxon_oid=$taxon_oid";
+        my $url3 = "$ko_base_url$ko";
+
+	my $row = $sd."<input type='checkbox' "
 	        . "name='gene_oid' value='$gene_oid'/>\t";
 	$row .= $gene_oid.$sd.alink($url1, $gene_oid, "_blank")."\t";
 	$row .= $locus_tag.$sd.$locus_tag."\t";
@@ -3380,10 +3381,10 @@ sub printMapGenesKo {
 
 	$gene_cnt++;
 	$txHash{ $taxon_oid } = 0;
-	if ( $gene_cnt >= $maxGeneListResults ) { 
-	    $trunc = 1; 
-	    last; 
-	} 
+	if ( $gene_cnt >= $maxGeneListResults ) {
+	    $trunc = 1;
+	    last;
+	}
     }
 
     OracleUtil::truncTable($dbh, "gtt_func_id"); # clean up temp table
@@ -3426,11 +3427,11 @@ sub printMapGenesKo {
 		    my $url1 = "$main_cgi?section=MetaGeneDetail" .
 			"&page=metaGeneDetail&taxon_oid=$taxon_oid" .
 			"&data_type=$data_type&gene_oid=$gene_oid";
-		    my $url2 = "$main_cgi?section=MetaDetail" 
-			. "&page=metaDetail&taxon_oid=$taxon_oid"; 
-		    my $url3 = "$ko_base_url$ko_id"; 
-	
-		    my $row = $sd."<input type='checkbox' " 
+		    my $url2 = "$main_cgi?section=MetaDetail"
+			. "&page=metaDetail&taxon_oid=$taxon_oid";
+		    my $url3 = "$ko_base_url$ko_id";
+
+		    my $row = $sd."<input type='checkbox' "
 			. "name='gene_oid' value='$workspace_id'/>\t";
 		    $row .= $gene_oid.$sd
 			  . alink($url1, $gene_oid, "_blank")."\t";
@@ -3443,10 +3444,10 @@ sub printMapGenesKo {
 		    $mer_fs_genes = 1;
 
 		    $gene_cnt++;
-		    if ( $gene_cnt >= $maxGeneListResults ) { 
-			$trunc = 1; 
-			last; 
-		    } 
+		    if ( $gene_cnt >= $maxGeneListResults ) {
+			$trunc = 1;
+			last;
+		    }
 		}
 	    }
 	}
@@ -3492,12 +3493,12 @@ sub printMapGenesKo {
 }
 
 ############################################################################
-# printMapGenesSamples - prints the genes with the given ko number for 
+# printMapGenesSamples - prints the genes with the given ko number for
 #           selected samples
 ############################################################################
 sub printMapGenesSamples {
     my $map_id = param("map_id");
-    my $ko_str = param("ko"); 
+    my $ko_str = param("ko");
     my $study = param("study");
     my $sample_oid_str = param("samples");
     my @sample_oids = split(",", $sample_oid_str);
@@ -3505,12 +3506,12 @@ sub printMapGenesSamples {
 
     print "<h1>Genes with KO: <font color='blue'><u>$ko_str</u></font>"
         . " found among selected samples</h1>\n";
- 
+
     my @ko = split(",", $ko_str);
     $ko_str = joinSqlQuoted(",", @ko);
     $ko_str =~ s/KO://g;
 
-    my $dbh = dbLogin(); 
+    my $dbh = dbLogin();
 
     my %sampleNames;
     my %sample2taxon;
@@ -3571,7 +3572,7 @@ sub printMapGenesSamples {
 	my $txsql = qq{
             select s.sample_oid, s.IMG_taxon_oid, tx.in_file, tx.genome_type
             from ms_sample s, taxon tx
-            where s.sample_oid in ($sample_oid_str) 
+            where s.sample_oid in ($sample_oid_str)
             and s.IMG_taxon_oid = tx.taxon_oid
         };
         my $cur = execSql( $dbh, $txsql, $verbose );
@@ -3596,7 +3597,7 @@ sub printMapGenesSamples {
         }
 	$cur->finish();
     }
-    
+
     my @recs = ();
     if ($study eq "rnaseq") {
 	foreach my $k (@ko) {
@@ -3615,7 +3616,7 @@ sub printMapGenesSamples {
 		    my %ko_genes = MetaUtil::getTaxonFuncGenes
 			($tx, "assembled", $kid);
 		    @gene_group = keys %ko_genes;
-		    
+
 		} else {
 		    my $rclause   = WebUtil::urClause('g.taxon');
 		    my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
@@ -3656,31 +3657,31 @@ sub printMapGenesSamples {
 		}
 	    }
 	}
-	
+
     } elsif ($study eq "proteomics") {
-	my $sql = qq{ 
+	my $sql = qq{
         select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
 	       dt.sample_oid, dt.sample_desc, iroi.roi_label, g.taxon
         from image_roi_ko_terms irk, gene_ko_terms gk, gene g,
-             image_roi iroi, kegg_pathway pw, 
+             image_roi iroi, kegg_pathway pw,
 	     dt_img_gene_prot_pep_sample dt
-        where pw.image_id = ? 
-        and irk.roi_id = iroi.roi_id 
-        and irk.ko_terms = gk.ko_terms 
-        and gk.gene_oid = g.gene_oid 
-        and iroi.pathway = pw.pathway_oid 
+        where pw.image_id = ?
+        and irk.roi_id = iroi.roi_id
+        and irk.ko_terms = gk.ko_terms
+        and gk.gene_oid = g.gene_oid
+        and iroi.pathway = pw.pathway_oid
         and dt.sample_oid in ($sample_oid_str)
         and dt.gene_oid = g.gene_oid
         and iroi.roi_label in ($ko_str)
         and g.obsolete_flag = 'No'
 	order by iroi.roi_label, g.gene_oid, dt.sample_oid
-        }; 
+        };
 
 	my $cur = execSql( $dbh, $sql, $verbose, $map_id );
-	for ( ;; ) { 
+	for ( ;; ) {
 	    my ( $gene_oid, $name, $locus_tag, $sample_oid, $sample_name,
-		 $ko, $tx ) = $cur->fetchrow(); 
-	    last if !$gene_oid; 
+		 $ko, $tx ) = $cur->fetchrow();
+	    last if !$gene_oid;
 	    my $sample_name = $sampleNames{$sample_oid} if $study eq "rnaseq";
 	    my $r = "$gene_oid\t$name\t$locus_tag\t"
 		  . "$sample_oid\t$sample_name\t$ko\ttx";
@@ -3689,78 +3690,78 @@ sub printMapGenesSamples {
 	$cur->finish();
     }
 
-    printMainForm(); 
- 
-    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 ); 
-    my $sd = $it->getSdDelim(); 
-    $it->addColSpec( "Select" ); 
-    $it->addColSpec( "Gene ID",            "asc", "right" ); 
-    $it->addColSpec( "Locus Tag",          "asc", "left"  ); 
-    $it->addColSpec( "Gene Product Name",  "asc", "left"  ); 
-    $it->addColSpec( "Sample ID",          "asc", "right" ); 
-    $it->addColSpec( "Sample Description", "asc", "left"  ); 
-    $it->addColSpec( "KO",                 "asc", "left"  ); 
- 
+    printMainForm();
+
+    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
+    my $sd = $it->getSdDelim();
+    $it->addColSpec( "Select" );
+    $it->addColSpec( "Gene ID",            "asc", "right" );
+    $it->addColSpec( "Locus Tag",          "asc", "left"  );
+    $it->addColSpec( "Gene Product Name",  "asc", "left"  );
+    $it->addColSpec( "Sample ID",          "asc", "right" );
+    $it->addColSpec( "Sample Description", "asc", "left"  );
+    $it->addColSpec( "KO",                 "asc", "left"  );
+
     my $cnt = 0;
-    foreach my $r ( @recs ) { 
+    foreach my $r ( @recs ) {
         my ($gene_oid, $name, $locus_tag, $sample_oid, $sample_name, $ko, $tx)
 	    = split( /\t/, $r );
  	$name = "hypothetical protein" if $name eq "";
 
-        my $url1 = "$main_cgi?section=GeneDetail" 
-                 . "&page=geneDetail&gene_oid=$gene_oid"; 
+        my $url1 = "$main_cgi?section=GeneDetail"
+                 . "&page=geneDetail&gene_oid=$gene_oid";
 	my ($in_file, $gt) = split(",", $taxons{ $tx });
 	if ($in_file eq "Yes") {
 	    $url1 = "$main_cgi?section=MetaGeneDetail"
 		  . "&page=metaGeneDetail&gene_oid=$gene_oid"
 		  . "&data_type=assembled&taxon_oid=$tx";
 	}
-        my $url2 = "$main_cgi?section=IMGProteins" 
-                 . "&page=sampledata&sample=$sample_oid"; 
+        my $url2 = "$main_cgi?section=IMGProteins"
+                 . "&page=sampledata&sample=$sample_oid";
 	if ( $study eq "rnaseq" ) {
 	    $url2 = "$main_cgi?section=RNAStudies"
 		  . "&page=sampledata&sample=$sample_oid";
-	} 
+	}
 	my $url3 = "$ko_base_url$ko";
- 
-        my $row = $sd."<input type='checkbox' " 
-                . "name='gene_oid' value='$gene_oid'/>\t"; 
-        $row .= $gene_oid.$sd.alink($url1, $gene_oid, "_blank")."\t"; 
+
+        my $row = $sd."<input type='checkbox' "
+                . "name='gene_oid' value='$gene_oid'/>\t";
+        $row .= $gene_oid.$sd.alink($url1, $gene_oid, "_blank")."\t";
 	$row .= $locus_tag.$sd.$locus_tag."\t";
-        $row .= $name.$sd.$name."\t"; 
-        $row .= $sample_oid.$sd.$sample_oid."\t"; 
-        $row .= $sample_name.$sd.alink($url2, $sample_name, "_blank")."\t"; 
-        $row .= $ko.$sd.alink($url3, $ko, "_blank")."\t"; 
-        $it->addRow($row); 
+        $row .= $name.$sd.$name."\t";
+        $row .= $sample_oid.$sd.$sample_oid."\t";
+        $row .= $sample_name.$sd.alink($url2, $sample_name, "_blank")."\t";
+        $row .= $ko.$sd.alink($url3, $ko, "_blank")."\t";
+        $it->addRow($row);
 	$cnt++;
-    } 
+    }
 
-    printGeneCartFooter(); 
+    printGeneCartFooter();
     $it->printOuterTable(1);
-    printGeneCartFooter(); 
+    printGeneCartFooter();
 
-    print end_form(); 
-    #$dbh->disconnect(); 
+    print end_form();
+    #$dbh->disconnect();
     printStatusLine("$cnt items for $ko_str", 2);
-} 
+}
 
-############################################################################ 
-# printMapGenesOneSample - prints the genes with the given ko number for 
-#           the one selected sample 
-############################################################################ 
-sub printMapGenesOneSample { 
-    my $map_id = param("map_id"); 
-    my $ko_str = param("ko"); 
+############################################################################
+# printMapGenesOneSample - prints the genes with the given ko number for
+#           the one selected sample
+############################################################################
+sub printMapGenesOneSample {
+    my $map_id = param("map_id");
+    my $ko_str = param("ko");
     my $study = param("study");
-    my $sample_oid = param("sample"); 
+    my $sample_oid = param("sample");
 
-    my $dbh = dbLogin(); 
-    my $sql = qq{ 
+    my $dbh = dbLogin();
+    my $sql = qq{
         select s.description, s.IMG_taxon_oid, tx.in_file, tx.genome_type
         from ms_sample s, taxon tx
         where s.sample_oid = ?
         and s.IMG_taxon_oid = tx.taxon_oid
-    }; 
+    };
     if ( $study eq "rnaseq" ) {
         $sql = qq{
             select dts.dataset_oid, dts.reference_taxon_oid,
@@ -3769,19 +3770,19 @@ sub printMapGenesOneSample {
             where dts.dataset_oid = ?
             and dts.reference_taxon_oid = tx.taxon_oid
         };
-    } 
+    }
 
     my $sample_oid2 = $sample_oid;
-    $sample_oid2 =~ tr/'//d; 
+    $sample_oid2 =~ tr/'//d;
 
     my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 );
     my ($sample_desc, $taxon_oid, $in_file, $genome_type) = $cur->fetchrow();
-    $cur->finish(); 
+    $cur->finish();
 
     $sample_desc = RNAStudies::getNameForSample($dbh, $sample_oid)
 	if $study eq "rnaseq";
 
-    print "<h1>Genes with KO: <font color='blue'>$ko_str</font>" 
+    print "<h1>Genes with KO: <font color='blue'>$ko_str</font>"
         . " for sample</h1>\n";
 
     my $url = "$main_cgi?section=IMGProteins"
@@ -3789,24 +3790,24 @@ sub printMapGenesOneSample {
     if ( $study eq "rnaseq" ) {
 	$url = "$main_cgi?section=RNAStudies"
 	     . "&page=sampledata&sample=$sample_oid";
-    } 
+    }
     print "<p>".alink($url, $sample_desc, "_blank", 0, 1)."</p>\n";
 
     my @ko = split(",", $ko_str);
-    $ko_str = joinSqlQuoted(",", @ko); 
+    $ko_str = joinSqlQuoted(",", @ko);
     $ko_str =~ s/KO://g;
 
     my @kkos;
     foreach my $ko (@ko) {
 	push @kkos, "KO:".$ko;
     }
-    my $kko_str = joinSqlQuoted(",", @kkos); 
+    my $kko_str = joinSqlQuoted(",", @kkos);
 
-    my $sql = qq{ 
-        select distinct g.gene_oid, g.gene_display_name, 
+    my $sql = qq{
+        select distinct g.gene_oid, g.gene_display_name,
                g.locus_tag, gk.ko_terms,
                round(sum(dt.coverage), 7)
-        from gene g, gene_ko_terms gk, 
+        from gene g, gene_ko_terms gk,
              dt_img_gene_prot_pep_sample dt
         where dt.gene_oid = gk.gene_oid
         and gk.gene_oid = g.gene_oid
@@ -3821,7 +3822,7 @@ sub printMapGenesOneSample {
     if ($study eq "rnaseq") {
 	my ($total_gene_cnt, $total_read_cnt) =
 	    MetaUtil::getCountsForRNASeqSample($sample_oid2, $taxon_oid);
-    	my %gene2info = 
+    	my %gene2info =
 	    MetaUtil::getGenesForRNASeqSample($sample_oid2, $taxon_oid);
     	my @genes = keys %gene2info;
 
@@ -3890,7 +3891,7 @@ sub printMapGenesOneSample {
         foreach my $ko_id (@ko) { # the selected ko
 	    my $kid = "KO:".$ko_id;
             next if (!$all_kos{$kid});
-	    
+
 	    my @gene_group;
 	    if ($in_file eq "Yes") {
 		my %ko_genes = MetaUtil::getTaxonFuncGenes
@@ -3919,7 +3920,7 @@ sub printMapGenesOneSample {
 		}
 	    }
 	    #next if (scalar @gene_group == 0);
-	    
+
 	    foreach my $gene ( @gene_group ) {
 		next if (!exists $gene2info{ $gene });
 
@@ -3928,7 +3929,7 @@ sub printMapGenesOneSample {
 		    $scaffold_oid, $dna_seq_length, $reads_cnt, @rest)
 		    = split("\t", $line);
 		next if $reads_cnt == 0;
-		
+
 		my $product = $prodNames{ $gene };
 		my $coverage = "0";
 		if ($dna_seq_length > 0 && $total_read_cnt > 0) {
@@ -3944,7 +3945,7 @@ sub printMapGenesOneSample {
 	}
 
     } else {
-	my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 ); 
+	my $cur = execSql( $dbh, $sql, $verbose, $sample_oid2 );
 	for ( ;; ) {
 	    my ( $gene_oid, $name, $locus_tag, $ko, $coverage )
 		= $cur->fetchrow();
@@ -3954,30 +3955,30 @@ sub printMapGenesOneSample {
 	    my $s = "$gene_oid\t$name\t$locus_tag\t$ko\t$coverage";
 	    push @recs, ( $s );
 	}
-	$cur->finish(); 
+	$cur->finish();
     }
 
-    printMainForm(); 
- 
-    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 ); 
-    $it->addColSpec( "Select" ); 
-    $it->addColSpec( "Gene ID", "asc", "right" ); 
+    printMainForm();
+
+    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
+    $it->addColSpec( "Select" );
+    $it->addColSpec( "Gene ID", "asc", "right" );
     $it->addColSpec( "Locus Tag", "asc", "left" );
     $it->addColSpec( "Gene Product Name", "asc", "left" );
     if ($study eq "rnaseq") {
         $it->addColSpec( "Normalized Coverage<sup>1</sup><br/>"
-                       . " * 10<sup>9</sup>", "desc", "right" ); 
+                       . " * 10<sup>9</sup>", "desc", "right" );
     } else {
         $it->addColSpec( "Coverage<sup>1</sup>", "desc", "right" );
     }
     $it->addColSpec( "KO", "asc", "left" );
     my $sd = $it->getSdDelim();
- 
+
     foreach my $s ( sort @recs ) {
         my ( $gene_oid, $name, $locus_tag, $ko, $coverage )
             = split( /\t/, $s );
 	$name = "hypothetical protein" if $name eq "";
- 
+
         my $url1 = "$main_cgi?section=GeneDetail"
                  . "&page=geneDetail&gene_oid=$gene_oid";
 	if ($in_file eq "Yes") {
@@ -3985,8 +3986,8 @@ sub printMapGenesOneSample {
 		  . "&page=metaGeneDetail&gene_oid=$gene_oid"
 		  . "&data_type=assembled&taxon_oid=$taxon_oid";
 	}
-        my $url3 = "$ko_base_url$ko"; 
- 
+        my $url3 = "$ko_base_url$ko";
+
         my $row = $sd."<input type='checkbox' "
             . "name='gene_oid' value='$gene_oid'/>\t";
         $row .= $gene_oid.$sd.alink($url1, $gene_oid, "_blank")."\t";
@@ -4001,12 +4002,12 @@ sub printMapGenesOneSample {
         }
 	$row .= $coverage.$sd.$coverage."\t";
         $row .= $ko.$sd.alink($url3, $ko, "_blank")."\t";
-        $it->addRow($row); 
-    } 
+        $it->addRow($row);
+    }
 
-    printGeneCartFooter(); 
+    printGeneCartFooter();
     $it->printOuterTable(1);
-    printGeneCartFooter(); 
+    printGeneCartFooter();
 
     print end_form();
     #$dbh->disconnect();
@@ -4019,49 +4020,49 @@ sub printMapGenesOneSample {
 }
 
 ############################################################################
-# makeColorStrip - draws a red-to-green color strip 
+# makeColorStrip - draws a red-to-green color strip
 ############################################################################
 sub makeColorStrip {
     my ($im2) = @_;
-    my $white = $im2->colorAllocate( 255, 255, 255 ); 
-    $im2->transparent( $white ); 
-    $im2->interlaced( 'true' ); 
+    my $white = $im2->colorAllocate( 255, 255, 255 );
+    $im2->transparent( $white );
+    $im2->interlaced( 'true' );
 
     my $im = new GD::Image(240, 10);
-    my $cell_height = 10; 
-    my $cell_width = 10; 
-    my $idx = 0; 
-    my $r = 255; my $g = 0; my $b = 0; 
+    my $cell_height = 10;
+    my $cell_width = 10;
+    my $idx = 0;
+    my $r = 255; my $g = 0; my $b = 0;
 
-    for ( my $i = 1; $i <= 12; $i++ ) { 
-	$r = 255 - 20*$i; 
-	$g = 0; 
-	$b = 0; 
-	my $color = $im->colorAllocate( $r, $g, $b ); 
+    for ( my $i = 1; $i <= 12; $i++ ) {
+	$r = 255 - 20*$i;
+	$g = 0;
+	$b = 0;
+	my $color = $im->colorAllocate( $r, $g, $b );
 
-	my $x1 = $idx * $cell_width; 
-	my $y1 = 0; 
-	my $x2 = $x1 + $cell_width; 
-	my $y2 = $cell_height; 
-	$im->filledRectangle( $x1, $y1, $x2, $y2, $color ); 
-	$idx++; 
-    } 
-    for ( my $i = 1; $i <= 12; $i++ ) { 
-	$r = 0; 
-	$g = 0 + 21*$i; 
-	$b = 0; 
-	my $color = $im->colorAllocate( $r, $g, $b ); 
+	my $x1 = $idx * $cell_width;
+	my $y1 = 0;
+	my $x2 = $x1 + $cell_width;
+	my $y2 = $cell_height;
+	$im->filledRectangle( $x1, $y1, $x2, $y2, $color );
+	$idx++;
+    }
+    for ( my $i = 1; $i <= 12; $i++ ) {
+	$r = 0;
+	$g = 0 + 21*$i;
+	$b = 0;
+	my $color = $im->colorAllocate( $r, $g, $b );
 
-	my $x1 = $idx * $cell_width; 
-	my $y1 = 0; 
-	my $x2 = $x1 + $cell_width; 
-	my $y2 = $cell_height; 
-	$im->filledRectangle( $x1, $y1, $x2, $y2, $color ); 
-	$idx++; 
-    } 
+	my $x1 = $idx * $cell_width;
+	my $y1 = 0;
+	my $x2 = $x1 + $cell_width;
+	my $y2 = $cell_height;
+	$im->filledRectangle( $x1, $y1, $x2, $y2, $color );
+	$idx++;
+    }
 
     #$idx++;
-    #my $x1 = $idx * $cell_width; 
+    #my $x1 = $idx * $cell_width;
     #my $x2 = $x1 + $cell_width;
     #my $gray = $im->colorAllocate( 150, 150, 150 );
     #$im->filledRectangle( $x1, 0, $x2, $cell_height, $gray );
@@ -4082,14 +4083,14 @@ sub logTransform {
 }
 
 # center values by subtracting the mean
-sub center { 
-    my ($values) = @_; 
- 
+sub center {
+    my ($values) = @_;
+
     my $cnt = scalar @$values;
-    my $sum = 0; 
-    foreach my $v (@$values) { 
-        $sum += $v; 
-    } 
+    my $sum = 0;
+    foreach my $v (@$values) {
+        $sum += $v;
+    }
     my $mean = $sum/$cnt;
     my @cvalues;
     foreach my $v (@$values) {
@@ -4097,7 +4098,7 @@ sub center {
 	push @cvalues, $c;
     }
     return \@cvalues;
-} 
+}
 
 # normalize: multiply all values by a scale factor S so that
 # the sum of the squares of the values in each row is 1.0
@@ -4119,35 +4120,35 @@ sub normalize {
 }
 
 # normalize all values to 0-100 range
-sub normalizeTo { 
-    my ($values) = @_; 
- 
-    my $high = @$values[0]; 
-    my $low = @$values[0]; 
-    foreach my $v (@$values) { 
-        if ($v > $high) { 
-            $high = $v; 
-        } 
+sub normalizeTo {
+    my ($values) = @_;
+
+    my $high = @$values[0];
+    my $low = @$values[0];
+    foreach my $v (@$values) {
+        if ($v > $high) {
+            $high = $v;
+        }
         if ($v < $low) {
-            $low = $v; 
-        } 
-    } 
+            $low = $v;
+        }
+    }
 
     print "<br/>Low: $low High: $high";
-    my @nvalues; 
-    foreach my $v (@$values) { 
+    my @nvalues;
+    foreach my $v (@$values) {
         my $n = ($v-$low)*100/($high-$low);
         push @nvalues, sprintf("%.3f", $n);
     }
-    return \@nvalues; 
+    return \@nvalues;
 }
 
 # normalize all values to -1 to 1 range
 sub normalizeTo2 {
     my ($values) = @_;
 
-    my $high = @$values[0]; 
-    my $low = @$values[0]; 
+    my $high = @$values[0];
+    my $low = @$values[0];
     foreach my $v (@$values) {
 	if ($v > $high) {
 	    $high = $v;
@@ -4158,12 +4159,12 @@ sub normalizeTo2 {
     }
 
     print "<br/>Low: $low High: $high";
-    my @nvalues; 
-    foreach my $v (@$values) { 
+    my @nvalues;
+    foreach my $v (@$values) {
         my $n = (($v-$low)*2/($high-$low)) - 1;
         push @nvalues, sprintf("%.3f", $n);
     }
-    return \@nvalues; 
+    return \@nvalues;
 }
 
 

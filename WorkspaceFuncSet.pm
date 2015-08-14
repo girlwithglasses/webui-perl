@@ -77,7 +77,7 @@ my $in_file          = $env->{in_file};
  
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
  
 # user's sub folder names                                                             
@@ -174,7 +174,7 @@ sub dispatch {
     elsif ( paramMatch("submitFuncScafSearch") ne ""
         || $page eq "submitFuncScafSearch" )
     {
-        submitJob('FuncScafSearch');
+        submitJob('func_scaf_search');
     }    
     else {
 	    printFuncSetMainForm();
@@ -227,45 +227,43 @@ sub printFuncSetMainForm {
 
     print "<div id='funcsettab3'>";
     print "<h2>Function Scaffold Search</h2>\n"; 
-    printHint(   "- Hold down the control key (or command key in the case of the Mac) "
-               . "to select multiple genomes.<br/>\n"
-               . "- Drag down list to select all genomes.<br/>\n"
-               . "- More genome and function selections result in slower query.\n" );
-    print "<br/>";
 
+    my $onCLickValidation;
     if ( $enable_genomelistJson ) {
-        my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
-        $template->param( base_url => $base_url );
-        $template->param( YUI      => $YUI );
-        print $template->output;
-        GenomeListJSON::printHiddenInputType();
-        GenomeListJSON::printGenomeListJsonDiv('t:');
+        WorkspaceUtil::printGenomeListForm();
+        $onCLickValidation = "return myValidationBeforeSubmit2('$folder', 'selectedGenome1', '1', '', '');";
     } 
     else {
+        printHint(   "- Hold down the control key (or command key in the case of the Mac) "
+                   . "to select multiple genomes.<br/>\n"
+                   . "- Drag down list to select all genomes.<br/>\n"
+                   . "- More genome and function selections result in slower query.\n" );
+        print "<br/>";
         my $dbh = dbLogin();
         if ($include_metagenomes) {
             GenomeListFilter::appendGenomeListFilter( $dbh, '', 1, '', 'Yes', '', 1 );
         } else {
             GenomeListFilter::appendGenomeListFilter( $dbh, '', 1, '', 'Yes', '' );
         }
+        $onCLickValidation = "return checkSetsIncludingShare('$folder');";
     }
-    HtmlUtil::printMetaDataTypeChoice('', '', 1);
+    HtmlUtil::printMetaDataTypeChoice('_f', '', 1);
 
     print submit(
         -name    => "_section_WorkspaceFuncSet_showFuncSetScaffoldSearch", 
         -value   => "Workspace Function-Scaffold Search",
         -class => "lgbutton",
-        -onClick => "return checkSetsIncludingShare('$folder');"
+        -onClick => $onCLickValidation
     );
 
-#    require WorkspaceJob;
-#    my ($genomeFuncSets_ref, $genomeBlastSets_ref, $genomePairwiseANISets_ref, $geneFuncSets_ref, 
-#        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, 
-#        $funcScafSearchSets_ref)
-#        = WorkspaceJob::getExistingJobSets();
-#
-#    Workspace::printSubmitComputation( $sid, $folder, 'func_scaf_search', 
-#        '_section_WorkspaceFuncSet_submitFuncScafSearch', '', $funcScafSearchSets_ref );
+    require WorkspaceJob;
+    my ($genomeFuncSets_ref, $genomeBlastSets_ref, $genomePairwiseANISets_ref, $geneFuncSets_ref, 
+        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, $funcScafSearchSets_ref, 
+        $genomeSaveFuncGeneSets_ref, $geneSaveFuncGeneSets_ref, $scafSaveFuncGeneSets_ref)
+        = WorkspaceJob::getExistingJobSets();
+
+    Workspace::printSubmitComputation( $sid, $folder, 'func_scaf_search', 
+        '_section_WorkspaceFuncSet_submitFuncScafSearch', '', $funcScafSearchSets_ref );
 
     print "</div>\n";
 
@@ -525,101 +523,164 @@ sub showFuncSetScaffoldSearch {
         return;
     }
 
-    my @selected_sets = ();
-    my $col_count = 1;
-    my %all_funcs_in_set;     # all func_ids in a function set
+    my %set2funcs;     # all func_ids in a function set
     my %all_func_ids;         # func_ids in all selected sets
-    for my $x2 ( @all_files ) {
-        if ( $col_count > $max_profile_select ) {
-            last;
-        }
-
-        push @selected_sets, ( $x2 );
-        $col_count++;
-    
+    for my $x2 ( @all_files ) {    
         my ($c_oid, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $x2 );
         open( FH, "$workspace_dir/$c_oid/$folder/$x" )
             or webError("File size - file error $x"); 
-        my $func_str = "";
+
+        my %funcs_h;
         while ( my $line = <FH> ) {
             chomp($line);
             $all_func_ids{$line} = 1;
-            if ( $func_str ) {
-                $func_str .= "\t" . $line;
-            }
-            else {
-                $func_str = $line;
-            }
+            $funcs_h{$line} = 1;
         }
         close FH;
-        $all_funcs_in_set{$x2} = $func_str;
-        #print "showFuncSetScaffoldSearch() funcs in $x: $func_str<br/>\n";
+        my @funcs = keys %funcs_h;
+        $set2funcs{$x2} = \@funcs;
+        #print "showFuncSetScaffoldSearch() funcs in $x: @funcs<br/>\n";
     }
 
-    my @all_funcs = keys %all_func_ids;
-    showFuncScaffoldSearch( \@all_funcs );
-}
+    my @func_ids = keys %all_func_ids;
+    if ( scalar(@func_ids) <= 0 ) {
+        @func_ids = param('func_id');
+    }
+    if ( scalar(@func_ids) == 0 ) {
+        webError("No functions are selected.");
+        return;
+    }
 
-#############################################################################
-# showFuncScaffoldSearch
-#############################################################################
-sub showFuncScaffoldSearch {
-    my ( $func_ids_ref ) = @_;
+    my @selected_funcs;
+    my $col_count = 1;
+    my $truncated_cols = 0;
+    for my $func_id ( @func_ids ) {
+        if ( $col_count > $max_profile_select ) {
+            $truncated_cols = 1;
+            last;
+        }
+        push(@selected_funcs, $func_id );
+        $col_count++;
+    }
+    @selected_funcs = sort(@selected_funcs);
+        
+    my $data_type = param('data_type_f');
 
-    my $sid = getContactOid();
-
-    printMainForm();
-    printStatusLine( "Loading ...", 1 );
-
-    print "<h1>Function Scaffold Search</h1>\n";
-
-    my $folder   = param("directory");
-    print hiddenVar("directory", $folder);
-
-    my @taxon_oids = OracleUtil::processTaxonBinOids("t");
+    my @taxon_oids;
     if ($enable_genomelistJson) {
-        @taxon_oids = param('genomeFilterSelections');
-        @taxon_oids = GenomeListJSON::cleanTaxonOid(@taxon_oids);
+        @taxon_oids = param("selectedGenome1");
+    }
+    else {
+        @taxon_oids = OracleUtil::processTaxonBinOids("t");
     }
     if ( scalar(@taxon_oids) == 0 ) {
         webError("No genomes are selected.");
         return;
     }        
 
-    my $data_type = param('data_type');
-    print hiddenVar( "data_type", $data_type ) if ($data_type);
+    my ( $func_names_href, $taxon2name_href, $taxon_in_file_href, $taxon_db_href, 
+        $dbScaf2name_href, $taxon_scaffolds_href, $scaf_func2genes_href, 
+        $timeout_msg ) 
+        = processFuncScaffoldSearch( \@selected_funcs, $data_type, \@taxon_oids );
 
-    my @func_ids;
-    if ( $func_ids_ref ) {
-        @func_ids = @$func_ids_ref;
-    }
-    else {
-        @func_ids = param('func_id');
-        if ( scalar(@func_ids) == 0 ) {
-            webError("No functions are selected.");
-            return;
-        }        
-    }
+    printFuncScaffoldSearch( $sid, \%set2funcs,
+        \@selected_funcs, $data_type, \@taxon_oids, 
+        $func_names_href, $taxon2name_href, $taxon_in_file_href, $taxon_db_href, 
+        $dbScaf2name_href, $taxon_scaffolds_href, $scaf_func2genes_href, 
+        $truncated_cols, $timeout_msg );
+}
 
-    my @selected_funcs;
-    my $col_count = 1;
-    for my $func_id ( @func_ids ) {
-        if ( $col_count > $max_profile_select ) {
-            last;
-        }
-        push(@selected_funcs, $func_id );
-        $col_count++;
-    }
+#############################################################################
+# processFuncScaffoldSearch
+#############################################################################
+sub processFuncScaffoldSearch {
+    my ( $selected_funcs_ref, $data_type, $taxon_oids_ref ) = @_;
+
+    my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( $selected_funcs_ref );
 
     # get function names
     my $dbh = dbLogin();
-    my %func_names = QueryUtil::fetchFuncIdAndName( $dbh, \@selected_funcs );
+    my %func_names = QueryUtil::fetchFuncIdAndName( $dbh, $selected_funcs_ref );
 
     my ($taxon2name_href, $taxon_in_file_href, $taxon_db_href, $taxon_oids_str) 
-        = QueryUtil::fetchTaxonsOidAndNameFile($dbh, \@taxon_oids);
-    OracleUtil::truncTable( $dbh, "gtt_num_id" )
-      if ( $taxon_oids_str =~ /gtt_num_id/i );
+        = QueryUtil::fetchTaxonsOidAndNameFile($dbh, $taxon_oids_ref);
 
+    printStartWorkingDiv();
+
+    require WorkspaceScafSet;
+
+    my %dbScaf2name_h;
+    my %taxon_scaffolds_h;
+    my %scaf_func2genes_h;
+
+    if ( scalar(keys %$taxon_db_href) > 0 ) {
+        my @dbTaxons = keys %$taxon_db_href;
+        my ($scaffolds_href, $id2name_href, $taxon_scaffolds_href) = QueryUtil::fetchGenomeScaffoldOidsHash( $dbh, @dbTaxons );
+        %dbScaf2name_h = %$id2name_href;
+        %taxon_scaffolds_h = %$taxon_scaffolds_href;
+
+        my @scaffolds = keys %$scaffolds_href;
+        WorkspaceScafSet::countDbScafFuncGene( $dbh, \@scaffolds, \@func_groups, \%scaf_func2genes_h );
+    }
+    #print "showFuncScaffoldSearch() db scaf_func2genes_h<br/>\n";
+    #print Dumper(\%scaf_func2genes_h)."<br/>\n";
+
+    timeout( 60 * $merfs_timeout_mins );
+    my $start_time = time(); 
+    my $timeout_msg;
+
+    if ( scalar(keys %$taxon_in_file_href) > 0 ) {
+        my @metaTaxons = keys %$taxon_in_file_href;
+        foreach my $taxon_oid ( @metaTaxons ) {
+            print "Computing function count for genome $taxon_oid scaffolds ... <br/>\n";
+            WorkspaceScafSet::countMetaTaxonScafFuncGene( $dbh, $taxon_oid, $data_type, \@func_groups, \%scaf_func2genes_h, \%taxon_scaffolds_h );
+
+            if ( (($merfs_timeout_mins * 60) -
+                  (time() - $start_time)) < 200 ) {
+                $timeout_msg = "Process takes too long to run " . 
+                "-- stopped at taxon $taxon_oid. " . 
+                "Only partial result is displayed."; 
+                last; 
+            }
+        }
+    }
+    #print "showFuncScaffoldSearch() meta scaf_func2genes_h<br/>\n";
+    #print Dumper(\%scaf_func2genes_h)."<br/>\n";
+
+    printEndWorkingDiv();
+
+    return ( \%func_names, $taxon2name_href, $taxon_in_file_href, $taxon_db_href, 
+        \%dbScaf2name_h, \%taxon_scaffolds_h, \%scaf_func2genes_h, $timeout_msg );
+        
+}
+
+sub printFuncScaffoldSearch {
+    my ( $sid, $set2funcs_href, 
+        $selected_funcs_ref, $data_type, $taxon_oids_ref, 
+        $func_names_href, $taxon2name_href, $taxon_in_file_href, $taxon_db_href, 
+        $dbScaf2name_href, $taxon_scaffolds_href, $scaf_func2genes_href, 
+        $truncated_cols, $timeout_msg ) = @_;
+
+    #print "printFuncScaffoldSearch() scaf_func2genes_href<br/>\n";
+    #print Dumper($scaf_func2genes_href)."<br/>\n";
+
+    printMainForm();
+    printStatusLine( "Loading ...", 1 );
+    my $dbh = dbLogin();
+
+    print "<h1>Function Scaffold Search</h1>\n";
+    print "<p>";
+    print "Selected Function set(s): ";
+    my @all_files = keys %$set2funcs_href;
+    WorkspaceUtil::printShareSetName($dbh, $sid, @all_files);
+    print "<br/>\n";
+    print "Number of Genomes: " . scalar(@$taxon_oids_ref) . "<br/>\n" 
+        if ( scalar(@$taxon_oids_ref) > 0 );
+    HtmlUtil::printMetaDataTypeSelection( $data_type, 2 ) 
+        if ($data_type);
+    print "</p>";
+
+    print hiddenVar( "data_type", $data_type ) if ($data_type);
 
     my $it = new InnerTable( 1, "funcScaffoldSearch$$", "funcScaffoldSearch", 1 );
     my $sd = $it->getSdDelim();
@@ -628,71 +689,31 @@ sub showFuncScaffoldSearch {
     $it->addColSpec( "Scaffold ID",   "char asc", "left" );
     $it->addColSpec( "Scaffold Name", "char asc", "left" );
     $it->addColSpec( "Genome", "char asc", "left" );
-    for my $func_id ( @selected_funcs ) {
-        $it->addColSpec( $func_id,  "char asc", "left", "", $func_names{$func_id} );
+    for my $func_id ( @$selected_funcs_ref ) {
+        $it->addColSpec( $func_id,  "char asc", "left", "", $func_names_href->{$func_id} );
     }
 
     my $select_id_name = "scaffold_oid";
 
-    my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( \@selected_funcs );
-
-    my $dbh = dbLogin();
-    require WorkspaceScafSet;
-
-    my %dbScaf2name_h;
-    my %dbTaxon_scaffolds_h;
-    my %dbScaf_func2genes_h;
-
-    if ( scalar(keys %$taxon_db_href) > 0 ) {
-        my @dbTaxons = keys %$taxon_db_href;
-        my ($scaffolds_href, $id2name_href, $taxon_scaffolds_href) = QueryUtil::fetchGenomeScaffoldOidsHash( $dbh, @dbTaxons );
-        %dbScaf2name_h = %$id2name_href;
-        %dbTaxon_scaffolds_h = %$taxon_scaffolds_href;
-
-        my @scaffolds = keys %$scaffolds_href;
-        %dbScaf_func2genes_h = WorkspaceScafSet::countDbScafFuncGene( $dbh, \@scaffolds, \@func_groups );
-    }
-    #print "showFuncScaffoldSearch() dbScaf_func2genes_h<br/>\n";
-    #print Dumper(\%dbScaf_func2genes_h)."<br/>\n";
-
-    timeout( 60 * $merfs_timeout_mins );
-    my $start_time = time(); 
-    my $timeout_msg = "";
-
-    printStartWorkingDiv();
-
-    my $trunc = 0;
     my $row = 0;
-    foreach my $taxon_oid ( @taxon_oids ) {
-        print "Computing function count for genome $taxon_oid scaffolds ... <br/>\n";
+    foreach my $taxon_oid ( @$taxon_oids_ref ) {
 
         my $genome_url;
-        my %scaffolds_h;
-        my %metaScaf_func2genes_h;
         if ( $taxon_db_href->{$taxon_oid} ) {
             $genome_url = "$main_cgi?section=TaxonDetail" 
             . "&page=taxonDetail&taxon_oid=$taxon_oid";
-            my $scaffolds_ref = $dbTaxon_scaffolds_h{$taxon_oid};
-            if (scalar(@$scaffolds_ref) > 0) {
-                for my $scaf_id (@$scaffolds_ref) {
-                    $scaffolds_h{$scaf_id} = 1;
-                }
-            }
         }
         elsif ( $taxon_in_file_href->{$taxon_oid} ) {
             $genome_url = "$main_cgi?section=MetaDetail" 
             . "&page=metaDetail&taxon_oid=$taxon_oid";
-            %metaScaf_func2genes_h = WorkspaceScafSet::countMetaTaxonScafFuncGene( $dbh, $taxon_oid, $data_type, \@func_groups, \%scaffolds_h );
         }
         else {
             #invalid taxon oid
             next;
         }
-        #print "showFuncScaffoldSearch() metaScaf_func2count_h<br/>\n";
-        #print Dumper(\%metaScaf_func2count_h)."<br/>\n";
 
-        my @scaffold_oids = keys %scaffolds_h;
-        for my $scaffold_oid ( @scaffold_oids ) {
+        my $scaffolds_href = $taxon_scaffolds_href->{$taxon_oid};
+        for my $scaffold_oid ( keys %$scaffolds_href ) {
             my $r = $sd
                 . "<input type='checkbox' name='$select_id_name' value='$scaffold_oid' />\t";
 
@@ -712,31 +733,24 @@ sub showFuncScaffoldSearch {
                 $scaf_oid = $scaffold_oid;
                 $scaf_url = "$main_cgi?section=ScaffoldCart"
                     . "&page=scaffoldDetail&scaffold_oid=$scaffold_oid";
-                $scaffold_name = $dbScaf2name_h{$scaffold_oid};
+                $scaffold_name = $dbScaf2name_href->{$scaffold_oid};
             }
 
             $r .= $scaf_oid . $sd . alink( $scaf_url, $scaf_oid ) . "\t";
             $r .= $scaffold_name . $sd . "$scaffold_name\t";
 
             my $taxon_name = $taxon2name_href->{$taxon_oid};
-            $r .= $taxon_name . $sd . alink( $genome_url, $taxon_oid ) . "\t";
+            $r .= $taxon_name . $sd . alink( $genome_url, $taxon_name ) . "\t";
 
-            my $func2genes_href;
-            if ( $taxon_in_file_href->{$taxon_oid} ) {
-                $func2genes_href = $metaScaf_func2genes_h{$scaffold_oid};
-            }
-            else {
-                $func2genes_href = $dbScaf_func2genes_h{$scaffold_oid};
-            }
-
+            my $func2genes_href = $scaf_func2genes_href->{$scaffold_oid};
             if ( $func2genes_href ) {
-                for my $func_id (@selected_funcs) {
+                for my $func_id (@$selected_funcs_ref) {
                     my $genes_href = $func2genes_href->{$func_id};
                     my $cnt = scalar( keys %$genes_href );
                     #print "showFuncScaffoldSearch() scaffold $scaffold_oid func $func_id cnt: $cnt<br/>\n";
                     if ($cnt) {
                         my $url = "$main_cgi?section=WorkspaceScafSet"
-                          . "&page=scafProfileGeneList&directory=$folder"
+                          . "&page=scafProfileGeneList"
                           . "&scaffold_oid=$scaffold_oid"
                           . "&func_id=$func_id";
                         if ( $taxon_in_file_href->{$taxon_oid} ) {
@@ -751,21 +765,11 @@ sub showFuncScaffoldSearch {
             }                        
         
             $it->addRow($r);
-            $row++;
-        
-            if ( (($merfs_timeout_mins * 60) -
-                  (time() - $start_time)) < 200 ) {
-                $timeout_msg = "Process takes too long to run " . 
-                "-- stopped at taxon $taxon_oid scaffold $scaffold_oid. " . 
-                "Only partial result is displayed."; 
-                last; 
-            }            
+            $row++;        
         }
     }
 
-    printEndWorkingDiv();
-
-    if ( scalar(@func_ids) > $max_profile_select ) { 
+    if ( $truncated_cols ) { 
         WebUtil::printMessage("There are too many selections. Only $max_profile_select functions are displayed.");
     }
     if ( $timeout_msg ) {
@@ -783,18 +787,7 @@ sub showFuncScaffoldSearch {
         print "<h6>No scaffolds have selected functions.</h6>\n";
     }
 
-    if ($trunc) { 
-        my $s = "Results limited to $maxGeneListResults genes.\n";
-        $s .= 
-            "( Go to " 
-            . alink( $preferences_url, "Preferences" )
-            . " to change \"Max. Gene List Results\". )\n";
-        printStatusLine( $s, 2 ); 
-    } 
-    else { 
-        printStatusLine( "$row scaffold(s) loaded", 2 );
-    } 
-
+    printStatusLine( "$row scaffold(s) loaded", 2 );
     print end_form();
 }
 
@@ -1967,7 +1960,7 @@ sub listFuncInSetForGene
     	if ( $data_type eq 'database' ) {
 
     		my ($sql2, @bindList);
-            if (isFuncDefined($func_id, %gene_func)) {
+            if ( isFuncDefined($func_id, %gene_func) ) {
                 @funcs = getFuncsFromHash($func_id, %gene_func);
             }
             else {
@@ -2934,40 +2927,43 @@ sub isFuncDefined {
 sub getFuncsFromHash {
     my ($func_id, %gene_func) = @_;
 
-	my @funcs = ();
+	my @funcs;
 
-    if ( $func_id =~ /^COG/ ) {
+    if ( $func_id =~ /^COG/ && defined $gene_func{'cog'} ) {
 		@funcs = @{$gene_func{'cog'}};
     }
-    elsif ( $func_id =~ /^pfam/ ) {
+    elsif ( $func_id =~ /^pfam/ && defined $gene_func{'pfam'} ) {
 	    @funcs = @{$gene_func{'pfam'}};
     }
-    elsif ( $func_id =~ /^TIGR/ ) {
+    elsif ( $func_id =~ /^TIGR/ && defined $gene_func{'tigr'} ) {
 	    @funcs = @{$gene_func{'tigr'}};
     }
-    elsif ( $func_id =~ /^KOG/ ) {
+    elsif ( $func_id =~ /^KOG/ && defined $gene_func{'kog'} ) {
 	    @funcs = @{$gene_func{'kog'}};
     }
-    elsif ( $func_id =~ /^KO/ ) {
+    elsif ( $func_id =~ /^KO/ && defined $gene_func{'ko'} ) {
 	    @funcs = @{$gene_func{'ko'}};
     }
-    elsif ( $func_id =~ /^EC/ ) {
+    elsif ( $func_id =~ /^EC/ && defined $gene_func{'ec'} ) {
 	    @funcs = @{$gene_func{'ec'}};
     }
-    elsif ( $func_id =~ /^MetaCyc/ ) {
+    elsif ( $func_id =~ /^MetaCyc/ && defined $gene_func{'metacyc'} ) {
 	    @funcs = @{$gene_func{'metacyc'}};
     }
-    elsif ( $func_id =~ /^IPR/ ) {
+    elsif ( $func_id =~ /^IPR/ && defined $gene_func{'interpro'} ) {
 	    @funcs = @{$gene_func{'interpro'}};
     }
-    elsif ( $func_id =~ /^TC/ ) {
-	    @funcs = @{$gene_func{'interpro'}};
+    elsif ( $func_id =~ /^TC/ && defined $gene_func{'tc'} ) {
+	    @funcs = @{$gene_func{'tc'}};
     }
-    elsif ( $func_id =~ /^ITERM/ ) {
+    elsif ( $func_id =~ /^ITERM/ && defined $gene_func{'iterm'} ) {
 	    @funcs = @{$gene_func{'iterm'}};
     }
-    elsif ( $func_id =~ /^IPWAY/ ) {
+    elsif ( $func_id =~ /^IPWAY/ && defined $gene_func{'ipway'} ) {
 	    @funcs = @{$gene_func{'ipway'}};
+    }
+    elsif ( $func_id =~ /^PLIST/ && defined $gene_func{'plist'} ) {
+        @funcs = @{$gene_func{'plist'}};
     }
     
     return (@funcs);
@@ -3022,36 +3018,31 @@ sub addFuncsToHash {
 sub submitJob {
     my ($jobPrefix) = @_;
 
-=pod
     printMainForm();
 
     my $lcJobPrefix = lc($jobPrefix);
+    if ( $lcJobPrefix eq 'func_scaf_search' ) {
+        $jobPrefix = 'Function Scaffold Search';
+    }
     #print "submitJob() job=$jobPrefix, lcJob=$lcJobPrefix<br/>\n";
 
     my $data_type;
-    if ( $lcJobPrefix eq 'blast' ) {
-        $data_type = param('data_type_b');
+    if ( $lcJobPrefix eq 'func_scaf_search' ) {
+        $data_type = param('data_type_f');
     }
+    #print "submitJob() data_type=$data_type<br/>\n";
 
-    my $d_type;
-    my $evalue;
-    my $fasta;
-    my $fastaFileName;
-    if ( $lcJobPrefix eq 'blast' ) {
-        $d_type = param('blast_program');
-        $evalue = param("blast_evalue");
-        $evalue = WebUtil::checkEvalue($evalue);
-        $fasta  = param("fasta");
-        if ( blankStr($fasta) ) {
-            webError("Query sequence not specified..");
+    my @oids;
+    my $oidsFileName;
+    if ( $lcJobPrefix eq 'func_scaf_search' ) {
+        if ($enable_genomelistJson) {
+            @oids = param("selectedGenome1");
         }
-        if ( $fasta !~ /[a-zA-Z]+/ ) {
-            webError("Query sequence should have letter characters.");
+        else {
+            @oids = OracleUtil::processTaxonBinOids("t");            
         }
-        $fastaFileName = "fasta.txt"
-    }
-    elsif ( $lcJobPrefix eq 'pairwise_ani' ) {
-        $d_type = param('reverseSets');
+        validateGenomesForFunctionScaffoldSearch(@oids);
+        $oidsFileName = "oidsfile.txt";
     }
     
     print "<h2>Computation Job Submission ($jobPrefix)</h2>\n";
@@ -3060,12 +3051,10 @@ sub submitJob {
     my $sid = WebUtil::getContactOid();
     $sid = sanitizeInt($sid);
     
-    my $folder = $GENOME_FOLDER;
+    my $folder = $FUNC_FOLDER;
     my $set_names;
     my $share_set_names;
     my $set_names_message;
-
-    my @genomes_oids;
 
     my @all_files = WorkspaceUtil::getAllInputFiles($sid);
     for my $file_set_name (@all_files) {
@@ -3083,36 +3072,16 @@ sub submitJob {
             $set_names_message = $f2;
         }
 
-        if ( $lcJobPrefix eq 'blast' ) {
-            open( FH, "$workspace_dir/$owner/genome/$x" )
-              or next;
-    
-            my %genomes_h;
-            while ( my $line = <FH> ) {
-                chomp($line);
-                next if ( ! $line );
-                if ( WebUtil::isInt($line) ) {
-                    $genomes_h{$line} = 1;
-                } 
-            }
-            close FH;
-            my @g_oids = keys %genomes_h;
-            push(@genomes_oids, @g_oids);
-        }
     }
     if ( !$set_names ) {
-        webError("Please select at least one genome set.");
+        webError("Please select at least one function set.");
         return;
-    }    
-    if ( $lcJobPrefix eq 'blast' ) {
-        validateGenomesForBlast(@genomes_oids);
     }
         
-    print "<p>Genome Set(s): $share_set_names<br/>\n";
+    print "<p>Function Set(s): $share_set_names<br/>\n";
+    print "Number of Genomes: " . scalar(@oids) . "<br/>\n" 
+        if ( scalar(@oids) > 0 );
     HtmlUtil::printMetaDataTypeSelection( $data_type, 2 ) if ($data_type);
-    print "Display Type: $d_type<br/>\n" if ( $d_type );
-    print "E-Value: $evalue<br/>\n" if ( $evalue );
-    print "Sequence: <br/>\n$fasta<br/>\n" if ( $fasta );
 
     my $output_name = Workspace::validJobSetNameToSaveOrReplace( $lcJobPrefix );
     my $job_file_dir = Workspace::getJobFileDirReady( $sid, $output_name );
@@ -3120,24 +3089,16 @@ sub submitJob {
     ## output info file
     my $info_file = "$job_file_dir/info.txt";
     my $info_fs   = newWriteFileHandle($info_file);
-    print $info_fs "Genome $jobPrefix\n";
-    print $info_fs "--genome $share_set_names\n";
+    print $info_fs "$jobPrefix\n";
+    print $info_fs "--function $share_set_names\n";
     print $info_fs "--datatype $data_type\n" if ( $data_type );
-    print $info_fs "--dtype $d_type\n" if ( $d_type );
-    print $info_fs "--evalue $evalue\n" if ( $evalue );
-    if ( $fasta ) {
-        print $info_fs "--fasta $fastaFileName\n";
-
-        $fasta =~ s/^\s+//;
-        $fasta =~ s/\s+$//;
-        my $fasta2 = $fasta;
-        if ( $fasta !~ /^>/ ) {
-            $fasta2 = ">query$$\n";
-            $fasta2 .= "$fasta\n";
+    if ( scalar(@oids) > 0 ) {
+        print $info_fs "--oidsfile $oidsFileName\n";
+        my $oidsFile = "$job_file_dir/$oidsFileName";
+        my $wfh = newWriteFileHandle( $oidsFile, "FunctionScaffoldSearchGenomes" );
+        foreach my $oid ( @oids ) {
+            print $wfh "$oid\n";            
         }
-        my $fastaFile = "$job_file_dir/$fastaFileName";
-        my $wfh = newWriteFileHandle( $fastaFile, "BlastQuery" );
-        print $wfh "$fasta2\n";
         close $wfh;
     }
     print $info_fs currDateTime() . "\n";
@@ -3146,36 +3107,36 @@ sub submitJob {
     my $queue_dir = $env->{workspace_queue_dir};
     #print "submitJob() queue_dir=$queue_dir<br/>\n";
     my $queue_filename;
-    if ( $lcJobPrefix eq 'blast' ) {
-        $queue_filename = $sid . '_genomeBlast_' . $output_name;
-    } 
-    elsif ( $lcJobPrefix eq 'pairwise_ani' ) {
-        $queue_filename = $sid . '_genomePairwiseANI_' . $output_name;
+    if ( $lcJobPrefix eq 'func_scaf_search' ) {
+        $queue_filename = $sid . '_functionScaffoldSearch_' . $output_name;
     } 
     #print "submitJob() queue_filename=$queue_filename<br/>\n";
     my $wfh = newWriteFileHandle( $queue_dir . $queue_filename );
 
-    if ( $lcJobPrefix eq 'blast' ) {
-        print $wfh "--program=genomeBlast\n";
-    } 
-    elsif ( $lcJobPrefix eq 'pairwise_ani' ) {
-        print $wfh "--program=genomePairwiseANI\n";
+    if ( $lcJobPrefix eq 'func_scaf_search' ) {
+        print $wfh "--program=funcScafSearch\n";
     } 
     print $wfh "--contact=$sid\n";
     print $wfh "--output=$output_name\n";
-    print $wfh "--genomeset=$set_names_message\n";
+    print $wfh "--funcset=$set_names_message\n";
     print $wfh "--datatype=$data_type\n" if ( $data_type );
-    print $wfh "--dtype=$d_type\n" if ( $d_type );
-    print $wfh "--evalue=$evalue\n" if ( $evalue );
-    print $wfh "--fasta=$fastaFileName\n" if ( $fastaFileName );
+    print $wfh "--oidsfile=$oidsFileName\n" if ( $oidsFileName );
     close $wfh;
-    
+
     Workspace::rsync($sid);
     print "<p>Job is submitted successfully.\n";
 
     print end_form();
-=cut
 
+}
+
+sub validateGenomesForFunctionScaffoldSearch {
+    my (@genomes) = @_;
+
+    if ( scalar(@genomes) == 0 ) {
+        webError("No genomes are selected.");
+        return;
+    }
 }
 
 

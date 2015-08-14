@@ -1,7 +1,7 @@
 ############################################################################
 #   Misc. web utility functions.
 # 	--es 04/15/2004
-# $Id: WebUtil.pm 33902 2015-08-05 01:24:06Z jinghuahuang $
+# $Id: WebUtil.pm 33903 2015-08-05 17:42:17Z aireland $
 ############################################################################
 package WebUtil;
 
@@ -318,7 +318,7 @@ my $mysql_config             = $env->{mysql_config} || undef;
 my $site_pw_md5              = $env->{site_pw_md5};
 my $show_sql_verbosity_level = $env->{show_sql_verbosity_level};
 
-require $oracle_config if $oracle_config;
+require $oracle_config if $oracle_config && ! $env->{dev_site};
 
 #require $mysql_config  if $mysql_config  ne "";
 my $img_internal        = $env->{img_internal};
@@ -460,16 +460,16 @@ my $linkTarget;
 my $rdbms = getRdbms();
 
 ## --es 05/05/2005 limit no. of concurrent BLAST jobs.
-my $max_blast_jobs = $env->{max_blast_jobs};
-$max_blast_jobs = 20 if $max_blast_jobs == 0;
+my $max_blast_jobs = $env->{max_blast_jobs} || 20;
+#$max_blast_jobs = 20 if $max_blast_jobs == 0;
 
 my $verbose = $env->{verbose};
 
 if ( ! $web_log_file ) {
-    webDie("env{ web_log_file } not define in WebConfig.pm\n");
+    webDie("env{ web_log_file } not defined in WebConfig.pm\n");
 }
 if ( ! $err_log_file ) {
-    webDie("env{ err_log_file } not define in WebConfig.pm\n");
+    webDie("env{ err_log_file } not defined in WebConfig.pm\n");
 }
 ## For web servers only, but not for developer doing "perl -c ...".
 if ( defined $ENV{GATEWAY_INTERFACE} ) {
@@ -486,6 +486,9 @@ if ( defined $ENV{GATEWAY_INTERFACE} ) {
 my $blast_PID = 0;
 
 sub initialize {
+
+	warn "Running WebUtil initialise";
+
     $cgi = CGI->new();
 
     # see http://search.cpan.org/~sherzodr/CGI-Session-3.95/Session/Tutorial.pm
@@ -496,17 +499,19 @@ sub initialize {
     # also the cookie name is now system base url specific
     # - Ken
     $cookie_name = "CGISESSID_";
+
     if ( $env->{urlTag} ) {
-        $cookie_name = $cookie_name . $env->{urlTag};
+        $cookie_name .= $env->{urlTag};
     } else {
         my @tmps = split( /\//, $base_url );
-        $cookie_name = $cookie_name . $tmps[$#tmps];
+        $cookie_name .= $tmps[$#tmps];
     }
+
     CGI::Session->name($cookie_name);    # override default cookie name CGISESSID
     $CGI::Session::IP_MATCH = 1;
 
     my $cookie_sid = $cgi->cookie($cookie_name) || undef;
-    $g_session = new CGI::Session( undef, $cookie_sid, { Directory => $cgi_tmp_dir } );
+    $g_session = CGI::Session->new( undef, $cookie_sid, { Directory => $cgi_tmp_dir } );
 
     #$g_session              = new CGI::Session( undef, $cgi, { Directory => $cgi_tmp_dir } );
 
@@ -860,15 +865,14 @@ sub printResetFormButton {
 #######################################################################
 sub printTaxonButtons {
     my ($txTableName) = @_;
-    print submit(
-        -name    => 'setTaxonFilter',
-        -value   => 'Add Selected to Genome Cart',
-        -class   => 'meddefbutton',
-        -onClick => "return isGenomeSelected('$txTableName');"
-    );
-    print nbsp(1);
-    print "<input type='button' name='selectAll' value='Select All' " . "onClick='selectAllTaxons(1)' class='smbutton' />";
-    print nbsp(1);
+#    print submit(
+#        -name    => 'setTaxonFilter',
+#        -value   => 'Add Selected to Genome Cart',
+#        -class   => 'meddefbutton',
+#        -onClick => "return isGenomeSelected('$txTableName');"
+#    );
+    print "<input class='meddefbutton' type='submit' name='setTaxonFilter' value='Add Selected to Genome Cart' onClick='return isGenomeSelected(\"$txTableName\");' />\n";
+    print "<input type='button' name='selectAll' value='Select All' " . "onClick='selectAllTaxons(1)' class='smbutton' />\n";
     print "<input type='button' name='clearAll' value='Clear All' " . "onClick='selectAllTaxons(0)' class='smbutton' />";
 }
 
@@ -927,7 +931,7 @@ sub webLog {
     #    }
 
     my $afh = newAppendFileHandle( $web_log_file, "webLog" );
-    print $afh $s;
+    print { $afh } $s;
     close $afh;
 }
 
@@ -1265,17 +1269,14 @@ sub webfsTest {
     my $action = POSIX::SigAction->new(
         sub { webErrorHeader( "IMG webfs hard drive has failed. Please try again later.", 0, -1 ) },   # the handler code ref
         $mask
-
           # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
     );
-
     my $oldaction = POSIX::SigAction->new();
     sigaction( 'ALRM', $action, $oldaction );
     eval {
         alarm( $dbLoginTimeout ) if $dbLoginTimeout;    # seconds before time out
         if ( -e $webfs ) {
-
-            # its fine.
+            # it's fine.
         }
         alarm(0);                  # cancel alarm (if connect worked fast)
     };
@@ -1286,7 +1287,6 @@ sub webfsTest {
     alarm($timeoutSec) if $timeoutSec;
 
     if ($@) {
-
         # eval failed
         webErrorHeader( "$@", 0, -1 );
     }
@@ -1630,6 +1630,22 @@ sub dirList {
     }
     return @paths2;
 }
+
+
+# dir list of all files
+sub dirListAll {
+    my ($dir) = @_;
+    opendir( Dir, $dir ) || webDie("dirList: cannot read '$dir'\n");
+    my @paths = sort( readdir(Dir) );
+    closedir(Dir);
+    my @paths2;
+    my $i;
+    for $i (@paths) {
+        push( @paths2, $i );
+    }
+    return @paths2;
+}
+
 
 ############################################################################
 # getSequence - Get substring sequence given start < end,
@@ -9869,20 +9885,6 @@ sub hasProdege {
         return 'https://prodege.jgi-psf.org' . $subUrl;
     }
     return '';
-}
-
-# dir list of all files
-sub dirListAll {
-    my ($dir) = @_;
-    opendir( Dir, $dir ) || webDie("dirList: cannot read '$dir'\n");
-    my @paths = sort( readdir(Dir) );
-    closedir(Dir);
-    my @paths2;
-    my $i;
-    for $i (@paths) {
-        push( @paths2, $i );
-    }
-    return @paths2;
 }
 
 1;

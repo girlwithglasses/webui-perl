@@ -3,7 +3,7 @@
 #   This handles the BLAST option under the "Find Genes" menu option.
 #  --es 07/07/2005
 #
-# $Id: FindGenesBlast.pm 33630 2015-06-23 20:59:03Z klchu $
+# $Id: FindGenesBlast.pm 33949 2015-08-09 07:37:16Z jinghuahuang $
 ############################################################################
 package FindGenesBlast;
 my $section = "FindGenesBlast";
@@ -2074,8 +2074,6 @@ sub printGeneSearchBlastForTaxons {
     my $dbh = dbLogin();
     my ($taxon2name_href, $taxon_in_file_href, $taxon_db_href, $taxon_oids_str) 
         = QueryUtil::fetchTaxonsOidAndNameFile($dbh, $taxon_oids_ref);
-    OracleUtil::truncTable( $dbh, "gtt_num_id" )
-      if ( $taxon_oids_str =~ /gtt_num_id/i );
 
     my @recs;
     foreach my $taxon_oid (keys %$taxon2name_href) {

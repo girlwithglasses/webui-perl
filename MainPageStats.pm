@@ -2,7 +2,7 @@
 # MainPageStats - Statistics for genomes in main/home page.
 #    --es 02/01/2005
 #
-# $Id: MainPageStats.pm 33841 2015-07-29 20:48:56Z klchu $
+# $Id: MainPageStats.pm 33935 2015-08-07 18:26:22Z klchu $
 ############################################################################
 package MainPageStats;
 my $section = "MainPageStats";
@@ -790,13 +790,13 @@ sub replaceStatTableRows {
 
     $x .= tablePrivateGenomeStats();
 
-    if ($img_geba) {
-
-        #print "replaceStatTableRows() start getGebaStats()<br/>\n";
-        $x .= getGebaStats();
-
-        #print "replaceStatTableRows() done getGebaStats()<br/>\n";
-    }
+#    if ($img_geba) {
+#
+#        #print "replaceStatTableRows() start getGebaStats()<br/>\n";
+#        $x .= getGebaStats();
+#
+#        #print "replaceStatTableRows() done getGebaStats()<br/>\n";
+#    }
 
     return ( $x, $hmp );
 }

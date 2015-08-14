@@ -1,6 +1,6 @@
 ############################################################################
 # ScaffoldCart.pm - Cart for Scaffolds
-# $Id: ScaffoldCart.pm 33873 2015-07-31 21:46:16Z klchu $
+# $Id: ScaffoldCart.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package ScaffoldCart;
 
@@ -61,7 +61,7 @@ if ( getSessionParam("maxGeneListResults") ne "" ) {
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
 
 my $max_gene_cnt_for_taxon = 200000000;

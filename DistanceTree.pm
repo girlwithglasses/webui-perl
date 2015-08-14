@@ -1,6 +1,6 @@
 ###########################################################################
 # DistanceTree.pm - draws a radial phylogenetic tree
-# $Id: DistanceTree.pm 33545 2015-06-10 18:35:58Z aratner $
+# $Id: DistanceTree.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package DistanceTree;
 my $section = "DistanceTree";
@@ -33,7 +33,7 @@ my $include_metagenomes = $env->{include_metagenomes};
 
 my $nvl = getNvl();
 my $decorator_exe = $env->{ decorator_exe };
-my $YUI = $env->{yui_dir_28}; 
+my $YUI = $env->{yui_dir_28};
 
 my $ISOLATE_LIMIT = 1500;
 my $META_LIMIT = 500;
@@ -44,14 +44,15 @@ my $META_LIMIT = 500;
 sub dispatch {
     my ($numTaxon) = @_;
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
     if ($page eq "tree") {
-        printStatusLine("Loading ...", 1); 
+        printStatusLine("Loading ...", 1);
 
-	my $phylip_url = 
+	my $phylip_url =
 	    "http://evolution.genetics.washington.edu/phylip/doc/";
 	my $link = "<a href=$phylip_url target=_blank>PHYLIP</a>";
 
-	my $description = 
+	my $description =
 	    "The tree is created using the alignment of 16S genes based on "
 	  . "the SILVA database and dnadist and neighbor tools from the $link "
 	  . "package. <br/>For cases where the exact gene sequence cannot be "
@@ -64,7 +65,7 @@ sub dispatch {
 	     "show description for this tool",
 	     "Distance Tree Info", 0, "DistanceTree.pdf", "", "java");
 
-	printMainForm(); 
+	printMainForm();
 
 	my $limit_note = "If &gt;".$ISOLATE_LIMIT." genomes are selected, "
 	    . "a precomputed newick file will be used instead.";
@@ -74,13 +75,13 @@ sub dispatch {
 		. "newick file will be used instead.";
 	}
 
-	print "<p>\n"; 
-	print "<font color='#003366'>" 
+	print "<p>\n";
+	print "<font color='#003366'>"
 	    . "Please select at least 3 genomes for the tree. $limit_note<br/>"
 	    . "<u>Note</u>: Isolate genomes and Metagenomes cannot be combined"
 	    . " in one tree as these are computed differently.<br/>"
 	    . "Only genomes with distance data are listed.<br>"
-	    . "</font>\n"; 
+	    . "</font>\n";
 
 	if ($include_metagenomes) {
 	    print "<p>\n";
@@ -92,7 +93,7 @@ sub dispatch {
 	    print "<input type='radio' name='perc_identity' "
 		. "value='90' />90+ &nbsp;";
 	    print "</p>\n";
-	} 
+	}
 
 	printForm();
 	print end_form();
@@ -192,12 +193,12 @@ sub getHomologHitCount {
     } else {
 	my %validTaxons = WebUtil::getAllTaxonsHashed($dbh);
 	my @rows = getBBHZipRows( $dbh, $gene_oid, \%validTaxons );
-	for my $row (@rows) { 
+	for my $row (@rows) {
 	    my ( $qid, $sid, @ignore )
 		= split( /\t/, $row );
-	    my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid ); 
+	    my ( $sgene_oid, $staxon, $slen ) = split( /_/, $sid );
 	    $taxon2count{ $staxon }++;
-	} 
+	}
 
         #my $sql = qq{
         #    select go.taxon
@@ -221,9 +222,9 @@ sub getHomologHitCount {
 #    that have distance data. Alternatively, this method can receive
 #    parameters: $taxon_selection - which can be either "all" or "selected"
 #    genomes to include, and $taxon2cnt_href - which is a mapping of genes
-#    to gene count, used for specifying how to group genomes for coloring 
+#    to gene count, used for specifying how to group genomes for coloring
 ############################################################################
-sub runTree { 
+sub runTree {
     my( $taxon2cnt_href, $taxon_selection, $type, $noTitle, $metag ) = @_;
 
     # try to get params from submit:
@@ -242,10 +243,10 @@ sub runTree {
     my @oids = param("selectedGenome1");
     my $nTaxons0 = @oids;
 
-    if ( $nTaxons0 < 3 && 
+    if ( $nTaxons0 < 3 &&
 	 $taxon_selection eq "" ) {
 	webError( "Please select at least 3 genomes." );
-    } 
+    }
 
     my $dbh = dbLogin();
     if ( $taxon_selection eq "all" ) {
@@ -258,12 +259,12 @@ sub runTree {
     }
 
     my $taxonStr;
-    if (OracleUtil::useTempTable($#oids + 1)) { 
-	OracleUtil::insertDataArray($dbh, "gtt_num_id", \@oids); 
-        $taxonStr = "select id from gtt_num_id"; 
-    } else { 
-        $taxonStr = join(",", @oids); 
-    } 
+    if (OracleUtil::useTempTable($#oids + 1)) {
+	OracleUtil::insertDataArray($dbh, "gtt_num_id", \@oids);
+        $taxonStr = "select id from gtt_num_id";
+    } else {
+        $taxonStr = join(",", @oids);
+    }
 
     my $sql = qq{
         select max(tx.distmatrix_date)
@@ -273,16 +274,16 @@ sub runTree {
     my $cur = execSql( $dbh, $sql, $verbose );
     my ($timestamp) = $cur->fetchrow();
 
-    my $description = 
+    my $description =
 	  "Distance data is computed for all genomes and stored in the "
 	. "database. This data is periodically recomputed to include "
 	. "new genomes. Of the selected genomes, only those with distance "
 	. "data are added to the matrix. ";
     if (!$noTitle) {
-	my $title = "Phylogenetic Tree for All Genomes"; 
-	if ($taxon_selection eq "" || $taxon_selection eq "selected") { 
-	    $title = "Phylogenetic Tree for Selected Genomes"; 
-	} 
+	my $title = "Phylogenetic Tree for All Genomes";
+	if ($taxon_selection eq "" || $taxon_selection eq "selected") {
+	    $title = "Phylogenetic Tree for Selected Genomes";
+	}
 
         WebUtil::printHeaderWithInfo
             ($title, $description,
@@ -294,7 +295,7 @@ sub runTree {
     print $description;
     print "</p>";
 
-    printStatusLine( "Loading ...", 1 ); 
+    printStatusLine( "Loading ...", 1 );
     printStartWorkingDiv("runTree");
     print "<p>[This may take time] " . (scalar @oids) . " genomes selected";
 
@@ -307,16 +308,16 @@ sub runTree {
 
     print "<br/>Getting info for genomes.";
 
-    my $sql = qq{ 
+    my $sql = qq{
 	select distinct tx.taxon_oid, tx.taxon_display_name,
-	       tx.domain, tx.genome_type, 
-               tx.phylum, $nvl(tx.ir_class, 'unknown'), 
-               $nvl(tx.ir_order, 'unknown'), 
+	       tx.domain, tx.genome_type,
+               tx.phylum, $nvl(tx.ir_class, 'unknown'),
+               $nvl(tx.ir_order, 'unknown'),
 	       tx.family, tx.genus
-	from taxon tx 
+	from taxon tx
         where tx.taxon_oid in ($taxonStr)
-	order by tx.taxon_oid 
-    }; 
+	order by tx.taxon_oid
+    };
     my $cur = execSql( $dbh, $sql, $verbose );
     for ( ;; ) {
 	my( $taxon_oid, $name, $domain, $genome_type, $phylum, $class,
@@ -361,10 +362,10 @@ sub runTree {
 	    . "TAXONOMY_SN:$name\t"
 	    . "TAXONOMY_CN:$domain,$phylum,$class,$order,$family,$genus\n";
     }
-    $cur->finish(); 
+    $cur->finish();
     close $wfh;
 
-    my $nTaxons = scalar @taxon_oids; 
+    my $nTaxons = scalar @taxon_oids;
     my $n_mTaxons = scalar @m_taxon_oids;
     my $newickFile;
     my $note;
@@ -373,7 +374,7 @@ sub runTree {
     if ($nTaxons > 2 && $n_mTaxons > 2) {
 	$note = "<u>Note</u>: Isolate genomes and Metagenomes cannot be "
 	      . "combined in one tree as these are computed differently.<br/>";
-	$taxon_selection = "all" 
+	$taxon_selection = "all"
 	    if $n_mTaxons > $META_LIMIT &&
 	       $nTaxons > $ISOLATE_LIMIT;
     } else {
@@ -381,12 +382,12 @@ sub runTree {
 	    $limit_note = "A precomputed newick file of all metagenomes is used since >".$META_LIMIT." metagenomes were selected.<br/>";
 	}
 
-	if ($taxon_selection = "selected" 
+	if ($taxon_selection = "selected"
 	    && $nTaxons > $ISOLATE_LIMIT) {
 	    $limit_note = "A precomputed newick file of all isolate genomes is used since >".$ISOLATE_LIMIT." genomes were selected.<br/>";
 	}
 
-	$taxon_selection = "all" 
+	$taxon_selection = "all"
 	    if $n_mTaxons > $META_LIMIT ||
 	       $nTaxons > $ISOLATE_LIMIT;
     }
@@ -404,7 +405,7 @@ sub runTree {
 	    if (!$matrixFile) {
 		if (scalar @taxon_oids > 2) {
 		    $perc = ""; # clear this - not needed for isolates
-		    ($matrixFile, $nTaxons, $itxFile) = 
+		    ($matrixFile, $nTaxons, $itxFile) =
 			getDistMatrixFile($dbh, \@taxon_oids);
 		    return if !$matrixFile;
 		} else {
@@ -446,7 +447,7 @@ sub runTree {
 	$newickFile = getNewickFile($matrixFile);
 
     } else {
-	if ($include_metagenomes && 
+	if ($include_metagenomes &&
 	    $perc ne "" && scalar @m_taxon_oids > $META_LIMIT) {
 	    # too many metagenomes selected, get a precomputed newick file
 	    #$newickFile = $tmp_dir . "/unifrac_newick$$.txt";
@@ -455,7 +456,7 @@ sub runTree {
 	    #if (-e $unifrac_file) {
 	    #	use File::stat;
 	    #	my $sb = stat($unifrac_file);
-	    #	$timestamp = localtime($sb->mtime); # last modified date                                                     
+	    #	$timestamp = localtime($sb->mtime); # last modified date
 	    #}
 
 	    printEndWorkingDiv("runTree");
@@ -466,15 +467,15 @@ sub runTree {
 
 	$newickFile = $tmp_dir . "/newick$$.txt";
 	my $newick_all = $env->{newick_all};
-	runCmd( "/bin/cp $newick_all $newickFile" ); 
+	runCmd( "/bin/cp $newick_all $newickFile" );
 	if (-e $newickFile) {
 	    use File::stat;
 	    my $sb = stat($newickFile);
-	    $timestamp = localtime($sb->mtime); # last modified date                                                     
+	    $timestamp = localtime($sb->mtime); # last modified date
 	}
     }
-    
-    my $cwd = "`pwd`"; 
+
+    my $cwd = "`pwd`";
 
     # decorate and convert newick file to phyloXML
     print "<br/>Converting to phyloXML";
@@ -483,42 +484,42 @@ sub runTree {
     my $cmd = $decorator_exe." ".$newickFile." ".$mapFile." ".$decoratedFile;
     my $st = runCmdNoExit($cmd);
 
-    chdir( $cwd ); 
+    chdir( $cwd );
 
-    printEndWorkingDiv("runTree"); 
- 
-    my $gene_oid = param("genePageGeneOid"); 
-    if ($taxon_selection ne "" && $gene_oid ne "") { 
-        my $url = 
-            "$main_cgi?section=GeneDetail&page=geneDetail" 
-	    . "&gene_oid=$gene_oid"; 
-        my $link = alink( $url, $gene_oid ); 
-        print "<p>Displaying homologs for gene: ".$link."<br/>"; 
+    printEndWorkingDiv("runTree");
+
+    my $gene_oid = param("genePageGeneOid");
+    if ($taxon_selection ne "" && $gene_oid ne "") {
+        my $url =
+            "$main_cgi?section=GeneDetail&page=geneDetail"
+	    . "&gene_oid=$gene_oid";
+        my $link = alink( $url, $gene_oid );
+        print "<p>Displaying homologs for gene: ".$link."<br/>";
 	print " [ homolog counts: "
 	    . "<font color=\"#999966\"><b>0</b></font>, "
 	    . "<font color=\"#6633FF\"><b>1</b></font>, "
 	    . "<font color=\"#009933\"><b>2</b></font>, "
-	    . "<font color=\"#FF0066\"><b>>2</b></font> ]"; 
+	    . "<font color=\"#FF0066\"><b>>2</b></font> ]";
 	print "<br/>\n";
 	print "</p>";
-    } 
- 
-    print "<p>\n"; 
-    if ($nTaxons != $nTaxons0) { 
+    }
+
+    print "<p>\n";
+    if ($nTaxons != $nTaxons0) {
 	my $m = "isolate ";
 	$m = "meta" if $perc ne "";
-        print "$nTaxons $m"."genomes were analyzed "; 
-        if ($taxon_selection eq "") { 
-            print "(out of $nTaxons0 that were selected)."; 
+        print "$nTaxons $m"."genomes were analyzed ";
+        if ($taxon_selection eq "") {
+            print "(out of $nTaxons0 that were selected).";
 	    if (-e $itxFile) {
 		print "&nbsp;View list of selected "
 		    . alink("$tmp_url/invalid_taxons$$.txt",
 			    $m."genomes with no distance data", "_blank")
 		    . ".";
 	    }
-        } 
-        print "<br/>\n"; 
-    } 
+        }
+        print "<br/>\n";
+    }
     print $note;
     print $limit_note;
 
@@ -528,23 +529,23 @@ sub runTree {
     print "Last computed on: <font color='red'>$timestamp</font>";
     print "<br/><br/>";
 
-    my $url = "http://www.phylosoft.org/archaeopteryx/"; 
-    print "The tree below is generated using the " 
-        . alink($url, "Archaeopteryx")." applet"; 
-    print "</p>\n"; 
+    my $url = "http://www.phylosoft.org/archaeopteryx/";
+    print "The tree below is generated using the "
+        . alink($url, "Archaeopteryx")." applet";
+    print "</p>\n";
 
     if (!(-e $newickFile)) {
-	print "<p>\n"; 
+	print "<p>\n";
 	my $url = "$base_url/tmp/table$$.map";
 	print alink($url, "View map file", "_blank");
-	print "</p>\n"; 
+	print "</p>\n";
 	webError( "Could not create the required newick input file: " );
     }
     if (!(-e $decoratedFile)) {
-	print "<p>\n"; 
+	print "<p>\n";
 	my $url = "$base_url/tmp/newick$$.txt";
 	print alink($url, "View newick", "_blank");
-	print "</p>\n"; 
+	print "</p>\n";
 	webError( "Could not create the required phyloXML input file: " );
     }
     printAptxApplet("decorated$$.txt");
@@ -557,21 +558,21 @@ sub runTree {
 sub getDistMatrixFile {
     my ($dbh, $oids) = @_;
     my @taxon_oids = @$oids;
-    #my $nTaxons = scalar @taxon_oids; 
+    #my $nTaxons = scalar @taxon_oids;
 
     my $taxonStr;
-    if (OracleUtil::useTempTable($#taxon_oids + 1)) { 
-	OracleUtil::insertDataArray($dbh, "gtt_num_id", \@taxon_oids); 
-        $taxonStr = "select id from gtt_num_id"; 
-    } else { 
-        $taxonStr = join(",", @taxon_oids); 
-    } 
- 
-    ## Matrix 
-    my $count = 0; 
-    my %matrix; 
-    
-    # first validate that a given taxon has distance data 
+    if (OracleUtil::useTempTable($#taxon_oids + 1)) {
+	OracleUtil::insertDataArray($dbh, "gtt_num_id", \@taxon_oids);
+        $taxonStr = "select id from gtt_num_id";
+    } else {
+        $taxonStr = join(",", @taxon_oids);
+    }
+
+    ## Matrix
+    my $count = 0;
+    my %matrix;
+
+    # first validate that a given taxon has distance data
     print "<br/>Validating distance data for genomes";
     my $sql = qq{
         select distinct tm.taxon_oid, tm.distance
@@ -603,9 +604,9 @@ sub getDistMatrixFile {
         close $wfh;
     }
 
-    if ( $nTaxons < 3 ) { 
+    if ( $nTaxons < 3 ) {
         printStatusLine( "No distance data.", 2 );
-	printEndWorkingDiv("runTree"); 
+	printEndWorkingDiv("runTree");
 
 	my $link = "genomes";
 	if (-e $txFile) {
@@ -618,8 +619,8 @@ sub getDistMatrixFile {
 	print "</p>";
 
 	return (0, 0, $txFile);
-    } 
-    
+    }
+
     my $taxonStr;
     if (OracleUtil::useTempTable($#validIds + 1)) {
 	OracleUtil::insertDataArray($dbh, "gtt_num_id", \@validIds);
@@ -628,56 +629,56 @@ sub getDistMatrixFile {
         $taxonStr = join(",", @validIds);
     }
 
-    my $sql = qq{ 
+    my $sql = qq{
 	select distinct tm.taxon_oid,
-	       tm.paired_taxon, tm.distance 
-        from taxon_dist_matrix tm, taxon tx 
-	where tx.taxon_oid = tm.taxon_oid 
+	       tm.paired_taxon, tm.distance
+        from taxon_dist_matrix tm, taxon tx
+	where tx.taxon_oid = tm.taxon_oid
         and tx.taxon_oid in ($taxonStr)
         and tm.paired_taxon in ($taxonStr)
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose ); 
-    for ( ;; ) { 
-	my( $taxon_oid, $paired_taxon, $distance ) 
-	    = $cur->fetchrow(); 
-	last if !$taxon_oid; 
-	$count++; 
-	
-	my $k1 = "$taxon_oid,$paired_taxon"; 
-	my $k2 = "$paired_taxon,$taxon_oid"; 
-	$matrix{ $k1 } = $distance; 
-	$matrix{ $k2 } = $distance; 
+    };
+    my $cur = execSql( $dbh, $sql, $verbose );
+    for ( ;; ) {
+	my( $taxon_oid, $paired_taxon, $distance )
+	    = $cur->fetchrow();
+	last if !$taxon_oid;
+	$count++;
+
+	my $k1 = "$taxon_oid,$paired_taxon";
+	my $k2 = "$paired_taxon,$taxon_oid";
+	$matrix{ $k1 } = $distance;
+	$matrix{ $k2 } = $distance;
 	if ($count % 10000 == 0 && $count > 1) {
 	    print " . ";
 	}
-    } 
-    $cur->finish(); 
+    }
+    $cur->finish();
 
     ## write out the distance matrices for taxons
     my $outFile = $tmp_dir . "/dist_matrix$$.txt";
-    my $wfh = newWriteFileHandle( $outFile, $tool ); 
+    my $wfh = newWriteFileHandle( $outFile, $tool );
     print $wfh "$nTaxons\n";
-    
+
     print "<br/>Writing the distance matrix to a file";
     for ( my $i = 0; $i < $nTaxons; $i++ ) {
 	my $taxon_oid1 = $validIds[ $i ];
-	printf $wfh "%-15s", $taxon_oid1; 
+	printf $wfh "%-15s", $taxon_oid1;
 	for ( my $j = 0; $j < $nTaxons; $j++ ) {
 	    my $taxon_oid2 = $validIds[ $j ];
 	    my $k = "$taxon_oid1,$taxon_oid2";
 	    my $dist = $matrix{ $k };
 	    if ( $dist eq "" ) {
 		warn( "$tool: $k: cannot find distance\n" )
-		    if $verbose >= 2; 
+		    if $verbose >= 2;
 		$dist = 0;
-	    } 
+	    }
 	    printf $wfh " %6.2f", $dist;
-	} 
+	}
 	if ($i % 100 == 0 && $i > 1) {
-	    print " . "; 
-	} 
-	print $wfh "\n"; 
-    } 
+	    print " . ";
+	}
+	print $wfh "\n";
+    }
     close $wfh;
 
     return ($outFile, $nTaxons, $txFile);
@@ -699,23 +700,23 @@ sub getUnifracDistMatrix {
 	             . "img_web_data/distance_tree/fs_unifrac_dist_";
     $unifrac_file .= $perc_identity.".txt";
     if (!(-e $unifrac_file)) {
-	printEndWorkingDiv("runTree"); 
+	printEndWorkingDiv("runTree");
         webError( "Cannot find the file $unifrac_file." );
     }
     if (!(-r $unifrac_file)) {
-	printEndWorkingDiv("runTree"); 
+	printEndWorkingDiv("runTree");
         webError( "The file $unifrac_file cannot be read." );
     }
 
     my $rfh = newReadFileHandle( $unifrac_file, "unifrac_dist_file", 1 );
 
     my %matrix;
-    my $count = 0; 
+    my $count = 0;
     while ( my $s = $rfh->getline() ) {
-        chomp $s; 
-	$count++; 
+        chomp $s;
+	$count++;
 
-	my ($tx1, $tx2, $distance) = split( /\t/, $s ); 
+	my ($tx1, $tx2, $distance) = split( /\t/, $s );
         my $k1 = "$tx1,$tx2";
         my $k2 = "$tx2,$tx1";
         $matrix{ $k1 } = $distance;
@@ -725,24 +726,24 @@ sub getUnifracDistMatrix {
         }
     }
 
-    my %valid_ids;  
-    print "<br/>Checking distance data for taxons";  
-    for ( my $i = 0; $i < $nTaxons; $i++ ) {  
-	my $taxon_oid1 = $taxon_oids[ $i ];  
-	for ( my $j = 0; $j < $nTaxons; $j++ ) {  
-	    my $taxon_oid2 = $taxon_oids[ $j ];  
-	    my $k = "$taxon_oid1,$taxon_oid2";  
-	    my $dist = $matrix{ $k };  
-	    if ( $dist eq "" || $dist eq "NA" || $dist eq "NaN" ) {  
-		warn( "$tool: $k: cannot find distance\n" )  
-		    if $verbose >= 2;  
-		next;  
-	    }  
-	    $valid_ids{ $taxon_oid1 } = 1;  
-	}  
-	if ($i % 100 == 0 && $i > 1) {  
-	    print " . ";  
-	}  
+    my %valid_ids;
+    print "<br/>Checking distance data for taxons";
+    for ( my $i = 0; $i < $nTaxons; $i++ ) {
+	my $taxon_oid1 = $taxon_oids[ $i ];
+	for ( my $j = 0; $j < $nTaxons; $j++ ) {
+	    my $taxon_oid2 = $taxon_oids[ $j ];
+	    my $k = "$taxon_oid1,$taxon_oid2";
+	    my $dist = $matrix{ $k };
+	    if ( $dist eq "" || $dist eq "NA" || $dist eq "NaN" ) {
+		warn( "$tool: $k: cannot find distance\n" )
+		    if $verbose >= 2;
+		next;
+	    }
+	    $valid_ids{ $taxon_oid1 } = 1;
+	}
+	if ($i % 100 == 0 && $i > 1) {
+	    print " . ";
+	}
     }
 
     my @validIds = sort keys %valid_ids;
@@ -790,7 +791,7 @@ sub getUnifracDistMatrix {
 }
 
 ############################################################################
-# getNewickFile - creates a newick-formatted file using the neighbor 
+# getNewickFile - creates a newick-formatted file using the neighbor
 #      program from a distance matrix of genomes
 ############################################################################
 sub getNewickFile {
@@ -798,35 +799,35 @@ sub getNewickFile {
 
     ## run the neighbor program
     my $newickFile = $tmp_dir . "/newick$$.txt";
-    my $cwd = "`pwd`"; 
+    my $cwd = "`pwd`";
 
     my $inFile = $tmp_dir . "/infile";
     my $treeFile = $tmp_dir . "/tree$$.txt";
-	
+
     my $neighbor_bin = $env->{neighbor_bin};
-    
+
     my $tmpDir = $cgi_tmp_dir."/neighbor$$";
     my $logFile = "$tmpDir/logfile";
-    WebUtil::unsetEnvPath(); 
-    
+    WebUtil::unsetEnvPath();
+
     runCmd( "/bin/mkdir -p $tmpDir" );
     runCmd( "/bin/cp $matrixFile $tmpDir/infile" );
     runCmd( "/bin/chmod 777 $tmpDir" );
-    
-    chdir( $tmpDir ); 
+
+    chdir( $tmpDir );
     my $cmd = "/bin/echo Y | $neighbor_bin > logfile";
     my $st = system( $cmd );
-    chdir( $cwd ); 
+    chdir( $cwd );
 
-    if ($st == 0) { 
-	runCmd( "/bin/cp $tmpDir/outfile $treeFile" ); 
-	# version 3.69 of neighbor seems to have renamed 
+    if ($st == 0) {
+	runCmd( "/bin/cp $tmpDir/outfile $treeFile" );
+	# version 3.69 of neighbor seems to have renamed
 	# the output file previously called outtree to treefile
 	if (-e "$tmpDir/outtree") {
-	    runCmd( "/bin/cp $tmpDir/outtree $newickFile" ); 
+	    runCmd( "/bin/cp $tmpDir/outtree $newickFile" );
 	}
 	elsif (-e "$tmpDir/treefile") {
-	    runCmd( "/bin/cp $tmpDir/treefile $newickFile" ); 
+	    runCmd( "/bin/cp $tmpDir/treefile $newickFile" );
 	}
     }
     runCmd( "/bin/rm -fr $tmpDir" );
@@ -842,14 +843,14 @@ sub printAptxApplet {
     my $configFile = $tmp_dir . "/aptx$$.config";
     my $jnlpEFile = $tmp_dir . "/aptxE$$.jnlp";
     my $jnlpAFile = $tmp_dir . "/aptxA$$.jnlp";
-    runCmd( "/bin/cp $cgi_dir/aptx.txt $configFile" ); 
-    runCmd( "/bin/cp $cgi_dir/jnlpE.txt $jnlpEFile" ); 
-    runCmd( "/bin/cp $cgi_dir/jnlpA.txt $jnlpAFile" ); 
-    runCmd( "/bin/cp $base_dir/forester.jar $tmp_dir/forester.jar" ); 
+    runCmd( "/bin/cp $cgi_dir/aptx.txt $configFile" );
+    runCmd( "/bin/cp $cgi_dir/jnlpE.txt $jnlpEFile" );
+    runCmd( "/bin/cp $cgi_dir/jnlpA.txt $jnlpAFile" );
+    runCmd( "/bin/cp $base_dir/forester.jar $tmp_dir/forester.jar" );
 
     my $url1 = "$cgi_url/$main_cgi?section=TaxonDetail"
 	. "&page=taxonDetail&taxon_oid=";
-    my $url2 = "$cgi_url/$main_cgi?section=GeneDetail" 
+    my $url2 = "$cgi_url/$main_cgi?section=GeneDetail"
 	. "&page=geneDetail&gene_oid=";
     my $url3 = "$cgi_url/$main_cgi?section=GeneCartStor"
 	. "&page=showGeneCart&genes=";
@@ -860,8 +861,8 @@ sub printAptxApplet {
     if ($type eq "domains") {
 	print $afh "\n#  Additional parameters for IMG domains:\n";
 	print $afh "#  --------------------------------------\n";
-	print $afh "web_link: ".$url2."\timgDomains\timgDomains\n"; 
-	print $afh "web_link: ".$url3."\timgGenes\timgGenes\n"; 
+	print $afh "web_link: ".$url2."\timgDomains\timgDomains\n";
+	print $afh "web_link: ".$url3."\timgGenes\timgGenes\n";
 	print $afh "phylogeny_graphics_type:       rectangular\n";
 	print $afh "show_domain_architectures:     display   yes\n";
 	print $afh "show_gene_names:               display   no\n";
@@ -872,24 +873,24 @@ sub printAptxApplet {
     } elsif ($type eq "genes") {
         print $afh "\n#  Additional parameters for IMG genes:\n";
         print $afh "#  --------------------------------------\n";
-	print $afh "web_link: ".$url2."\timgDomains\timgDomains\n"; 
+	print $afh "web_link: ".$url2."\timgDomains\timgDomains\n";
         print $afh "web_link: ".$url3."\timgGenes\timgGenes\n";
     } else {
 	print $afh "\nweb_link: ".$url1."\timg\timg\n";
     }
-    close $afh; 
+    close $afh;
 
     WebUtil::resetEnvPath();
 
-    print qq{ 
-        <script type='text/javascript' 
-            src='$YUI/build/yahoo-dom-event/yahoo-dom-event.js'> 
-        </script> 
- 
-        <script language='JavaScript' type='text/javascript'> 
-        function showAptx(type, base_url, num, treefile) { 
+    print qq{
+        <script type='text/javascript'
+            src='$YUI/build/yahoo-dom-event/yahoo-dom-event.js'>
+        </script>
+
+        <script language='JavaScript' type='text/javascript'>
+        function showAptx(type, base_url, num, treefile) {
 	    var html =
-		'<p><APPLET code="org.forester.archaeopteryx.ArchaeopteryxA.class" '+ 
+		'<p><APPLET code="org.forester.archaeopteryx.ArchaeopteryxA.class" '+
 		'archive="'+base_url+'/tmp/forester.jar" '+
 		'codebase="'+base_url+'" '+
 		'jnlp_href="'+base_url+'/tmp/aptxA'+num+'.jnlp" '+
@@ -903,47 +904,47 @@ sub printAptxApplet {
 		'value="exported'+num+'">'+
 		'</APPLET></p>';
 
-            if (type == 'aptxapplet') { 
-                document.getElementById('showapplet').innerHTML = html; 
-		document.getElementById('showapplet').style.display = 'block'; 
-		document.getElementById('hideapplet').style.display = 'none'; 
-	    } 
-        } 
-        </script> 
-    }; 
+            if (type == 'aptxapplet') {
+                document.getElementById('showapplet').innerHTML = html;
+		document.getElementById('showapplet').style.display = 'block';
+		document.getElementById('hideapplet').style.display = 'none';
+	    }
+        }
+        </script>
+    };
 
-    print "<div id='hideapplet' style='display: block;'>"; 
-    print "<input type='button' class='medbutton' name='view'" 
-        . " value='Launch in separate window'" 
+    print "<div id='hideapplet' style='display: block;'>";
+    print "<input type='button' class='medbutton' name='view'"
+        . " value='Launch in separate window'"
         . " onclick='showAptx(\"aptxapplet\", \"$base_url\", "
-	. "\"$$\", \"$base_url/tmp/$treeFile\")' />"; 
-    print "</div>\n"; 
- 
+	. "\"$$\", \"$base_url/tmp/$treeFile\")' />";
+    print "</div>\n";
+
     print "<div id='showapplet' style='display: none;'>";
-    print "</div>\n"; 
+    print "</div>\n";
 
     print "<p>";
     #print "Use mouse wheel + SHIFT to rotate the circular tree\n<br/>";
     my $url = "$base_url/tmp/$treeFile";
-    print alink($url, "View phyloXML", "_blank"); 
-    print "</p>\n"; 
+    print alink($url, "View phyloXML", "_blank");
+    print "</p>\n";
 
     # Launch applet using JNLP (Java Network Launch Protocol)
-    print qq{ 
-	<applet archive="$base_url/tmp/forester.jar" 
-	        code="org.forester.archaeopteryx.ArchaeopteryxE.class" 
-                width="800" height="600" 
-	        codebase="$base_url" 
+    print qq{
+	<applet archive="$base_url/tmp/forester.jar"
+	        code="org.forester.archaeopteryx.ArchaeopteryxE.class"
+                width="800" height="600"
+	        codebase="$base_url"
 	        jnlp_href="$base_url/tmp/aptxE$$.jnlp">
 	<param name="java_arguments" value="-Xmx256m">
-        <param name="url_of_tree_to_load" 
-               value="$base_url/tmp/$treeFile"> 
-        <param name="config_file" 
-               value="$base_url/tmp/aptx$$.config"> 
-        <param name="exported_name" 
-               value="exported$$"> 
-        </applet> 
-    }; 
+        <param name="url_of_tree_to_load"
+               value="$base_url/tmp/$treeFile">
+        <param name="config_file"
+               value="$base_url/tmp/aptx$$.config">
+        <param name="exported_name"
+               value="exported$$">
+        </applet>
+    };
 }
 
 

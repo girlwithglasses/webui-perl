@@ -3,7 +3,7 @@
 #  Module to handle the "Find Genes" menu tab option.
 #    --es 07/07/2005
 #
-# $Id: FindGenes.pm 33157 2015-04-13 00:02:52Z jinghuahuang $
+# $Id: FindGenes.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package FindGenes;
 my $section = "FindGenes";
@@ -82,7 +82,7 @@ my %searchFilterName = (
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 

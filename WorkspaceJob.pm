@@ -73,7 +73,7 @@ my $in_file          = $env->{in_file};
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 # user's sub folder names
@@ -310,8 +310,8 @@ sub showJobDetail {
     my $job_file_dir = "$workspace_dir/$sid/job/$job_name";
     my $res = newReadFileHandle("$job_file_dir/info.txt");
 
-    my $lineno    = 0;
-    my $job_type  = "";
+    my $lineno = 0;
+    my $job_type;
     my @set_names;
     my $datatype;
     my $dtype;
@@ -327,6 +327,8 @@ sub showJobDetail {
             } elsif ( $tag eq "--gene" ) {
                 @set_names = split( /\,/, $val );
             } elsif ( $tag eq "--scaffold" ) {
+                @set_names = split( /\,/, $val );
+            } elsif ( $tag eq "--function" ) {
                 @set_names = split( /\,/, $val );
             } elsif ( $tag eq "--datatype" ) {
                 $datatype = $val;
@@ -344,12 +346,14 @@ sub showJobDetail {
     print hiddenVar( "dtype", $dtype );
 
     for my $set_name (@set_names) {
-        if ( $job_type =~ /Genome/ ) {
+        if ( $job_type =~ /^Genome/ ) {
             print hiddenVar( 'genome_set', $set_name );
-        } elsif ( $job_type =~ /Gene/ ) {
+        } elsif ( $job_type =~ /^Gene/ ) {
             print hiddenVar( 'gene_set', $set_name );
-        } elsif ( $job_type =~ /Scaffold/ ) {
+        } elsif ( $job_type =~ /^Scaffold/ ) {
             print hiddenVar( 'scaf_set', $set_name );
+        } elsif ( $job_type =~ /^Function/ ) {
+            print hiddenVar( 'func_set', $set_name );
         }
     }
 
@@ -376,6 +380,12 @@ sub showJobDetail {
         showPairwiseANIJobDetail( $sid, $job_name, \@set_names, $datatype );
     } elsif ( $job_type eq 'Genome Blast' ) {
         showGenomeBlastDetail( $sid, $job_name, \@set_names, $datatype, $dtype );
+    } elsif ( $job_type eq 'Function Scaffold Search' ) {
+        showFunctionScaffoldSearchDetail( $sid, $job_name, \@set_names, $datatype );
+    } elsif ( $job_type eq 'Genome Save Function Gene' 
+        || $job_type eq 'Gene Save Function Gene' 
+        || $job_type eq 'Scaffold Save Function Gene' ) {
+        showSaveFuncGeneDetail( $sid, $job_name, \@set_names, $datatype );
     }
 
     print end_form();
@@ -962,6 +972,178 @@ sub showPairwiseANIJobDetail {
 }
 
 ###############################################################################
+# showFunctionScaffoldSearchDetail
+###############################################################################
+sub showFunctionScaffoldSearchDetail {
+    my ( $sid, $job_name, $set_names_ref, $datatype ) = @_;
+
+    my $dbh = dbLogin();
+
+    my %set2funcs;
+    my %set2shareSetName;
+    my @selected_funcs;
+    my @taxon_oids;
+    my %func_names;
+    my %taxon2name_h;
+    my %taxon_in_file_h;
+    my %taxon_db_h;
+    my %dbScaf2name_h;
+    my %taxon_scaffolds_h;
+    my %scaf_func2genes_h;
+    my $truncated_cols;
+        
+    my $job_file_dir = "$workspace_dir/$sid/job/$job_name";    
+    my $res = newReadFileHandle("$job_file_dir/profile.txt");
+    while ( my $line = $res->getline() ) {
+        chomp $line;
+        next if ( ! $line );
+
+        if ( $line =~ /\-\-funcset/ ) {
+            my ( $tag, $funcset_name, @funcs ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--funcset' ) {
+                my ( $owner, $x ) = WorkspaceUtil::splitAndValidateOwnerFileset( $sid, $funcset_name, $ownerFilesetDelim_message, $FUNC_FOLDER );
+                $funcset_name = WorkspaceUtil::getOwnerFilesetName( $owner, $x, $ownerFilesetDelim, $sid );
+                $set2funcs{$funcset_name} = \@funcs; 
+                my $share_set_name = WorkspaceUtil::fetchShareSetName( $dbh, $owner, $x, $sid );
+                $set2shareSetName{$funcset_name} = $share_set_name;
+            }
+        }
+        elsif ( $line =~ /\-\-selected_funcs/ ) {
+            my ( $tag, @funcs ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--selected_funcs' ) {
+                @selected_funcs = @funcs;
+            }
+        }
+        elsif ( $line =~ /\-\-taxon_oids/ ) {
+            my ( $tag, @taxons ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--taxon_oids' ) {
+                @taxon_oids = @taxons;
+            }
+        }
+        elsif ( $line =~ /\-\-func_names/ ) {
+            my ( $tag, $func, $name ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--func_names' ) {
+                $func_names{$func} = $name; 
+            }
+        }
+        elsif ( $line =~ /\-\-taxon2name_h/ ) {
+            my ( $tag, $taxon, $name ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--taxon2name_h' ) {
+                $taxon2name_h{$taxon} = $name; 
+            }
+        }
+        elsif ( $line =~ /\-\-taxon_in_file/ ) {
+            my ( $tag, $taxon ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--taxon_in_file' ) {
+                $taxon_in_file_h{$taxon} = 1; 
+            }
+        }
+        elsif ( $line =~ /\-\-taxon_db_h/ ) {
+            my ( $tag, $taxon ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--taxon_db_h' ) {
+                $taxon_db_h{$taxon} = 1; 
+            }
+        }
+        elsif ( $line =~ /\-\-dbScaf2name_h/ ) {
+            my ( $tag, $dbScaf, $name ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--dbScaf2name_h' ) {
+                $dbScaf2name_h{$dbScaf} = $name; 
+            }
+        }
+        elsif ( $line =~ /\-\-taxon_scaffolds_h/ ) {
+            my ( $tag, $taxons, @scafs ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--taxon_scaffolds_h' ) {
+                my %scaf_h;
+                for my $scaf (@scafs) {
+                    if ( $scaf ) {
+                        $scaf_h{$scaf} = 1;                        
+                    }
+                }
+                $taxon_scaffolds_h{$taxons} = \%scaf_h; 
+            }
+        }
+        elsif ( $line =~ /\-\-scaf_func2genes_h/ ) {
+            my ( $tag, $scaf, $func, @genes ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--scaf_func2genes_h' ) {
+                my %genes_h;
+                for my $gene (@genes) {
+                    if ( $gene ) {
+                        $genes_h{$gene} = 1;                        
+                    }
+                }
+                my $func2genes_href = $scaf_func2genes_h{$scaf};
+                if ( $func2genes_href ) {
+                    $func2genes_href->{$func} = \%genes_h;
+                }
+                else {
+                    my %func2genes_h;
+                    $func2genes_h{$func} = \%genes_h;
+                    $scaf_func2genes_h{$scaf} = \%func2genes_h;                    
+                }
+            }
+        }
+        elsif ( $line =~ /\-\-truncated_cols/ ) {
+            my ( $tag, $truncated_cols0 ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--truncated_cols' ) {
+                $truncated_cols = $truncated_cols0; 
+            }
+        }
+
+    }
+
+    require WorkspaceFuncSet;
+    WorkspaceFuncSet::printFuncScaffoldSearch( $sid, \%set2funcs,
+        \@selected_funcs, $datatype, \@taxon_oids, 
+        \%func_names, \%taxon2name_h, \%taxon_in_file_h, \%taxon_db_h, 
+        \%dbScaf2name_h, \%taxon_scaffolds_h, \%scaf_func2genes_h, 
+        $truncated_cols );
+
+}
+
+###############################################################################
+# showFunctionScaffoldSearchDetail
+###############################################################################
+sub showSaveFuncGeneDetail {
+    my ( $sid, $job_name, $set_names_ref, $datatype ) = @_;
+
+    my $fname;
+    my $total_saved;
+        
+    my $job_file_dir = "$workspace_dir/$sid/job/$job_name";    
+    my $res = newReadFileHandle("$job_file_dir/profile.txt");
+    while ( my $line = $res->getline() ) {
+        chomp $line;
+        next if ( ! $line );
+
+        if ( $line =~ /\-\-fname/ ) {
+            my ( $tag, $fname0 ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--fname' ) {
+                $fname = $fname0; 
+            }
+        }
+
+        if ( $line =~ /\-\-total_saved/ ) {
+            my ( $tag, $total_saved0 ) = split( /\t/, $line );
+            if ( $tag && $tag eq '--total_saved' ) {
+                $total_saved = $total_saved0; 
+            }
+        }
+
+    }
+
+    my $text = qq{
+        <p>
+        $total_saved genes saved to file <b>$fname</b><br/>
+        <font color=red>If you don't see the saved file, please have patience wait for the system update.</font>
+        </p>
+    };
+
+    Workspace::folderList( $GENE_FOLDER, $text );
+
+}
+
+
+###############################################################################
 # printSaveSelectedFuncGeneToWorkspace
 ###############################################################################
 sub printSaveSelectedFuncGeneToWorkspace {
@@ -1398,6 +1580,9 @@ sub getExistingJobSets {
     my @scafKmerJobs;
     my @scafPhyloJobs;
     my @funcScafSearchJobs;
+    my @genomeSaveFuncGeneJobs;
+    my @geneSaveFuncGeneJobs;
+    my @scafSaveFuncGeneJobs;
     
     my $sid = getContactOid();
     my $job_dir = "$workspace_dir/$sid/job";
@@ -1434,6 +1619,12 @@ sub getExistingJobSets {
                     push(@scafPhyloJobs, $x);
                 } elsif ( $job_type eq 'Function Scaffold Search' ) {
                     push(@funcScafSearchJobs, $x);
+                } elsif ( $job_type eq 'Genome Save Function Gene' ) {
+                    push(@genomeSaveFuncGeneJobs, $x);
+                } elsif ( $job_type eq 'Gene Save Function Gene' ) {
+                    push(@geneSaveFuncGeneJobs, $x);
+                } elsif ( $job_type eq 'Scaffold Save Function Gene' ) {
+                    push(@scafSaveFuncGeneJobs, $x);
                 }
                 last;
             }
@@ -1442,7 +1633,8 @@ sub getExistingJobSets {
     }
     
     return (\@genomeFuncJobs, \@genomeBlastJobs, \@genomePairwiseANIJobs, \@geneFuncJobs, 
-        \@scafFuncJobs, \@scafHistJobs, \@scafKmerJobs, \@scafPhyloJobs, \@funcScafSearchJobs);
+        \@scafFuncJobs, \@scafHistJobs, \@scafKmerJobs, \@scafPhyloJobs, \@funcScafSearchJobs,
+        \@genomeSaveFuncGeneJobs, \@geneSaveFuncGeneJobs, \@scafSaveFuncGeneJobs);
 }
 
 1;

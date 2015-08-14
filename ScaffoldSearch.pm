@@ -1,7 +1,7 @@
 #
 #
 #
-# $Id: ScaffoldSearch.pm 32833 2015-02-19 08:02:25Z jinghuahuang $
+# $Id: ScaffoldSearch.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 
 package ScaffoldSearch;
 use POSIX qw(ceil floor); 
@@ -43,7 +43,7 @@ if ( getSessionParam("maxGeneListResults") ne "" ) {
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 } 
 ## Let's try 10 min to see how it works
 $merfs_timeout_mins = 10;

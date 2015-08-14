@@ -1,5 +1,5 @@
 ############################################################################
-# $Id: MetagPhyloDist.pm 32705 2015-02-05 08:47:01Z jinghuahuang $
+# $Id: MetagPhyloDist.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package MetagPhyloDist;
 
@@ -51,7 +51,7 @@ my $mer_data_dir = $env->{mer_data_dir};
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 my $hmp_test = $env->{hmp_test};

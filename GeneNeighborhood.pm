@@ -1,7 +1,7 @@
 ############################################################################
 # GeneNeighborhood - Print gene neighborhoods for multiple orthologs
 #  or for selected genes.
-# $Id: GeneNeighborhood.pm 31333 2014-07-03 17:32:34Z jinghuahuang $
+# $Id: GeneNeighborhood.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package GeneNeighborhood;
 my $section = "GeneNeighborhood";
@@ -51,6 +51,7 @@ my $show_checkbox_remove = 0;
 ############################################################################
 sub dispatch {
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
 
     $show_checkbox = param("show_checkbox");
     if ( $show_checkbox eq "" ) {
@@ -235,7 +236,7 @@ sub printOrthologNeighborhoodsGo {
         my $url = "$section_cgi&page=neigFile&index=2&file=$file" . "&cog_color=$cog_color&show_checkbox=$show_checkbox";
         print qq{
             <input class='smbutton'
-                   type="button" 
+                   type="button"
                    value="Next &gt;"
                    onclick="window.open('$url', '_self')">
         };
@@ -357,7 +358,7 @@ sub printOrthologNeighborhoodsBBHLite {
         my $url = "$section_cgi&page=neigFile&index=2&file=$file" . "&cog_color=$cog_color&show_checkbox=$show_checkbox";
         print qq{
             <input class='smbutton'
-                   type="button" 
+                   type="button"
                    value="Next &gt;"
                    onclick="window.open('$url', '_self')">
         };
@@ -387,11 +388,11 @@ sub printOrthologNeighborhoodsCog_new_merfs {
 
     my $maxHomologResults = getSessionParam("maxHomologResults");
     $maxHomologResults = 200 if $maxHomologResults eq "";
-    
+
     my $num_neighborhoods = param("num_neighborhoods");
     $num_neighborhoods = $maxNeighborhoods if ( $num_neighborhoods eq "" );
-    
-    
+
+
     my ( $gene_oid2, $locus_type, $locus_tag, $gene_display_name, $start_coord, $end_coord, $strand, $scaffold ) =
       MetaUtil::getGeneInfo( $gene_oid, $taxon_oid, $data_type );
     print "Top Isolate Hits<br/>\n";
@@ -449,7 +450,7 @@ sub printOrthologNeighborhoodsCog_new_merfs {
     my @homologRecs;
     print "Calculating top hits<br>\n";
     require OtfBlast;
-    
+
     my $filterType   = OtfBlast::genePageTopHits( $dbh, $workspace_id, \@homologRecs, "", 0, 1, '', '', $seq );
 
     print "Done calculating top hits<br>\n";
@@ -523,7 +524,7 @@ sub printOrthologNeighborhoodsCog_new_merfs {
           = split( /\t/, $s );
          my $r = "$bit_score\t$homo_gene\t";
         push( @sortRecs, $r );
-    }    
+    }
     my @sortRecs2 = reverse( sort { $a <=> $b } (@sortRecs) );
     my @gene_oids = ();
     foreach my $sr (@sortRecs2) {
@@ -613,7 +614,7 @@ sub printOrthologNeighborhoodsCog_new_merfs {
         }
 
     }
-    
+
 #    my $x1 = $#homologRecsVaild;
 #    webLog("======= size 1 = $x1\n");
 #    my $x1 = $#recs;
@@ -652,7 +653,7 @@ sub printOrthologNeighborhoodsCog_new_merfs {
         $warningMsg = "$nitems (out of $count) neighborhoods are shown.";
         if ( $count > 50 ) {
             $warningMsg .= qq{
-                Please note that showing <u>all 
+                Please note that showing <u>all
                 $count</u> neighborhoods may take time.
             };
         }
@@ -712,8 +713,8 @@ sub printOrthologNeighborhoodsCog_new {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
     my $sql       = qq{
-            select g.taxon 
-            from gene g 
+            select g.taxon
+            from gene g
             where g.gene_oid = ?
             $rclause
             $imgClause
@@ -731,7 +732,7 @@ sub printOrthologNeighborhoodsCog_new {
     printMainForm();
     print "<h1>Gene Neighborhoods</h1>\n";
 
-    my $sql = qq{ 
+    my $sql = qq{
         select taxon_display_name from taxon
         where taxon_oid = ?
     };
@@ -816,12 +817,12 @@ sub printOrthologNeighborhoodsCog_new {
     my $aa_seq_length1 = 0;
     my $rclause        = WebUtil::urClause('g.taxon');
     my $imgClause      = WebUtil::imgClauseNoTaxon('g.taxon');
-    my $sql            = qq{ 
+    my $sql            = qq{
             select g.strand, g.aa_seq_length
             from gene g
             where g.gene_oid = ?
             $rclause
-            $imgClause 
+            $imgClause
     };
     my $cur = execSql( $dbh, $sql, $verbose, $gene_oid );
     ( $strand1, $aa_seq_length1 ) = $cur->fetchrow();
@@ -925,7 +926,7 @@ sub printOrthologNeighborhoodsCog_new {
         $warningMsg = "$nitems (out of $count) neighborhoods are shown.";
         if ( $count > 50 ) {
             $warningMsg .= qq{
-                Please note that showing <u>all 
+                Please note that showing <u>all
                 $count</u> neighborhoods may take time.
             };
         }
@@ -1020,8 +1021,8 @@ sub printOrthologNeighborhoodsCog {
         my $rclause   = WebUtil::urClause('g.taxon');
         my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
         my $sql       = qq{
-            select g.taxon 
-            from gene g 
+            select g.taxon
+            from gene g
             where g.gene_oid = ?
             $rclause
             $imgClause
@@ -1043,7 +1044,7 @@ sub printOrthologNeighborhoodsCog {
     printMainForm();
     print "<h1>Gene Neighborhoods</h1>\n";
 
-    my $sql = qq{ 
+    my $sql = qq{
         select taxon_display_name from taxon
         where taxon_oid = ?
     };
@@ -1115,12 +1116,12 @@ sub printOrthologNeighborhoodsCog {
     {
         my $rclause   = WebUtil::urClause('g.taxon');
         my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
-        my $sql       = qq{ 
+        my $sql       = qq{
             select g.strand, g.aa_seq_length
             from gene g
             where g.gene_oid = ?
             $rclause
-            $imgClause 
+            $imgClause
 	};
         my $cur = execSql( $dbh, $sql, $verbose, $gene_oid );
         ( $strand1, $aa_seq_length1 ) = $cur->fetchrow();
@@ -1232,7 +1233,7 @@ sub printOrthologNeighborhoodsCog {
         $warningMsg = "$nitems (out of $count) neighborhoods are shown.";
         if ( $count > 50 ) {
             $warningMsg .= qq{
-                Please note that showing <u>all 
+                Please note that showing <u>all
                 $count</u> neighborhoods may take time.
             };
         }
@@ -1351,7 +1352,7 @@ sub printSelectedNeighborhoods {
 
     print qq{
         <script language="JavaScript" type="text/javascript">
-        function mySubmit(x, c) {         
+        function mySubmit(x, c) {
             var f = document.mainForm.gene_oid_neigh;
             var str = "";
             for (var i = 0; i < f.length; i++) {
@@ -1359,16 +1360,16 @@ sub printSelectedNeighborhoods {
                 if (e.type == "checkbox" && e.checked == true) {
                     str = str + "," + e.value;
                 }
-            }         
-         
+            }
+
             //alert(str);
-            document.mainForm.gene_oid_neigh_str.value = 
+            document.mainForm.gene_oid_neigh_str.value =
 		document.mainForm.gene_oid_neigh_str.value + str;
             document.mainForm.index.value = x;
             document.mainForm.cog_color.value = c;
             document.mainForm.submit();
         }
-        </script>    
+        </script>
     };
 
     print hiddenVar( "alignGenes",           $alignGenes );
@@ -1446,9 +1447,9 @@ sub printSelectedNeighborhoods {
         return;
     }
 
-    my $direction = 
+    my $direction =
 	"5'-3' direction of each gene selected in the gene cart left to right";
-    $direction = 
+    $direction =
 	"5'-3' direction of the (+) plus strand always left to right, on top"
 	if (!$alignGenes);
 
@@ -1531,7 +1532,7 @@ sub printSelectedNeighborhoods {
             # print Prev button
             print qq{
 		<input class='smbutton'
-		       type="button" 
+		       type="button"
 		       value="&lt; Prev"
 		       onclick="javascript:history.back()">
 	    };
@@ -1541,7 +1542,7 @@ sub printSelectedNeighborhoods {
         # Next button
         print qq{
             <input class='smbutton'
-		   type="button" 
+		   type="button"
 		   value="Next &gt;"
 		   onclick="javascript:mySubmit('$index', '$cog_color')">
 	};
@@ -1549,8 +1550,8 @@ sub printSelectedNeighborhoods {
         if ( $index > 1 ) {
 
             # print Prev button
-            print qq{ 
-                <input class='smbutton' 
+            print qq{
+                <input class='smbutton'
                        type="button"
                        value="&lt; Prev"
                        onclick="javascript:history.back()">
@@ -1583,7 +1584,7 @@ sub printNeighborhoodPanels {
         my ( $gene_oid, $panelStrand ) = split( /\t/, $r );
         webLog "get color gene_oid='$gene_oid' " . currDateTime() . "\n"
           if $verbose >= 1;
-        getColors( $dbh, $gene_oid, \%groupCount );        
+        getColors( $dbh, $gene_oid, \%groupCount );
     }
     my %groupColors;
     assignGroupColors( \%groupCount, \%groupColors );
@@ -1642,7 +1643,7 @@ sub printOneNeighborhood {
            select scf.scaffold_oid, scf.scaffold_name, ss.seq_length,
               g.start_coord, g.end_coord, g.strand, tx.taxon_display_name,
               tx.taxon_oid, scf.mol_topology
-           from gene g, scaffold scf, scaffold_stats ss, taxon tx 
+           from gene g, scaffold scf, scaffold_stats ss, taxon tx
            where g.taxon = tx.taxon_oid
            $rclause
            $imgClause
@@ -1668,8 +1669,8 @@ sub printOneNeighborhood {
             my $rclause   = WebUtil::urClause('tx');
             my $imgClause = WebUtil::imgClause('tx');
             my $sql       = qq{
-                select tx.taxon_display_name 
-                from taxon tx 
+                select tx.taxon_display_name
+                from taxon tx
                 where tx.taxon_oid = ?
                 $rclause
                 $imgClause
@@ -1680,7 +1681,7 @@ sub printOneNeighborhood {
         }
 
         if ( $d2 eq 'assembled' ) {
-            my ( $gene_oid2, $locus_type, $locus_tag, $gene_display_name, 
+            my ( $gene_oid2, $locus_type, $locus_tag, $gene_display_name,
 		      $start_coord, $end_coord, $strand, $scaf_oid ) =
               MetaUtil::getGeneInfo( $g2, $t2, $d2 );
             $scaffold_oid = $t2 . "_" . $d2 . "_" . $scaf_oid;
@@ -1693,7 +1694,7 @@ sub printOneNeighborhood {
                 $scaffold_name = $taxon_display_name . ": " . $scaf_oid;
             }
 
-            my ( $scaf_len, $scaf_gc, $scaf_gene_cnt ) 
+            my ( $scaf_len, $scaf_gc, $scaf_gene_cnt )
 		      = MetaUtil::getScaffoldStats( $t2, $d2, $scaf_oid );
 
             $scf_seq_length = $scaf_len;
@@ -1718,7 +1719,7 @@ sub printOneNeighborhood {
 	 . "scaffold=$scaffold_oid\n";
 
     #ANNA: fix the size of the neighborhood if scaffold is smaller
-    #$flank_length = $scf_seq_length/2 
+    #$flank_length = $scf_seq_length/2
     #if $scf_seq_length/2 < $flank_length && $topology eq "circular";
 
     my $mid_coord   = int(($end_coord0 - $start_coord0)/2) + $start_coord0 + 1;
@@ -1747,7 +1748,7 @@ sub printOneNeighborhood {
             $rf2        = $right_flank2;
             $in_boundry = 1;
         }
-    } 
+    }
 
     my @recs = ();
     #my %gene2Enzymes;
@@ -1780,7 +1781,7 @@ sub printOneNeighborhood {
             my @cogs = MetaUtil::getGeneCogId( $gene_oid, $t2, $d2 );
             my $cluster_id = join( ",", @cogs );
 
-            my ( $prod_name, $source ) 
+            my ( $prod_name, $source )
         		= MetaUtil::getGeneProdNameSource( $gene_oid, $t2, $d2 );
             if ($prod_name) {
                 $gene_display_name = $prod_name;
@@ -1802,21 +1803,21 @@ sub printOneNeighborhood {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
     my $sql       = qq{
-        select distinct g.gene_oid, g.gene_symbol, 
+        select distinct g.gene_oid, g.gene_symbol,
               g.gene_display_name,
-              g.locus_type, g.locus_tag, 
+              g.locus_type, g.locus_tag,
               g.start_coord, g.end_coord, g.strand,
-              g.aa_seq_length, dt.cog, g.scaffold, 
+              g.aa_seq_length, dt.cog, g.scaffold,
               g.is_pseudogene, g.cds_frag_coord
         from gene_cog_groups dt, gene g
         where g.scaffold = ?
         $rclause
         $imgClause
         and g.gene_oid = dt.gene_oid (+)
-        and g.start_coord > 0 
-        and g.end_coord > 0 
-        and ( (g.start_coord >= ? and g.end_coord <= ?) or 
-              ( (g.end_coord + g.start_coord) / 2 >= ? and 
+        and g.start_coord > 0
+        and g.end_coord > 0
+        and ( (g.start_coord >= ? and g.end_coord <= ?) or
+              ( (g.end_coord + g.start_coord) / 2 >= ? and
                 (g.end_coord + g.start_coord) / 2 <= ? ) )
     };
     my @binds = ( $scaffold_oid, $left_flank, $right_flank, $left_flank, $right_flank );
@@ -1868,7 +1869,7 @@ sub printOneNeighborhood {
             my $cur = execSql( $dbh, $sql, $verbose, @mybinds );
             for ( ; ; ) {
                 my (
-                     $gene_oid, $gene_symbol, $gene_display_name, 
+                     $gene_oid, $gene_symbol, $gene_display_name,
                      $locus_type, $locus_tag, $start_coord, $end_coord,
                      $strand, $aa_seq_length,
                      $cluster_id, $scaffold, $is_pseudogene, $cds_frag_coord
@@ -1903,7 +1904,7 @@ sub printOneNeighborhood {
         $label = "gene $gene_oid" if $label eq "";
         $label .= " : $gene_display_name";
         $label .= " $start_coord..$end_coord";
-        $label .= GeneUtil::formMultFragCoordsLine( @coordLines );                
+        $label .= GeneUtil::formMultFragCoordsLine( @coordLines );
 
         if ( $locus_type eq "CDS" ) {
             $label .= "(${aa_seq_length}aa)";
@@ -1948,11 +1949,11 @@ sub printOneNeighborhood {
             foreach my $line (@coordLines) {
                 my ( $frag_start, $frag_end ) = split( /\.\./, $line );
                 my $tmplabel = $label . " $frag_start..$frag_end";
-                $sp->addGene( $gene_oid, $frag_start, $frag_end, 
+                $sp->addGene( $gene_oid, $frag_start, $frag_end,
 			      $strand, $color, $tmplabel );
             }
         } else {
-            $sp->addGene( $gene_oid, $start_coord, $end_coord, 
+            $sp->addGene( $gene_oid, $start_coord, $end_coord,
 			  $strand, $color, $label );
         }
 
@@ -1960,7 +1961,7 @@ sub printOneNeighborhood {
              && exists $gene_cart_genes_href->{$gene_oid} )
         {
             # color gene cart genes red
-            $sp->addBox( $start_coord, $end_coord, $sp->{color_red}, 
+            $sp->addBox( $start_coord, $end_coord, $sp->{color_red},
 			 $strand, "Gene Cart $label", $gene_oid );
         }
     }    # end foreach r
@@ -2014,12 +2015,12 @@ sub printOneNeighborhood {
         my $url = "xml.cgi?section=Cart&gene_oid=$gene_oid0";
         print qq{
             <td>
-            <input id='ncbox$gene_oid0' 
+            <input id='ncbox$gene_oid0'
                    name='plotbox'
                    type='checkbox'
                    $ck
                    title='Add to neighborhood cart'
-                   value='$gene_oid0' 
+                   value='$gene_oid0'
                    onclick="addNeighborhoodCart('$url', 'ncbox$gene_oid0')">
             </td>
             <td>
@@ -2062,7 +2063,7 @@ sub getColors {
         my $rclause   = WebUtil::urClause('tx');
         my $imgClause = WebUtil::imgClause('tx');
         my $sql       = qq{
-            select scf.scaffold_oid, g.start_coord, g.end_coord, g.strand, 
+            select scf.scaffold_oid, g.start_coord, g.end_coord, g.strand,
                    tx.taxon_oid, tx.taxon_display_name
             from gene g, scaffold scf, taxon tx
             where g.gene_oid = ?
@@ -2093,7 +2094,7 @@ sub getColors {
     my $left_flank  = $mid_coord - $flank_length + 1;
     my $right_flank = $mid_coord + $flank_length + 1;
 
-    if ( isInt($gene_oid0) ) {        
+    if ( isInt($gene_oid0) ) {
         my $sql = qq{
 	    select dt.gene_oid, dt.cog
             from gene_cog_groups dt
@@ -2406,7 +2407,7 @@ sub printNextNeighborhoods {
             # print Prev button
             print qq{
             <input class='smbutton'
-                   type="button" 
+                   type="button"
                    value="&lt; Prev"
                    onclick="javascript:history.back()">
             };
@@ -2419,7 +2420,7 @@ sub printNextNeighborhoods {
           "$section_cgi&page=neigFile&index=$index&file=$file" . "&cog_color=$cog_color&show_checkbox=$show_checkbox";
         print qq{
             <input class='smbutton'
-                   type="button" 
+                   type="button"
                    value="Next &gt;"
                    onclick="window.open('$url', '_self')">
         };
@@ -2437,8 +2438,8 @@ sub printTrackerDiv {
         <script src="$base_url/cart.js" ></script>
         <script type="text/javascript"
           src="$YUI/build/yahoo-dom-event/yahoo-dom-event.js"></script>
-        <script src="$YUI/build/yahoo/yahoo-min.js" ></script> 
-        <script src="$YUI/build/event/event-min.js" ></script>          
+        <script src="$YUI/build/yahoo/yahoo-min.js" ></script>
+        <script src="$YUI/build/event/event-min.js" ></script>
         <script src="$YUI/build/connection/connection-min.js"></script>
         };
 
@@ -2461,19 +2462,19 @@ sub printTrackerDiv {
 
         print qq{
         <p>
-        <input id='genedetails' type='radio' name='mygenedetail' 
+        <input id='genedetails' type='radio' name='mygenedetail'
         onchange='showSelectGenes()' value='gene_details' checked>
         Use mouse-click on a gene in a neighborhood to <u>view the details</u>
         page for that gene
         <br/>
-        <input id='geneselect' type='radio' name='mygenedetail' 
+        <input id='geneselect' type='radio' name='mygenedetail'
         onchange='showSelectGenes()' value='gene_oid' >
         Use mouse-click on a gene in a neighborhood to <u>select</u> it
         into a virtual cart
-        </p>    
+        </p>
         };
 
-        print qq{            
+        print qq{
         <div id='geneSelectDiv' style='display: none;'>
         <p>
         <input type="button" class="smbutton" value="View selected genes"
@@ -2490,9 +2491,9 @@ sub printTrackerDiv {
         <u>Selected</u>: Neighborhoods = $size &nbsp;&nbsp; Genes = $size2
         </p>
         </div>
-        
+
         <p>
-        <input type="button" class="medbutton" 
+        <input type="button" class="medbutton"
         value="View selected neighborhoods"
         onclick="window.open('main.cgi?section=GeneNeighborhood&page=neighborhoodCart&show_checkbox=$show_checkbox&cog_color=$cog_color&subj_gene_oid=$subj_gene_oid','_self')" >
 
@@ -2519,7 +2520,7 @@ sub printTrackerDiv {
 
                 showSelectGenes();
             }
-            </script> 
+            </script>
         };
 
     } elsif ($show_checkbox_remove) {

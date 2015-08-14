@@ -1,6 +1,6 @@
 ############################################################################
 #
-# $Id: MetagenomeGraph.pm 31256 2014-06-25 06:27:22Z jinghuahuang $
+# $Id: MetagenomeGraph.pm 33981 2015-08-13 01:12:00Z aireland $
 #
 # package to draw 2 recur plots and scatter plot
 #
@@ -9,7 +9,7 @@ package MetagenomeGraph;
 
 require Exporter;
 @ISA    = qw( Exporter );
-@EXPORT = qw( 
+@EXPORT = qw(
 );
 
 use strict;
@@ -58,6 +58,7 @@ sub dispatch {
 
     my $sid       = getContactOid();
     my $taxon_oid = param("taxon_oid");
+    timeout( 60 * 40 );    # timeout in 40 mins (from main.pl)
 
 #    if ( $user_restricted_site && HtmlUtil::isCgiCacheEnable() ) {
 #        my $x = WebUtil::isTaxonPublic( $dbh, $taxon_oid );
@@ -93,22 +94,22 @@ sub dispatch {
 }
 
 sub getPhylumGeneFilePercentInfo {
-    my ( $dbh, $taxon_oid, 
-        $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, $recs_aref, 
+    my ( $dbh, $taxon_oid,
+        $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, $recs_aref,
         $homolog_start_coord_min, $homolog_end_coord_max,
         $gene_oids_href, $homolog_gene_oids_href, $gene2homolog_hits_href
         )
       = @_;
-        
+
     my $rclause   = WebUtil::urClause('t');
     my $imgClause = WebUtil::imgClause('t');
 
     my @gene_oids = keys(%$gene_oids_href);
     my $str = OracleUtil::getNumberIdsInClause( $dbh, @gene_oids );
-    
+
     my $sql = qq{
-        select g.gene_oid, t.taxon_oid, t.taxon_display_name, 
-            g.scaffold, s.scaffold_name, 
+        select g.gene_oid, t.taxon_oid, t.taxon_display_name,
+            g.scaffold, s.scaffold_name,
             g.start_coord, g.end_coord, g.strand, g.product_name
         from taxon t, gene g, scaffold s
         where t.taxon_oid = ?
@@ -120,14 +121,14 @@ sub getPhylumGeneFilePercentInfo {
     };
 
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid );
-    
+
     my %geneInfo;
     for ( ; ; ) {
-        my ( $gene_oid,    $taxon_oid, $taxon_name,   $scaffold,  $scaffold_name, 
+        my ( $gene_oid,    $taxon_oid, $taxon_name,   $scaffold,  $scaffold_name,
              $metag_start, $metag_end, $metag_strand, $product_name )
           = $cur->fetchrow();
         last if !$gene_oid;
-        
+
         my $r = $taxon_oid . "\t";
         $r .= $taxon_name. "\t";
         $r .= $scaffold. "\t";
@@ -137,14 +138,14 @@ sub getPhylumGeneFilePercentInfo {
         $r .= $metag_strand . "\t";
         $r .= $product_name;
         $geneInfo{$gene_oid} = $r;
-    }  
+    }
     $cur->finish();
     OracleUtil::truncTable( $dbh, "gtt_num_id" )
       if ( $str =~ /gtt_num_id/i );
 
     my @binds;
-    
-    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2( 
+
+    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2(
         $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species );
     push(@binds, @$binds_t_clause_ref) if ( $binds_t_clause_ref );
 
@@ -161,12 +162,12 @@ sub getPhylumGeneFilePercentInfo {
         $taxonomyClause
         $rclause
         $imgClause
-    };    
+    };
     #print "getPhylumGeneFilePercentInfo() sql: $sql<br/>\n";
     #print "getPhylumGeneFilePercentInfo() binds: @binds<br/>\n";
 
     my $cur = execSql( $dbh, $sql, $verbose, @binds );
-    
+
     my %homologGeneInfo;
     for ( ; ; ) {
         my ( $homolog_gene_oid,  $homolog_scaffold_oid,  $homolog_scaffold_name,
@@ -193,7 +194,7 @@ sub getPhylumGeneFilePercentInfo {
 
         my ($gene_oid, $homolog_gene) = split(/ /, $key);
 
-        my ( $taxon_oid, $taxon_name,   $scaffold,  $scaffold_name, 
+        my ( $taxon_oid, $taxon_name,   $scaffold,  $scaffold_name,
              $metag_start, $metag_end, $metag_strand, $product_name )
           = split( /\t/, $geneInfo{$gene_oid} );
 
@@ -243,16 +244,16 @@ sub getPhylumGeneFilePercentInfoMinMax {
 
     my @binds;
 
-    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2( 
+    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2(
         $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species );
     push(@binds, @$binds_t_clause_ref) if ( $binds_t_clause_ref );
 
     my $rclause   = WebUtil::urClause('t');
     my $imgClause = WebUtil::imgClause('t');
-    
+
     my @homolog_gene_oids = keys(%$homolog_gene_oids_href);
     my $str = OracleUtil::getNumberIdsInClause( $dbh, @homolog_gene_oids );
-    
+
     my $sql = qq{
         select min( g.start_coord), max(g.end_coord)
         from gene g, taxon t
@@ -352,7 +353,7 @@ sub printScatter {
     printStartWorkingDiv();
 
     if ( $merfsGenome ) {
-        
+
         my %gene_oids_h;
         my %homolog_gene_oids_h;
         my %gene2homolog_hits;
@@ -360,14 +361,14 @@ sub printScatter {
         my @percent_list = ( 30, 60, 90 );
         for my $percent_identity (@percent_list) {
             my @workspace_ids_data;
-            PhyloUtil::getFilePhyloGeneList( 
-                $taxon_oid, $data_type, $percent_identity, $plus, 
-                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, 
-                $rna16s, 0, $limit, \@workspace_ids_data ); # 10000 
-    
+            PhyloUtil::getFilePhyloGeneList(
+                $taxon_oid, $data_type, $percent_identity, $plus,
+                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species,
+                $rna16s, 0, $limit, \@workspace_ids_data ); # 10000
+
             for my $r (@workspace_ids_data) {
-                my ( 
-                    $workspace_id, $per_cent, $homolog_gene, 
+                my (
+                    $workspace_id, $per_cent, $homolog_gene,
                     $homo_taxon, $copies, @rest
                   )
                   = split( /\t/, $r );
@@ -375,11 +376,11 @@ sub printScatter {
                 my ($taxon4, $data_type4, $gene_oid2) = split(/ /, $workspace_id);
                 $gene_oids_h{$gene_oid2} = 1;
                 $homolog_gene_oids_h{$homolog_gene} = 1;
-    
+
                 my $gene2homolog = "$gene_oid2 $homolog_gene";
                 $gene2homolog_hits{$gene2homolog} = $r;
             }
-            
+
             if($limit) {
                 my $size = $#workspace_ids_data;
                 if($percent_identity == 30 && $size > $limit) {
@@ -390,12 +391,12 @@ sub printScatter {
                     next;
                 }
             }
-            
+
         }
 
         if ( $range eq "" ) {
             # gets min max of start and end coord of metag on ref genome
-            ( $min1, $max1 ) = getPhylumGeneFilePercentInfoMinMax( $dbh, 
+            ( $min1, $max1 ) = getPhylumGeneFilePercentInfoMinMax( $dbh,
                 $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \%homolog_gene_oids_h );
         } else {
             ( $min1, $max1 ) = split( /-/, $range );
@@ -403,17 +404,17 @@ sub printScatter {
         #print "printScatter() min1: $min1; max1: $max1<br/>\n";
 
         getPhylumGeneFilePercentInfoMERFS( $dbh, $taxon_oid, $data_type,
-            $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \@records, $min1, $max1, 
-            \%gene_oids_h, \%homolog_gene_oids_h, \%gene2homolog_hits, $limit );            
-            
-    } 
+            $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \@records, $min1, $max1,
+            \%gene_oids_h, \%homolog_gene_oids_h, \%gene2homolog_hits, $limit );
+
+    }
     else {
 
         my $use_phylo_file = 0;
         my $phylo_dir_name = MetaUtil::getPhyloDistTaxonDir( $taxon_oid );
         if ( -e $phylo_dir_name ) {
             $use_phylo_file = 1;
-        }    
+        }
 
         if ( $use_phylo_file ) {
             my %gene_oids_h;
@@ -423,11 +424,11 @@ sub printScatter {
             my @percent_list = ( 30, 60, 90 );
             for my $percent_identity (@percent_list) {
                 my @workspace_ids_data;
-                PhyloUtil::getFilePhyloGeneList( 
-                    $taxon_oid, $data_type, $percent_identity, $plus, 
-                    $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, 
+                PhyloUtil::getFilePhyloGeneList(
+                    $taxon_oid, $data_type, $percent_identity, $plus,
+                    $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species,
                     $rna16s, 0, '', \@workspace_ids_data );
-    
+
                 for my $r (@workspace_ids_data) {
                     my (
                         $workspace_id, $per_cent, $homolog_gene,
@@ -438,7 +439,7 @@ sub printScatter {
                     my ($taxon4, $data_type4, $gene_oid2) = split(/ /, $workspace_id);
                     $gene_oids_h{$gene_oid2} = 1;
                     $homolog_gene_oids_h{$homolog_gene} = 1;
-    
+
                     my $gene2homolog = "$gene_oid2 $homolog_gene";
                     $gene2homolog_hits{$gene2homolog} = $r;
                 }
@@ -446,30 +447,30 @@ sub printScatter {
 
             if ( $range eq "" ) {
                 # gets min max of start and end coord of metag on ref genome
-                ( $min1, $max1 ) = getPhylumGeneFilePercentInfoMinMax( $dbh, 
+                ( $min1, $max1 ) = getPhylumGeneFilePercentInfoMinMax( $dbh,
                     $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \%homolog_gene_oids_h );
             } else {
                 ( $min1, $max1 ) = split( /-/, $range );
             }
             #print "printScatter() min1: $min1; max1: $max1<br/>\n";
 
-            getPhylumGeneFilePercentInfo( $dbh, $taxon_oid, 
-                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \@records, $min1, $max1, 
-                \%gene_oids_h, \%homolog_gene_oids_h, \%gene2homolog_hits );            
-            
+            getPhylumGeneFilePercentInfo( $dbh, $taxon_oid,
+                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, \@records, $min1, $max1,
+                \%gene_oids_h, \%homolog_gene_oids_h, \%gene2homolog_hits );
+
         }
         else {
 
             if ( $range eq "" ) {
                 # gets min max of start and end coord of metag on ref genome
-                ( $min1, $max1 ) = GraphUtil::getPhylumGenePercentInfoMinMax( $dbh, $taxon_oid, 
+                ( $min1, $max1 ) = GraphUtil::getPhylumGenePercentInfoMinMax( $dbh, $taxon_oid,
                     $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, "" );
             } else {
                 ( $min1, $max1 ) = split( /-/, $range );
             }
-    
-            GraphUtil::getPhylumGenePercentInfo( $dbh, $taxon_oid, 
-                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, 
+
+            GraphUtil::getPhylumGenePercentInfo( $dbh, $taxon_oid,
+                $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species,
                 \@records, $min1, $max1, "" );
         }
 
@@ -486,14 +487,14 @@ sub printScatter {
     $seq_length = $max1 if ( $range eq "" );
 
     my $xincr = ceil( $seq_length / 10 );
-    
 
-    my $geneoids_href; 
+
+    my $geneoids_href;
 
     if ( $strand eq "pos" ) {
         print "<p>Positive Strands Plot<p>\n";
         if ( $range eq "" ) {
-            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href, 
+            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href,
                        $xincr, "+", $merfsGenome, $taxon_oid, 1 );
         } else {
             GraphUtil::drawScatterPanel( $min1, $max1, \@records, $geneoids_href,
@@ -502,20 +503,20 @@ sub printScatter {
     } elsif ( $strand eq "neg" ) {
         print "<p>Negative Strands Plot<p>\n";
         if ( $range eq "" ) {
-            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href, 
+            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href,
                        $xincr, "-", $merfsGenome, $taxon_oid, 1 );
         } else {
-            GraphUtil::drawScatterPanel( $min1, $max1, \@records, $geneoids_href, 
+            GraphUtil::drawScatterPanel( $min1, $max1, \@records, $geneoids_href,
                        $xincr, "-", $merfsGenome, $taxon_oid, 1 );
         }
     } else {
         print "<p>All Strands Plot<p>\n";
         if ( $range eq "" ) {
-            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href, 
+            GraphUtil::drawScatterPanel( 0, $seq_length, \@records, $geneoids_href,
                        $xincr, "+-", $merfsGenome, $taxon_oid, 1 );
         } else {
             #  test zoom selection
-            GraphUtil::drawScatterPanel( $min1, $max1, \@records, $geneoids_href, 
+            GraphUtil::drawScatterPanel( $min1, $max1, \@records, $geneoids_href,
                        $xincr, "+-", $merfsGenome, $taxon_oid, 1 );
         }
     }
@@ -551,31 +552,31 @@ sub printScatter {
 
 sub getPhylumGeneFilePercentInfoMERFS {
     my ( $dbh, $taxon_oid, $data_type,
-        $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, $recs_aref, 
+        $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species, $recs_aref,
         $homolog_start_coord_min, $homolog_end_coord_max,
         $gene_oids_href, $homolog_gene_oids_href, $gene2homolog_hits_href, $max_count )
       = @_;
 
     my $rclause   = WebUtil::urClause('t');
     my $imgClause = WebUtil::imgClause('t');
-    my $taxon_name = QueryUtil::fetchSingleTaxonName( $dbh, $taxon_oid, $rclause, $imgClause );    
-    
+    my $taxon_name = QueryUtil::fetchSingleTaxonName( $dbh, $taxon_oid, $rclause, $imgClause );
+
     my %allGenes;
     for my $gene_oid (keys %$gene_oids_href) {
         my $workspace_id = "$taxon_oid $data_type $gene_oid";
-        $allGenes{$workspace_id} = 1;        
+        $allGenes{$workspace_id} = 1;
     }
 
     my %geneInfo;
     MetaUtil::getAllMetaGeneInfo( \%allGenes, '', \%geneInfo, '', '', 1, '', '', $max_count );
-    
+
     my (%names) = MetaUtil::getGeneProdNamesForTaxon($taxon_oid, $data_type, $max_count, 1);
 
     my @binds;
-    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2( 
+    my ($taxonomyClause, $binds_t_clause_ref) = PhyloUtil::getTaxonomyClause2(
         $domain, $phylum, $ir_class, $ir_order, $family, $genus, $species );
     push(@binds, @$binds_t_clause_ref) if ( $binds_t_clause_ref );
-        
+
     my @homolog_gene_oids = keys(%$homolog_gene_oids_href);
     my $str = OracleUtil::getNumberIdsInClause( $dbh, @homolog_gene_oids );
 
@@ -589,12 +590,12 @@ sub getPhylumGeneFilePercentInfoMERFS {
         $taxonomyClause
         $rclause
         $imgClause
-    };    
+    };
     #print "getPhylumGeneFilePercentInfoMERFS() sql: $sql<br/>\n";
     #print "getPhylumGeneFilePercentInfoMERFS() binds: @binds<br/>\n";
 
     my $cur = execSql( $dbh, $sql, $verbose, @binds );
-    
+
     my %homologGeneInfo;
     for ( ; ; ) {
         my ( $homolog_gene_oid,  $homolog_scaffold_oid,  $homolog_scaffold_name,
@@ -622,12 +623,12 @@ sub getPhylumGeneFilePercentInfoMERFS {
 
         my ($gene_oid, $homolog_gene) = split(/ /, $key);
 
-        my ($locus_type, $locus_tag, $gene_display_name, $metag_start, $metag_end, $metag_strand, $scaffold, $tid2, $dtype2) 
+        my ($locus_type, $locus_tag, $gene_display_name, $metag_start, $metag_end, $metag_strand, $scaffold, $tid2, $dtype2)
             = split(/\t/, $geneInfo{$workspace_id});
         my $scaffold_name = $scaffold; #$scaffold_name is the same as $scaffold for metagenome in file ?
 
         my $product_name = $names{$gene_oid};
-            
+
         my $homologGeneInfo_r = $homologGeneInfo{$homolog_gene};
         my ( $homolog_scaffold_oid, $homolog_scaffold_name, $strand, $start, $end )
           = split( /\t/, $homologGeneInfo{$homolog_gene} );
@@ -653,7 +654,7 @@ sub getPhylumGeneFilePercentInfoMERFS {
         push( @rec,        $start );
         push( @rec,        $end );
         push( @rec,        $scaffold );
-        push( @rec,        $scaffold_name ); 
+        push( @rec,        $scaffold_name );
         push( @rec,        0 );
         push( @rec,        0 );
         push( @rec,        $homolog_gene );

@@ -1,7 +1,7 @@
 ###########################################################################
 #
 #
-# $Id: GeneCassetteSearch.pm 30629 2014-04-14 21:26:04Z klchu $
+# $Id: GeneCassetteSearch.pm 33981 2015-08-13 01:12:00Z aireland $
 
 package GeneCassetteSearch;
 my $section = "GeneCassetteSearch";
@@ -52,9 +52,10 @@ my $BATCH_SIZE = 999;
 
 sub dispatch {
     my ($numTaxon) = @_;    # number of saved genomes
-    
+
     return if(!$enable_cassette);
-    
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
+
     $numTaxon = 0 if ( $numTaxon eq "" );
     my $sid  = getContactOid();
     my $page = param("page");
@@ -101,7 +102,7 @@ sub printTopPage {
         <br/>
         <a href='$section_cgi&page=form'> text search </a>
         <br/>
-        
+
     };
 }
 
@@ -271,13 +272,13 @@ printEndWorkingDiv();
     if ( $sort eq "genecount" ) {
         print qq{
         Sorted by the number of Cassette gene count
-        </p>            
+        </p>
         };
 
     } else {
         print qq{
-        Sorted by the number of matches 
-        </p>            
+        Sorted by the number of matches
+        </p>
         };
     }
 
@@ -374,7 +375,7 @@ YUI
     $page_num++;
     print qq{
         <script language="javascript" type="text/javascript">
-        function mySubmit() {          
+        function mySubmit() {
             document.mainForm.submit();
         }
         </script>
@@ -396,22 +397,22 @@ YUI
     print "<p>\n";
     if ( $page_num > 2 ) {
         print qq{
-        <input type="button" 
-        name="prev" 
-        value="&lt; Prev" 
+        <input type="button"
+        name="prev"
+        value="&lt; Prev"
         class="meddefbutton"
-        onClick='javascript:history.back()' />      
-        &nbsp;  
+        onClick='javascript:history.back()' />
+        &nbsp;
         };
 
     }
     if ( $count < $size ) {
         print qq{
-        <input type="button" 
-        name="_section_GeneCassetteSearch_runSearch" 
-        value="Next &gt;" 
+        <input type="button"
+        name="_section_GeneCassetteSearch_runSearch"
+        value="Next &gt;"
         class="meddefbutton"
-        onClick='mySubmit()' />        
+        onClick='mySubmit()' />
         };
     }
     print "</p>\n";
@@ -703,7 +704,7 @@ sub getCassetteGenes {
         where gcg.gene = gc.gene_oid
         and gc.pfam_family = c.ext_accession
         and gcg.cassette_oid = ?
-        order by 2            
+        order by 2
         };
     } elsif ( $cluster eq "bbh" ) {
         $sql = qq{
@@ -716,7 +717,7 @@ sub getCassetteGenes {
         };
     } else {
         $sql = qq{
-        select distinct gcg.cassette_oid, gc.cog, gc.gene_oid, c.cog_name 
+        select distinct gcg.cassette_oid, gc.cog, gc.gene_oid, c.cog_name
         from gene_cassette_genes gcg, gene_cog_groups gc, cog c
         where gcg.gene = gc.gene_oid
         and gc.cog = c.cog_id
@@ -846,9 +847,9 @@ YUI
     print "<td class='$classStr' valign='top' >\n";
     print "<div class='yui-dt-liner'>" if $yui_tables;
     print qq{
-        <input type='radio' name='field' value='id' 
+        <input type='radio' name='field' value='id'
         title='regex search % id' checked /> Function ID<br/>
-        <input type='radio' name='field' value='name' 
+        <input type='radio' name='field' value='name'
         title='regex search % name %' /> Function Name <br/>
         <input type='radio' name='field' value='both' /> Both (Id and Name)
     };
@@ -868,7 +869,7 @@ YUI
     # Sort Results
     print "<td class='$classStr' valign='top' >\n";
     print "<div class='yui-dt-liner'>" if $yui_tables;
-    print qq{        
+    print qq{
         <input type='radio' name='sort' value='match' checked /> Function matches <br/>
         <input type='radio' name='sort' value='genecount'  /> Cassette gene count
     };
@@ -893,7 +894,7 @@ YUI
     #$dbh->disconnect();
 
     print qq{
-	    <br/> 
+	    <br/>
     };
 
     print hiddenVar( "section", $section );
@@ -1021,9 +1022,9 @@ YUI
     print "<td class='$classStr' valign='top' >\n";
     print "<div class='yui-dt-liner'>" if $yui_tables;
     print qq{
-        <input type='radio' name='field' value='id' 
+        <input type='radio' name='field' value='id'
         title='regex search % id' checked /> Function ID<br/>
-        <input type='radio' name='field' value='name' 
+        <input type='radio' name='field' value='name'
         title='regex search % name %' /> Function Name <br/>
         <input type='radio' name='field' value='both' /> Both (Id and Name)
     };
@@ -1043,7 +1044,7 @@ YUI
     # Sort Results
     print "<td class='$classStr' valign='top' >\n";
     print "<div class='yui-dt-liner'>" if $yui_tables;
-    print qq{        
+    print qq{
         <input type='radio' name='sort' value='match' checked /> Function matches <br/>
         <input type='radio' name='sort' value='genecount'  /> Cassette gene count
     };
@@ -1087,9 +1088,9 @@ YUI
 
 
         GenomeListJSON::printMySubmitButton( "", '', "Search",
-                                             '', $section, 'runSearch', 'meddefbutton' );  
+                                             '', $section, 'runSearch', 'meddefbutton' );
     print qq{
-        <br/> 
+        <br/>
     };
 
     print qq{
@@ -1137,7 +1138,7 @@ sub printClusterTable {
     my ($list_aref) = @_;
 
     print qq{
-       
+
         <table class='img'>
         <th class='img'>Select</th>
         <th class='img'>Id</th>
@@ -1150,7 +1151,7 @@ sub printClusterTable {
 
         print qq{
             <td class='img'>
-            <input type='checkbox' name='func_id' value='$id' />    
+            <input type='checkbox' name='func_id' value='$id' />
             </td>
             <td class='img'>$id </td>
             <td class='img'>$name </td>
@@ -1177,13 +1178,13 @@ sub searchCluster {
             $sql = qq{
             select ext_accession
             from pfam_family
-            where lower(description) like '%' || ? || '%' escape '\\'          
+            where lower(description) like '%' || ? || '%' escape '\\'
             }
         } elsif ( $cluster eq "bbh" ) {
             $sql = qq{
             select cluster_id
             from bbh_cluster
-            where lower(cluster_name) like '%' || ? || '%' escape '\\'   
+            where lower(cluster_name) like '%' || ? || '%' escape '\\'
             }
         } else {
             $sql = qq{
@@ -1225,7 +1226,7 @@ sub searchCluster {
             $sql = qq{
             select ext_accession
             from pfam_family
-            where ext_accession like '%' || ? escape '\\'            
+            where ext_accession like '%' || ? escape '\\'
             };
         } elsif ( $cluster eq "bbh" ) {
             $sql = qq{
@@ -1334,14 +1335,14 @@ sub searchCassette {
     }
 
     #push( @batch, \@idlist );
-    
+
     my $sqlFunc = qq{
 select cog_id, cog_name from cog
     };
     if($cluster eq "pfam") {
 $sqlFunc = qq{
 select ext_accession, description from pfam_family
-    };        
+    };
     }
     my %funcIdToName;
     my $cur = execSql( $dbh, $sqlFunc, 1 );
@@ -1350,7 +1351,7 @@ select ext_accession, description from pfam_family
         last if ( !$id );
         $funcIdToName{$id} = $funcname;
     }
-    
+
 
     # search cassettes
     my $sql_base;
@@ -1362,7 +1363,7 @@ select ext_accession, description from pfam_family
         where gcg.gene = gc.gene_oid
         $taxonClause
         $urClause
-        and gc.pfam_family in (            
+        and gc.pfam_family in (
         };
 #    } elsif ( $cluster eq "bbh" ) {
 #        $sql_base = qq{
@@ -1415,9 +1416,9 @@ select ext_accession, description from pfam_family
     for ( ; ; ) {
         my ( $cid, $funcid ) = $cur->fetchrow();
         last if ( !$cid );
-        
+
         my $funcname = $funcIdToName{$funcid};
-        
+
         if ( exists $foundIds{$cid} ) {
             my $href = $foundIds{$cid};
             $href->{$funcid} = $funcname;
@@ -1430,7 +1431,7 @@ select ext_accession, description from pfam_family
 
     #    }
 
-    OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
+    OracleUtil::truncTable( $dbh, "gtt_num_id" )
         if ( $taxon_filter_oid_str =~ /gtt_num_id/i );
     OracleUtil::truncTable( $dbh, "gtt_func_id" )
         if ( $str =~ /gtt_func_id/i );
@@ -1551,7 +1552,7 @@ sub getCassetteGeneCnt {
     $sql_base = qq{
         select gcg.cassette_oid, count(gcg.gene)
         from gene_cassette_genes gcg
-        where gcg.cassette_oid in (            
+        where gcg.cassette_oid in (
         };
     my $sql_end = "group by gcg.cassette_oid";
 
@@ -1617,7 +1618,7 @@ sub getCassetteGenome {
         select gc.cassette_oid, t.taxon_display_name, t.taxon_oid
         from gene_cassette gc, taxon t
         where gc.taxon = t.taxon_oid
-        and gc.cassette_oid in (            
+        and gc.cassette_oid in (
         };
 
     # hash cassette id => taxon name

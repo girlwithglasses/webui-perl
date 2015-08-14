@@ -1,6 +1,6 @@
 ############################################################################
 # WorkspaceQueryUtil.pm
-# $Id: WorkspaceQueryUtil.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: WorkspaceQueryUtil.pm 33910 2015-08-06 05:10:03Z jinghuahuang $
 ############################################################################
 package WorkspaceQueryUtil;
 
@@ -2594,235 +2594,6 @@ sub getDbScaffoldFuncsGenesSql {
     return ( $sql, @bindList );
 }
 
-sub getDbScaffoldFuncsGenesSql_old {
-    my ( $dbh, $func_type, $func_ids_ref, $scaf_str, $rclause, $imgClause ) = @_;
-
-    if (!$rclause && !$imgClause) {
-        $rclause = WebUtil::urClause('g.taxon');
-        $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');        
-    }
-
-    my $sql;
-    my @bindList;
-
-    if ( $func_type =~ /^COG/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.cog 
-            from gene g, gene_cog_groups f
-            where g.gene_oid = f.gene_oid
-                and f.cog in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^KOG/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.kog 
-            from gene g, gene_kog_groups f
-            where g.gene_oid = f.gene_oid
-                and f.kog in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^pfam/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.pfam_family
-            from gene g, gene_pfam_families f
-            where g.gene_oid = f.gene_oid
-                and f.pfam_family in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^TIGR/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.ext_accession 
-            from gene g, gene_tigrfams f
-            where g.gene_oid = f.gene_oid
-                and f.ext_accession in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^KO/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.ko_terms 
-            from gene g, gene_ko_terms f
-            where g.gene_oid = f.gene_oid
-                and f.ko_terms in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^EC/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.enzymes 
-            from gene g, gene_ko_enzymes f
-            where g.gene_oid = f.gene_oid
-                and f.enzymes in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^MetaCyc/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, brp.in_pwys, g.taxon, g.gene_display_name
-            from gene_biocyc_rxns gb, biocyc_reaction_in_pwys brp, gene g
-            where brp.unique_id = gb.biocyc_rxn
-                and brp.in_pwys in ( $func_ids_str )
-                and gb.gene_oid = g.gene_oid 
-                and g.scaffold in ( $scaf_str ) 
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^IPR/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.id, g.taxon, g.gene_display_name
-            from gene g, gene_xref_families f
-            where f.db_name = 'InterPro'
-            and g.gene_oid = f.gene_oid
-            and f.id in ( $func_ids_str )
-            and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^TC/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.tc_family, g.taxon, g.gene_display_name
-            from gene g, gene_tc_families f
-            where g.gene_oid = f.gene_oid
-                and f.tc_family in ( $func_ids_str )
-                and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^ITERM/i ) { 
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
-        #$sql = qq{
-        #    select distinct g.gene_oid, g.scaffold, it.term_oid, g.taxon, g.gene_display_name
-        #    from img_term it, dt_img_term_path dtp, gene_img_functions f, gene g
-        #    where it.term_oid in ( $func_ids_str )
-        #    and it.term_oid = dtp.term_oid
-        #    and dtp.map_term = f.function
-        #    and f.gene_oid = g.gene_oid
-        #    and g.scaffold in ( $scaf_str )
-        #    $rclause
-        #    $imgClause
-        #};
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, f.function, g.taxon, g.gene_display_name
-            from gene_img_functions f, gene g
-            where f.function in ( $func_ids_str )
-            and f.gene_oid = g.gene_oid
-            and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^IPWAY/i ) { 
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
-        #$sql = qq{
-        #    select g.gene_oid, g.scaffold, ipr.pathway_oid, g.taxon, g.gene_display_name
-        #    from img_pathway_reactions ipr, img_reaction_catalysts irc, 
-        #        dt_img_term_path dtp, gene_img_functions gif, gene g
-        #    where ipr.pathway_oid in ( $func_ids_str )
-        #    and ipr.rxn = irc.rxn_oid
-        #    and irc.catalysts = dtp.term_oid
-        #    and dtp.map_term = gif.function
-        #    and gif.gene_oid = g.gene_oid
-        #    and g.scaffold in ( $scaf_str )
-        #    $rclause
-        #    $imgClause
-        #     union
-        #     select g.gene_oid, g.scaffold, ipr.pathway_oid, g.taxon, g.gene_display_name
-        #     from img_pathway_reactions ipr, img_reaction_t_components irtc, 
-        #        dt_img_term_path dtp, gene_img_functions gif, gene g
-        #     where ipr.pathway_oid in ( $func_ids_str )
-        #    and ipr.rxn = irtc.rxn_oid
-        #    and irtc.term = dtp.term_oid
-        #    and dtp.map_term = gif.function
-        #    and gif.gene_oid = g.gene_oid
-        #    and g.scaffold in ( $scaf_str )
-        #    $rclause
-        #    $imgClause
-        #};
-        $sql = qq{
-            select g.gene_oid, g.scaffold, ipr.pathway_oid, g.taxon, g.gene_display_name
-            from img_pathway_reactions ipr, img_reaction_catalysts irc, 
-                gene_img_functions gif, gene g
-            where ipr.pathway_oid in ( $func_ids_str )
-            and ipr.rxn = irc.rxn_oid
-            and irc.catalysts = gif.function
-            and gif.gene_oid = g.gene_oid
-            and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-             union
-             select g.gene_oid, g.scaffold, ipr.pathway_oid, g.taxon, g.gene_display_name
-             from img_pathway_reactions ipr, img_reaction_t_components irtc, 
-                gene_img_functions gif, gene g
-             where ipr.pathway_oid in ( $func_ids_str )
-            and ipr.rxn = irtc.rxn_oid
-            and irtc.term = gif.function
-            and gif.gene_oid = g.gene_oid
-            and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-    elsif ( $func_type =~ /^PLIST/i ) {
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
-        #$sql = qq{
-        #    select distinct g.gene_oid, g.scaffold, pt.parts_list_oid, g.taxon,
-        #        g.gene_display_name
-        #    from img_parts_list_img_terms pt, dt_img_term_path dtp, gene_img_functions f, gene g
-        #    where pt.parts_list_oid in ( $func_ids_str )
-        #    and pt.term = dtp.term_oid
-        #    and dtp.map_term = f.function
-        #    and f.gene_oid = g.gene_oid
-        #    and g.scaffold in ( $scaf_str )
-        #    $rclause
-        #    $imgClause
-        #};
-        $sql = qq{
-            select distinct g.gene_oid, g.scaffold, pt.parts_list_oid, g.taxon,
-                g.gene_display_name
-            from img_parts_list_img_terms pt, gene_img_functions f, gene g
-            where pt.parts_list_oid in ( $func_ids_str )
-            and pt.term = f.function
-            and f.gene_oid = g.gene_oid
-            and g.scaffold in ( $scaf_str )
-            $rclause
-            $imgClause
-        };
-    }
-
-    #print "WorkspaceQueryUtil::getDbScaffoldFuncsGenesSql \$sql: $sql<br/>\n";
-    #print "WorkspaceQueryUtil::getDbScaffoldFuncsGenesSql \@bindList: @bindList<br/>\n";
-
-    return ( $sql, @bindList );
-}
-
-
 ############################################################################
 # getDbScaffoldFuncCategoryGeneSql - return the func gene sql for db scaffolds
 # need to be merged with getDbScaffoldFuncGeneSql
@@ -2981,7 +2752,7 @@ sub getDbScaffoldFuncCategoryGeneSql {
 # getDbFuncsGenesSql - return the func gene sql for db func
 ############################################################################
 sub getDbFuncsGenesSql {
-    my ($dbh, $func_ids_ref, $min_gene_oid, $max_gene_oid, $rclause, $imgClause) = @_;
+    my ($dbh, $func_ids_ref, $gene_str, $rclause, $imgClause) = @_;
 
     my $sql;
     my @bindList;
@@ -2994,7 +2765,7 @@ sub getDbFuncsGenesSql {
             from gene_cog_groups g, cog_functions cf 
             where g.cog = cf.cog_id 
             and cf.functions in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3005,7 +2776,7 @@ sub getDbFuncsGenesSql {
             from gene_cog_groups g, cog_pathway_cog_members cpcm 
             where g.cog = cpcm.cog_members 
             and cpcm.cog_pathway_oid in ( $func_ids_str )           
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3015,7 +2786,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.cog 
             from gene_cog_groups g 
             where g.cog in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3026,7 +2797,7 @@ sub getDbFuncsGenesSql {
             from gene_pfam_families g, pfam_family_cogs pfc 
             where g.pfam_family = pfc.ext_accession 
             and pfc.functions in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3036,7 +2807,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.pfam_family 
             from gene_pfam_families g 
             where g.pfam_family in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3047,7 +2818,7 @@ sub getDbFuncsGenesSql {
             from gene_tigrfams g, tigrfam_roles tr 
             where g.ext_accession = tr.ext_accession 
             and tr.roles in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3057,7 +2828,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.ext_accession 
             from gene_tigrfams g 
             where g.ext_accession in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3074,7 +2845,7 @@ sub getDbFuncsGenesSql {
                 from kegg_pathway kp3 
                 where kp3.pathway_oid in ( $func_ids_str )
             )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3086,7 +2857,7 @@ sub getDbFuncsGenesSql {
             where g.ko_terms = rk.ko_terms 
             and rk.roi_id = ir.roi_id 
             and ir.pathway in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3096,7 +2867,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.kog 
             from gene_kog_groups g 
             where g.kog in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3106,7 +2877,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.ko_terms 
             from gene_ko_terms g 
             where g.ko_terms in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3125,7 +2896,7 @@ sub getDbFuncsGenesSql {
                 from kegg_pathway kp3 
                 where kp3.pathway_oid in ( $func_ids_str )
             ) 
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3138,7 +2909,7 @@ sub getDbFuncsGenesSql {
             and kt.ko_id = rk.ko_terms
             and rk.roi_id = ir.roi_id
             and ir.pathway in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3148,7 +2919,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.enzymes 
             from gene_ko_enzymes g 
             where g.enzymes in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3159,7 +2930,7 @@ sub getDbFuncsGenesSql {
             from biocyc_reaction_in_pwys brp, gene_biocyc_rxns g
             where brp.unique_id = g.biocyc_rxn
             and brp.in_pwys in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3170,7 +2941,7 @@ sub getDbFuncsGenesSql {
             from gene_xref_families g
             where g.db_name = 'InterPro'
             and g.id in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3180,7 +2951,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.tc_family 
             from gene_tc_families g 
             where g.tc_family in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3192,7 +2963,7 @@ sub getDbFuncsGenesSql {
         #    where it.term_oid in ( $func_ids_str )
         #    and it.term_oid = dtp.term_oid
         #    and dtp.map_term = g.function
-        #    and g.gene_oid between $min_gene_oid and $max_gene_oid
+        #    and g.gene_oid in ( $gene_str )
         #    $rclause
         #    $imgClause
         #};
@@ -3200,7 +2971,7 @@ sub getDbFuncsGenesSql {
             select distinct g.gene_oid, g.function 
             from gene_img_functions g
             where g.function in ( $func_ids_str )
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -3215,7 +2986,7 @@ sub getDbFuncsGenesSql {
         #    and ipr.rxn = irc.rxn_oid
         #    and irc.catalysts = dtp.term_oid
         #    and dtp.map_term = g.function
-        #    and g.gene_oid between $min_gene_oid and $max_gene_oid
+        #    and g.gene_oid in ( $gene_str )
         #    $rclause
         #    $imgClause
         #    union
@@ -3227,7 +2998,7 @@ sub getDbFuncsGenesSql {
         #    and ipr.rxn = irtc.rxn_oid
         #    and irtc.term = dtp.term_oid
         #    and dtp.map_term = g.function
-        #    and g.gene_oid between $min_gene_oid and $max_gene_oid
+        #    and g.gene_oid in ( $gene_str )
         #    $rclause
         #    $imgClause
         # };
@@ -3239,7 +3010,7 @@ sub getDbFuncsGenesSql {
             where ipr.pathway_oid in ( $func_ids_str )
             and ipr.rxn = irc.rxn_oid
             and irc.catalysts = g.function
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
             union
@@ -3250,7 +3021,7 @@ sub getDbFuncsGenesSql {
             where ipr.pathway_oid in ( $func_ids_str )
             and ipr.rxn = irtc.rxn_oid
             and irtc.term = g.function
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
          };
@@ -3262,7 +3033,7 @@ sub getDbFuncsGenesSql {
         #    where pt.parts_list_oid in ( $func_ids_str )
         #    and pt.term = dtp.term_oid
         #    and dtp.map_term = g.function
-        #    and g.gene_oid between $min_gene_oid and $max_gene_oid
+        #    and g.gene_oid in ( $gene_str )
         #    $rclause
         #    $imgClause
         #};
@@ -3271,7 +3042,7 @@ sub getDbFuncsGenesSql {
             from img_parts_list_img_terms pt, gene_img_functions g
             where pt.parts_list_oid in ( $func_ids_str )
             and pt.term = g.function
-            and g.gene_oid between $min_gene_oid and $max_gene_oid
+            and g.gene_oid in ( $gene_str )
             $rclause
             $imgClause
         };
@@ -4756,18 +4527,19 @@ sub getDbGeneFuncCountSql {
 # getDbGeneFuncsCountSql - return the count sql for specified gene and func
 ############################################################################
 sub getDbGeneFuncsCountSql {
-    my ($dbh, $func_type, $func_ids_ref, $gene_str, $rclause, $imgClause) = @_;
+    my ($dbh, $func_ids_ref, $gene_str, $rclause, $imgClause) = @_;
 
     if (!$rclause && !$imgClause) {
         $rclause = WebUtil::urClause('g.taxon');
         $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');        
     }
     
-    my $sql = "";
-    my @bindList = ();
+    my $sql;
+    my @bindList;
 
-    if ( $func_type =~ /^COG/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    my ($func_id, $func_ids_str) = getFuncIdsStr( $dbh, $func_ids_ref );
+
+    if ( $func_id =~ /COG/i ) {
         $sql = qq{
             select g.cog, count(distinct g.gene_oid)
             from gene_cog_groups g
@@ -4778,8 +4550,7 @@ sub getDbGeneFuncsCountSql {
             group by g.cog
         };
     }
-    elsif ( $func_type =~ /^KOG/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /KOG/i ) {
         $sql = qq{
             select g.kog, count(distinct g.gene_oid)
             from gene_kog_groups g
@@ -4790,8 +4561,7 @@ sub getDbGeneFuncsCountSql {
             group by g.kog
         };
     }
-    elsif ( $func_type =~ /^pfam/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /pfam/i ) {
         $sql = qq{
             select g.pfam_family, count(distinct g.gene_oid)
             from gene_pfam_families g
@@ -4802,8 +4572,7 @@ sub getDbGeneFuncsCountSql {
             group by g.pfam_family
         };
     }
-    elsif ( $func_type =~ /^TIGR/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /TIGR/i ) {
         $sql = qq{
             select g.ext_accession, count(distinct g.gene_oid) 
             from gene_tigrfams g 
@@ -4814,8 +4583,7 @@ sub getDbGeneFuncsCountSql {
             group by g.ext_accession
         };
     }
-    elsif ( $func_type =~ /^KO/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /KO/i ) {
         $sql = qq{
             select g.ko_terms, count(distinct g.gene_oid)
             from gene_ko_terms g
@@ -4826,8 +4594,7 @@ sub getDbGeneFuncsCountSql {
             group by g.ko_terms
         };
     }
-    elsif ( $func_type =~ /^EC/i ) {
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /EC/i ) {
         $sql = qq{
             select g.enzymes, count(distinct g.gene_oid) 
             from gene_ko_enzymes g
@@ -4838,8 +4605,7 @@ sub getDbGeneFuncsCountSql {
             group by g.enzymes
         };
     }
-    elsif ( $func_type =~ /^MetaCyc/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /MetaCyc/i ) { 
         $sql = qq{
             select brp.in_pwys, count(distinct g.gene_oid)
             from biocyc_reaction_in_pwys brp, gene_biocyc_rxns g
@@ -4851,8 +4617,7 @@ sub getDbGeneFuncsCountSql {
             group by brp.in_pwys
         };
     }
-    elsif ( $func_type =~ /^IPR/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /IPR/i ) { 
         $sql = qq{
             select g.id, count(distinct g.gene_oid)
             from gene_xref_families g
@@ -4864,8 +4629,7 @@ sub getDbGeneFuncsCountSql {
             group by g.id
         }; 
     } 
-    elsif ( $func_type =~ /^TC/i ) { 
-        my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /TC/i ) { 
         $sql = qq{
             select g.tc_family, count(distinct g.gene_oid)
             from gene_tc_families g
@@ -4876,8 +4640,7 @@ sub getDbGeneFuncsCountSql {
             group by g.tc_family
         }; 
     } 
-    elsif ( $func_type =~ /^ITERM/i ) { 
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /ITERM/i ) { 
         #$sql = qq{
         #    select it.term_oid, count(distinct g.gene_oid)
         #    from img_term it, dt_img_term_path dtp, gene_img_functions g 
@@ -4899,8 +4662,7 @@ sub getDbGeneFuncsCountSql {
             group by g.function
         }; 
     } 
-    elsif ( $func_type =~ /^IPWAY/i ) { 
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /IPWAY/i ) { 
         #$sql = qq{
         #    select new.pathway_oid, count(distinct new.gene_oid)
         #    from (
@@ -4958,8 +4720,7 @@ sub getDbGeneFuncsCountSql {
             group by new.pathway_oid
         } 
     } 
-    elsif ( $func_type =~ /^PLIST/i ) {
-        my $func_ids_str = OracleUtil::getNumberIdsInClause1( $dbh, @$func_ids_ref );
+    elsif ( $func_id =~ /PLIST/i ) {
         #$sql = qq{
         #    select pt.parts_list_oid, count(distinct g.gene_oid)
         #    from img_parts_list_img_terms pt, dt_img_term_path dtp, gene_img_functions g

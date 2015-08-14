@@ -11,7 +11,7 @@
 #   are still pretty much the same, after sorting.)
 #    --es 10/10/2005
 #
-# $Id: AbundanceProfiles.pm 32004 2014-09-27 07:16:31Z jinghuahuang $
+# $Id: AbundanceProfiles.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package AbundanceProfiles;
 require Exporter;
@@ -53,8 +53,8 @@ if ( ! $merfs_timeout_mins ) {
 my $scaffold_cart = $env->{scaffold_cart};
 
 my $preferences_url    = "$main_cgi?section=MyIMG&form=preferences";
-my $in_file = $env->{in_file}; 
-my $mer_data_dir   = $env->{mer_data_dir}; 
+my $in_file = $env->{in_file};
+my $mer_data_dir   = $env->{mer_data_dir};
 
 my $max_taxon_selection        = 100;     # for heap map
 my $max_taxon_selection_matrix = 1000;    # for matrix
@@ -71,6 +71,7 @@ my $verbose = $env->{verbose};
 ############################################################################
 sub dispatch {
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( $page eq "topPage" ) {
         printTopPage();
@@ -127,7 +128,7 @@ sub printTopPage {
     my $row = alink( $url, "Abundance Profile Overview(All Functions)" );
     $row .= "\tView abundance for all functions across selected genomes.\t";
     $sit->addRow($row);
-    
+
     # Row 2
     my $url = "$main_cgi?section=AbundanceProfileSearch";
     my $row = alink( $url, "Abundance Profile Search" );
@@ -178,23 +179,23 @@ sub printMergeForm {
                 document.mainForm.xcopy[1].disabled = true;
                 document.mainForm.allRows.disabled = true;
                 document.mainForm.funcsPerPage.disabled = true;
-                
-                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection genomes.</p>";                
+
+                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection genomes.</p>";
 
             } else {
                 document.mainForm.doNormalization[0].disabled = true;
                 document.mainForm.doNormalization[1].disabled = true;
-                
+
                 document.mainForm.xcopy[0].disabled = false;
                 document.mainForm.xcopy[1].disabled = false;
                 document.mainForm.allRows.disabled = false;
                 document.mainForm.funcsPerPage.disabled = false;
 
-                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection_matrix genomes.</p>";                
+                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection_matrix genomes.</p>";
 
-            }            
-        }      
-        </script>        
+            }
+        }
+        </script>
     };
 
     print qq{
@@ -226,10 +227,10 @@ sub printMergeForm {
     print qq{
         <td></td>
         <td>
-        <input type='radio' name='doNormalization' 
+        <input type='radio' name='doNormalization'
 	    value='0' checked='checked' />\n
         None<br/>\n
-        <input type='radio' name='doNormalization' 
+        <input type='radio' name='doNormalization'
             value='genomeSize' />
         Scale for genome size<br/>\n
         </td>
@@ -250,7 +251,7 @@ sub printMergeForm {
           </td>\n
           <td></td>\n
           <td>\n
-            <input type='radio' name='xcopy' 
+            <input type='radio' name='xcopy'
               value='gene_count' checked='checked' disabled/>\n
             Gene count<br/>\n
             <input type='radio' name='xcopy' value='est_copy' disabled/>\n
@@ -285,7 +286,7 @@ sub printMergeForm {
         </table>\n
         </p>
         <p>\n
-          Enter matching text for highlighting clusters/rows 
+          Enter matching text for highlighting clusters/rows
           (E.g., "kinase")<br/>\n
           <input type='text' name='clusterMatchText' size='60' />\n
         </p>\n
@@ -401,23 +402,23 @@ sub printMergeForm3 {
                 document.mainForm.xcopy[1].disabled = true;
                 document.mainForm.allRows.disabled = true;
                 document.mainForm.funcsPerPage.disabled = true;
-                
-                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection genomes.</p>";                
+
+                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection genomes.</p>";
 
             } else {
                 document.mainForm.doNormalization[0].disabled = true;
                 document.mainForm.doNormalization[1].disabled = true;
-                
+
                 document.mainForm.xcopy[0].disabled = false;
                 document.mainForm.xcopy[1].disabled = false;
                 document.mainForm.allRows.disabled = false;
                 document.mainForm.funcsPerPage.disabled = false;
 
-                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection_matrix genomes.</p>";                
+                e0.innerHTML = "<p>Please select 1 to $max_taxon_selection_matrix genomes.</p>";
 
-            }            
-        }      
-        </script>        
+            }
+        }
+        </script>
     };
 
     print qq{
@@ -449,10 +450,10 @@ sub printMergeForm3 {
     print qq{
         <td></td>
         <td>
-        <input type='radio' name='doNormalization' 
+        <input type='radio' name='doNormalization'
         value='0' checked='checked' />\n
         None<br/>\n
-        <input type='radio' name='doNormalization' 
+        <input type='radio' name='doNormalization'
             value='genomeSize' />
         Scale for genome size<br/>\n
         </td>
@@ -473,7 +474,7 @@ sub printMergeForm3 {
           </td>\n
           <td></td>\n
           <td>\n
-            <input type='radio' name='xcopy' 
+            <input type='radio' name='xcopy'
               value='gene_count' checked='checked' disabled/>\n
             Gene count<br/>\n
             <input type='radio' name='xcopy' value='est_copy' disabled/>\n
@@ -508,7 +509,7 @@ sub printMergeForm3 {
         </table>\n
         </p>
         <p>\n
-          Enter matching text for highlighting clusters/rows 
+          Enter matching text for highlighting clusters/rows
           (E.g., "kinase")<br/>\n
           <input type='text' name='clusterMatchText' size='60' />\n
         </p>\n
@@ -725,8 +726,8 @@ sub printAbundanceProfilesForm {
     print qq{
        <h1>Abundance Profile Viewer</h1>\n
        <p>\n
-        The Abundance Profile Viewer displays the relative abundance of 
-        protein / functional families in selected  
+        The Abundance Profile Viewer displays the relative abundance of
+        protein / functional families in selected
         genomes using a heat map.\n
        </p>\n
 
@@ -749,7 +750,7 @@ sub printAbundanceProfilesForm {
         <input type='radio' name='doNormalization' value='genomeSize' />\n
         Scale for genome size<br/>\n
         <br/>\n
-        Enter matching text for highlighting clusters/rows 
+        Enter matching text for highlighting clusters/rows
         (E.g., "kinase")<br/>\n
         <input type='text' name='clusterMatchText' size='60' />\n
        </p>\n
@@ -860,9 +861,9 @@ sub printResultHeader {
     print qq{
         <p>\n
          Mouse over labels to see additional information.<br/>\n
-         Clicking on the column number will sort rows for that 
+         Clicking on the column number will sort rows for that
          column in descending gene count order.<br/>\n
-         Clicking on row cluster ID will add the cluster to 
+         Clicking on row cluster ID will add the cluster to
          the appropriate analysis cart (if cart is supported).<br/>\n
          Mouse over heat map to see gene counts. \n
          Clicking in the heat map will take you to the gene list.<br/>\n
@@ -879,7 +880,7 @@ sub printAbundanceProfileResults {
     my $doNormalization  = param("doNormalization");
     my $clusterMatchText = param("clusterMatchText");
     my $data_type        = param("data_type");
-    
+
     printResultHeader();
 
     my @selectGenomes = param('genomeFilterSelections');
@@ -1056,11 +1057,11 @@ sub printAbundanceProfileNormalizationNote {
 sub normalizationHint {
     return qq{
       <u>Normalization Method:</u><br/>\n
-      Single organism genomes can be compared 
+      Single organism genomes can be compared
       using raw gene counts.<br/>\n
-      Communities should be normalized by taking 
+      Communities should be normalized by taking
       the size of the genome into account.<br/>\n
-      Normalization does not affect the ordering of rows, 
+      Normalization does not affect the ordering of rows,
       only the coloring in the heat map.
     };
 }
@@ -1070,7 +1071,7 @@ sub normalizationHint {
 ############################################################################
 sub getTaxonDict {
     my ($dict_ref) = @_;
-    
+
     my $dbh        = dbLogin();
     my $sql        = qq{
        select taxon_oid, taxon_display_name, 'No'
@@ -1107,7 +1108,7 @@ sub getTaxonDict {
 ############################################################################
 sub getOrthologDict {
     my ($dict_ref) = @_;
-    
+
     my $dbh        = dbLogin();
     my $sql        = qq{
        select cluster_id, cluster_name
@@ -1157,7 +1158,7 @@ sub loadMapDb {
     	if ( $mer_fs_taxons{$taxon_oid} ) {
     	    # MER-FS
     	    $taxon_oid = sanitizeInt($taxon_oid);
-    
+
     	    my $file_name = "";
     	    if ( $func_type eq "cog" ) {
         		$file_name = 'cog_count.txt';
@@ -1177,25 +1178,25 @@ sub loadMapDb {
 
     	    if ( $file_name ) {
                 my @type_list = MetaUtil::getDataTypeList( $data_type );
-                for my $t2 ( @type_list ) { 
+                for my $t2 ( @type_list ) {
                     my $file = $mer_data_dir . "/" . $taxon_oid .
-                        "/" . $t2 . "/" . $file_name; 
-                    if ( -e $file ) { 
-                        my $fh = newReadFileHandle($file); 
-                        if ( ! $fh ) { 
-                            next; 
-                        } 
- 
-                        while ( my $line = $fh->getline() ) { 
-                            chomp $line; 
+                        "/" . $t2 . "/" . $file_name;
+                    if ( -e $file ) {
+                        my $fh = newReadFileHandle($file);
+                        if ( ! $fh ) {
+                            next;
+                        }
+
+                        while ( my $line = $fh->getline() ) {
+                            chomp $line;
                             my ($id, $cnt) = split(/\t/, $line);
-            			    $rowId2Val{$id}     = $cnt; 
-            			    $rowId2ValOrig{$id} = $cnt; 
-            			    $uniqueRowIds{$id}  = 1; 
-                        }   # end while line 
+            			    $rowId2Val{$id}     = $cnt;
+            			    $rowId2ValOrig{$id} = $cnt;
+            			    $uniqueRowIds{$id}  = 1;
+                        }   # end while line
             			close $fh;
-                    } 
-                }   # end for data_type                                                     
+                    }
+                }   # end for data_type
     	    }
     	}
     	else {
@@ -1204,7 +1205,7 @@ sub loadMapDb {
             if ( $scaffold_cart && $taxon_oid < 0 ) {
                 $scaffold_cart_name = ScaffoldCart::getCartNameForTaxonOid($taxon_oid);
             }
-            my ( $cur, $scaffold_oids_str) = AbundanceToolkit::getFuncProfileCur( 
+            my ( $cur, $scaffold_oids_str) = AbundanceToolkit::getFuncProfileCur(
                 $dbh, 'gene_count', $func_type, $taxon_oid, $scaffold_cart_name );
     	    for ( ; ; ) {
         		my ( $id, $cnt ) = $cur->fetchrow();
@@ -1214,12 +1215,12 @@ sub loadMapDb {
         		$uniqueRowIds{$id}  = 1;
     	    }
     	    $cur->finish();
-    	    
-            OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
-                if ( $scaffold_oids_str =~ /gtt_num_id/i );    	    
+
+            OracleUtil::truncTable( $dbh, "gtt_num_id" )
+                if ( $scaffold_oids_str =~ /gtt_num_id/i );
     	}
     }
-    
+
     if ( $doNorm eq "z" || $doNorm eq "genomeSize" ) {
         my $nColumns = @columns;
         for ( my $i = 0 ; $i < $nColumns ; $i++ ) {
@@ -1570,7 +1571,7 @@ sub printHeatMapFiles {
     getTaxonDict( \%colDict );
 
     my $dbh = dbLogin();
-    
+
     my $rowDict_ref = AbundanceToolkit::getFuncDict($dbh, $func_type);
 
     my %table;
@@ -1752,7 +1753,7 @@ sub genOneHeatMapFile {
     }
     my $html =
       $hm->draw( \@a, $orderedRowIds_ref, $taxonOids_ref, $rowDict_ref,
-                 $colDict_ref, $tableOrig_ref, $clusterMatchText, $stateFile, 
+                 $colDict_ref, $tableOrig_ref, $clusterMatchText, $stateFile,
                  $func_type, $data_type );
     $hm->printToFile();
     return ( $outFile, $html );
@@ -1797,9 +1798,9 @@ sub printAbundanceCellGeneList {
     my $dbh = dbLogin();
     printStatusLine( "Loading ...", 1 );
 
-    my $isTaxonInFile = AbundanceToolkit::printAbundanceGeneListSubHeader( 
+    my $isTaxonInFile = AbundanceToolkit::printAbundanceGeneListSubHeader(
         $dbh, $func_type, $rowId, $taxon_oid, $data_type);
-    
+
     if ( $isTaxonInFile ) {
         AbundanceToolkit::printMetaGeneList( $rowId, $taxon_oid, $data_type );
     }
@@ -1862,7 +1863,7 @@ sub printAbundanceCellGeneList {
         }
 
         my @binds = ( $rowId, $taxon_oid, 'CDS', 'No' );
-        AbundanceToolkit::printDbGeneList(  $dbh, $sql, \@binds );   
+        AbundanceToolkit::printDbGeneList(  $dbh, $sql, \@binds );
     }
 
     print end_form();
@@ -1876,13 +1877,13 @@ sub printSuperClusterNote {
        <p>
        Super cluster combine IMG's ortholog groups (based on bidiretional
        best hits) and paralog groups to descrease the granularity
-       of the clusters for puropses of cross comparisons. 
+       of the clusters for puropses of cross comparisons.
        Larger and more common groups allow for more cross comparisons.
        (The comparisons are also more coarse grained.)
        </p>
        <p>
        The results should be taken cautiously.  They are provided
-       as an alternative view to COG, de novo clustering, 
+       as an alternative view to COG, de novo clustering,
        taken from clustering genes in the native data set.
        </p>
     };

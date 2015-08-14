@@ -26,13 +26,13 @@ my $include_img_terms = $env->{ include_img_terms };
 my $include_metagenomes = $env->{ include_metagenomes };
 my $show_myimg_login = $env->{ show_myimg_login };
 my $img_lite = $env->{ img_lite };
-my $cgi_tmp_dir = $env->{ cgi_tmp_dir }; 
+my $cgi_tmp_dir = $env->{ cgi_tmp_dir };
 my $top_n_abundances = 10000;  # make a very large number
 my $max_query_taxons = 20;
 my $max_reference_taxons = 200;
 my $r_bin = $env->{ r_bin };
 
-my $max_batch = 500; 
+my $max_batch = 500;
 my %function2IdType = (
    cog => "cog_id",
    pfam => "pfam_id",
@@ -46,7 +46,8 @@ my $fdr = 0.05;
 ############################################################################
 sub dispatch {
     my $page = param( "page" );
-    
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
+
     if( paramMatch( "abundanceResults" ) ne "" ) {
        printAbundanceResults( );
     }
@@ -57,10 +58,10 @@ sub dispatch {
        printAbundanceDownload( );
     }
     elsif( $page eq "geneList" ) {
-       printGeneList( );       
+       printGeneList( );
     }
     elsif( $page eq "dscoreNote" ) {
-       printDScoreNote( );       
+       printDScoreNote( );
     }
     else {
        printQueryForm( );
@@ -221,7 +222,7 @@ sub printAbundanceResults {
    my %rfreq;
    my %dscores;
    my %flags;
-   my( $n1, $n2 ) = getDScores( $queryProfile_ref, $referenceProfile_ref, 
+   my( $n1, $n2 ) = getDScores( $queryProfile_ref, $referenceProfile_ref,
       \%qfreq, \%rfreq, \%dscores, \%flags );
    delete $queryTaxonProfiles{ query };
    delete $referenceTaxonProfiles{ reference };
@@ -237,12 +238,12 @@ sub printAbundanceResults {
 
    if( $normalization eq "genomeSize" ) {
       genomeNormalizeProfileVectors( $dbh, \%queryTaxonProfiles, "query" );
-      genomeNormalizeProfileVectors( $dbh, 
+      genomeNormalizeProfileVectors( $dbh,
          \%referenceTaxonProfiles, "reference" );
    }
    elsif( $normalization eq "pooledGenes" ) {
       pooledNormalizeProfileVectors( $dbh, \%queryTaxonProfiles, "query" );
-      pooledNormalizeProfileVectors( $dbh, 
+      pooledNormalizeProfileVectors( $dbh,
          \%referenceTaxonProfiles, "reference" );
    }
 
@@ -269,9 +270,9 @@ sub printAbundanceResults {
 #   (Usually, they are the same, but sometimes not.)
 ############################################################################
 sub writePagerFiles {
-   my( $dbh, $pagerFileRoot, $funcId2Name_ref, 
+   my( $dbh, $pagerFileRoot, $funcId2Name_ref,
        $queryTaxonProfiles_ref, $referenceTaxonProfiles_ref,
-       $qfreq_ref, $rfreq_ref, $n1, $n2, 
+       $qfreq_ref, $rfreq_ref, $n1, $n2,
        $dscores_ref, $pvalues_ref, $flags_ref ) = @_;
 
    my $funcsPerPage = param( "funcsPerPage" );
@@ -302,7 +303,7 @@ sub writePagerFiles {
 
    my @funcIds = sort( keys( %$funcId2Name_ref ) );
    my $nFuncs = @funcIds;
-   my $nPages  = int( $nFuncs / $funcsPerPage ) + 1;        
+   my $nPages  = int( $nFuncs / $funcsPerPage ) + 1;
 
    my %queryFuncsSum;
    my %referenceFuncsSum;
@@ -570,7 +571,7 @@ sub printAbundancePager {
    printMainForm( );
    printStatusLine( "Loading ...", 1 );
    if( $sortType ne "" ) {
-      sortAbundanceFile( $function, $xcopy, $normalization, 
+      sortAbundanceFile( $function, $xcopy, $normalization,
           $sortType, $colIdx, $funcsPerPage );
       $pageNo = 1;
    }
@@ -583,7 +584,7 @@ sub printAbundancePager {
 # sortAbundanceFile - Resort abundance file.
 ############################################################################
 sub sortAbundanceFile {
-   my( $function, $xcopy, $normalization, 
+   my( $function, $xcopy, $normalization,
        $sortType, $colIdx, $funcsPerPage ) = @_;
 
    #print "<p>\n";
@@ -647,7 +648,7 @@ sub sortAbundanceFile {
 sub getPagerFileRoot {
    my( $function, $xcopy, $normalization ) = @_;
    my $sessionId = getSessionId( );
-   my $tmpPagerFile = "$cgi_tmp_dir/abundanceTest.$function" . 
+   my $tmpPagerFile = "$cgi_tmp_dir/abundanceTest.$function" .
       ".$xcopy.$normalization.$sessionId";
 }
 
@@ -699,7 +700,7 @@ sub printOnePage {
    printMainForm( );
    my $colorLegend = getDScoreColorLegend( );
    $colorLegend = getRelColorLegend( ) if $doGenomeNormalization;
-   printHint( 
+   printHint(
       "- Click on column name to sort.<br/>" .
       "- Mouse over genome abbreviation to see genome name " .
       "and taxon object identifier.<br/>" .
@@ -767,7 +768,7 @@ sub printOnePage {
 	 my $val_display = $vals[ ($i*2)+1 ];
 	 my $colorSpec;
 	 my $color;
-	 $color = getDScoreColor( $val ) 
+	 $color = getDScoreColor( $val )
 	    if $i == $dscoreIdx && $validTest eq "Yes";
 	 $colorSpec = "bgcolor='$color'" if $color ne "";
 	 print "<td class='img' $colorSpec $alignSpec>$val_display</td>\n";
@@ -904,23 +905,23 @@ sub getFilePosition {
 # getProfileVectors
 ############################################################################
 sub getProfileVectors {
-   my( $dbh, $type, $taxonOids_ref, $func, 
+   my( $dbh, $type, $taxonOids_ref, $func,
        $xcopy, $taxonProfiles_ref, $funcId2Name_ref ) = @_;
 
    if( $func eq "cog" ) {
-      getCogVectors( $dbh, $type, $taxonOids_ref, 
+      getCogVectors( $dbh, $type, $taxonOids_ref,
          $xcopy, $taxonProfiles_ref, $funcId2Name_ref );
    }
    elsif( $func eq "pfam" ) {
-      getPfamVectors( $dbh, $type, $taxonOids_ref, 
+      getPfamVectors( $dbh, $type, $taxonOids_ref,
          $xcopy, $taxonProfiles_ref, $funcId2Name_ref );
    }
    elsif( $func eq "enzyme" ) {
-      getEnzymeVectors( $dbh, $type, $taxonOids_ref, 
+      getEnzymeVectors( $dbh, $type, $taxonOids_ref,
          $xcopy, $taxonProfiles_ref, $funcId2Name_ref );
    }
    elsif( $func eq "tigrfam" ) {
-      getTigrfamVectors( $dbh, $type, $taxonOids_ref, 
+      getTigrfamVectors( $dbh, $type, $taxonOids_ref,
          $xcopy, $taxonProfiles_ref, $funcId2Name_ref );
    }
 }
@@ -929,7 +930,7 @@ sub getProfileVectors {
 # getCogVectors - Get profile vectors for COG.
 ############################################################################
 sub getCogVectors {
-    my( $dbh, $type, $taxonOids_ref, 
+    my( $dbh, $type, $taxonOids_ref,
         $xcopy, $taxonProfiles_ref, $funcId2Name_ref ) = @_;
 
     ## Template
@@ -980,7 +981,7 @@ sub getCogVectors {
 # getPfamVectors - Get profile vectors for Pfams.
 ############################################################################
 sub getPfamVectors {
-    my( $dbh, $type, $taxonOids_ref, 
+    my( $dbh, $type, $taxonOids_ref,
         $xcopy, $taxonProfiles_ref, $funcId2Name_ref ) = @_;
 
     ## Template
@@ -1031,7 +1032,7 @@ sub getPfamVectors {
 # getEnzymeVectors - Get profile vectors for enzymes.
 ############################################################################
 sub getEnzymeVectors {
-    my( $dbh, $type, $taxonOids_ref, 
+    my( $dbh, $type, $taxonOids_ref,
         $xcopy, $taxonProfiles_ref, $funcId2Name_ref ) = @_;
 
     ## Template
@@ -1082,7 +1083,7 @@ sub getEnzymeVectors {
 # getTigrfamVectors - Get profile vectors for TIGRfams.
 ############################################################################
 sub getTigrfamVectors {
-    my( $dbh, $type, $taxonOids_ref, 
+    my( $dbh, $type, $taxonOids_ref,
         $xcopy, $taxonProfiles_ref, $funcId2Name_ref ) = @_;
 
     ## Template
@@ -1181,7 +1182,7 @@ sub pooledNormalizeProfileVectors {
     my( $pooled_gene_count ) = getCumGeneCount( $dbh, \@taxon_oids );
     for my $taxon_oid( @taxon_oids ) {
         my $profile_ref = $taxonProfiles_ref->{ $taxon_oid };
-	pooledNormalizeTaxonProfile( $dbh, $taxon_oid, 
+	pooledNormalizeTaxonProfile( $dbh, $taxon_oid,
 	   $profile_ref, $pooled_gene_count );
     }
 }
@@ -1232,7 +1233,7 @@ sub printGeneList {
 
     my $dbh = dbLogin( );
     require FuncCartStor;
-    my $sql = FuncCartStor::getDtGeneFuncQuery1($funcId);    
+    my $sql = FuncCartStor::getDtGeneFuncQuery1($funcId);
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid, $funcId );
     my @gene_oids;
     for( ;; ) {
@@ -1251,13 +1252,13 @@ sub printGeneList {
     print "<h1>Abundance Test Tool Genes</h1>\n";
     printStatusLine( "Loading ...", 1 );
     printMainForm( );
-    
+
     printGeneCartFooter( );
-    print "<p>\n";    
+    print "<p>\n";
     #HtmlUtil::flushGeneBatchSorting( $dbh, \@gene_oids, $it );
     print "</p>\n";
     printGeneCartFooter( ) if $nGenes > 10;
-    
+
     printStatusLine( "$nGenes gene(s) retrieved.", 2 );
     print end_form( );
 }
@@ -1398,7 +1399,7 @@ sub getDScoreColorLegend {
 #
 ############################################################################
 sub getDScores {
-   my( $q_ref, $r_ref, $qfreq_ref, $rfreq_ref, 
+   my( $q_ref, $r_ref, $qfreq_ref, $rfreq_ref,
        $dscores_ref, $flags_ref ) = @_;
 
    ## n1
@@ -1463,7 +1464,7 @@ sub getDScores {
 ############################################################################
 sub isValidTest {
     my( $n1, $n2, $x1, $x2 ) = @_;
-    
+
     return 1 if $x1 >= 5 && $x2 >= 5;
     return 1 if $x1 + $x2 >= 10 && $x1 > $x2 && $n2 >= $n1;
     return 1 if $x1 + $x2 >= 10 && $x2 > $x1 && $n1 >= $n2;
@@ -1472,7 +1473,7 @@ sub isValidTest {
 
 ############################################################################
 # getPvalues - Get pvalues given z (or d-score in this case).
-# 
+#
 #  Input:
 #    @param dscores_ref - Hash of d-scores
 #    @param flags_ref - Flag of undersized values.
@@ -1502,7 +1503,7 @@ sub getPvalues {
     close $wfh;
 
     WebUtil::unsetEnvPath( );
-    webLog( "Running R pnorm( )\n" ); 
+    webLog( "Running R pnorm( )\n" );
     my $env = "PATH='/bin:/usr/bin'; export PATH";
     my $cmd = "$env; $r_bin --slave < $tmpRcmdFile > /dev/null";
     webLog( "+ $cmd\n" );
@@ -1590,7 +1591,7 @@ sub printDScoreNote {
     print "<h1>D-score</h1>\n";
     print "<p>\n";
     print qq{
-       D-score uses a binomial distribution 
+       D-score uses a binomial distribution
        whereby the "difference" measurement is approximately normally
        distributed with mean 0 and unit variance, <i>N(0,1)</i>.<br/>
        <br/>
@@ -1600,7 +1601,7 @@ sub printDScoreNote {
        <i>x2</i> = count of a given function
            in reference group.<br/>
        <i>n1</i> = total counts of all function occurrences in query group.<br/>
-       <i>n2</i> = total counts of all function occurrences 
+       <i>n2</i> = total counts of all function occurrences
           in reference group.<br/>
        <br/>
        <b>Computations:</b><br/>

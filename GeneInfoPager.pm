@@ -1,9 +1,9 @@
 ############################################################################
-# GeneInfoPager - Gene information pager.  Pager indexes and read's
+# GeneInfoPager - Gene information pager.  Pager indexes and reads
 #  Indexed file in pages for comparative gene information file which
 #  is precomputed.
 #      --es 06/10/09
-# $Id: GeneInfoPager.pm 30841 2014-05-08 04:32:57Z klchu $
+# $Id: GeneInfoPager.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package GeneInfoPager;
 my $section = "GeneInfoPager";
@@ -44,6 +44,7 @@ sub dispatch {
         timeout( 60 * 180 );    # timeout in 3 hrs
         printFilePager();
     } else {
+        timeout( 60 * 60 );    # timeout in 1 hr (from main.pl)
         printFilterPager();
     }
 }
@@ -98,11 +99,11 @@ sub printFilePager {
     print qq{
         <p>
         Select filter * &nbsp;
-        <select name='filterSection' onChange='filter()'> 
+        <select name='filterSection' onChange='filter()'>
         };
 
     if ( $filter eq "noproduct" ) {
-        print qq{<option value="label"> 
+        print qq{<option value="label">
                 -- Select Filter --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>};
         print qq{<option value="all">None</option>};
         print qq{
@@ -110,7 +111,7 @@ sub printFilePager {
         };
         print qq{<option value="product">Product Name/No Evidence</option> };
     } elsif ( $filter eq "product" ) {
-        print qq{<option value="label"> 
+        print qq{<option value="label">
                 -- Select Filter --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>};
         print qq{<option value="all">None</option>};
         print qq{
@@ -118,33 +119,33 @@ sub printFilePager {
         print qq{
             <option value="product" selected>Product Name/No Evidence &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option> };
     } elsif ( $filter eq "all" ) {
-        print qq{<option value="label"> 
+        print qq{<option value="label">
                 -- Select Filter --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>};
         print qq{<option value="all" selected>None</option>};
         print qq{
             <option value="noproduct">No Product Name/With Evidence</option>};
         print qq{<option value="product">Product Name/No Evidence</option> };
     } else {
-        print qq{<option value="label" selected> 
+        print qq{<option value="label" selected>
                 -- Select Filter --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>};
         print qq{<option value="all">None</option>};
         print qq{
             <option value="noproduct">No Product Name/With Evidence</option>
-        };    
+        };
         print qq{<option value="product">Product Name/No Evidence</option> };
     }
 
     print qq{
-        </select>   
-        
+        </select>
+
         <br><br>
         &nbsp;&nbsp;* Without product name, but with some protein family information evidence.
-        <br> 
-        &nbsp;&nbsp;* With product name, but without any protein family information evidence.     
-         
+        <br>
+        &nbsp;&nbsp;* With product name, but without any protein family information evidence.
+
         <br><br>
         Current filter selection: $filtername.
-        </p>             
+        </p>
         };
 
     print end_form();
@@ -414,7 +415,7 @@ sub flushGenesToExcel {
             and ( $prod_name is null
                  or lower($prod_name) like '%hypothetic%'
                  or lower($prod_name) like '%unknown%'
-                 or lower($prod_name) like '%unnamed%' ) 
+                 or lower($prod_name) like '%unnamed%' )
         };
     } elsif ( $filter eq "product" ) {
         $sqlClause = qq{
@@ -524,7 +525,7 @@ sub flushGenesToExcel {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
     my $sql = qq{
-      select g.gene_oid, 'Coordinates', 
+      select g.gene_oid, 'Coordinates',
          g.start_coord || '..' || g.end_coord || '(' || g.strand || ')'
       from scaffold scf, gene g
       where g.taxon = ?
@@ -644,7 +645,7 @@ sub flushGenesToExcel {
     my $sql = qq{
        select distinct g.gene_oid, 'KEGG_module',
           km.module_id||': '||km.module_name val
-       from kegg_module km, 
+       from kegg_module km,
           gene_ko_terms gk, gene g, ko_term kt, kegg_module_ko_terms kmk
        where km.module_id = kmk.module_id
        and kmk.ko_terms = gk.ko_terms
@@ -661,7 +662,7 @@ sub flushGenesToExcel {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
     my $sql = qq{
-        select distinct g.gene_oid, 'IMG_pathway', 
+        select distinct g.gene_oid, 'IMG_pathway',
            pw.pathway_oid||': '||pw.pathway_name
         from gene_img_functions g,
            img_reaction_catalysts irc, img_pathway_reactions ipr,
@@ -692,7 +693,7 @@ sub flushGenesToExcel {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
     my $sql = qq{
-        select distinct g.gene_oid, 'Metacyc', 
+        select distinct g.gene_oid, 'Metacyc',
 	   bp.unique_id||': '||bp.common_name val
         from biocyc_pathway bp, biocyc_reaction_in_pwys brp,
         biocyc_reaction br, gene_biocyc_rxns gb, gene g
@@ -827,8 +828,8 @@ sub flushGenesToExcel {
       $rclause
       $imgClause
    };
-    populateHash( $dbh, $sql, \%geneOid2Swissprot, $taxon_oid );    
-    
+    populateHash( $dbh, $sql, \%geneOid2Swissprot, $taxon_oid );
+
     print "Retrieving KO term annotations ...<br/>\n";
     my %geneOid2Ko;
     my $rclause   = WebUtil::urClause('g.taxon');
@@ -844,8 +845,8 @@ sub flushGenesToExcel {
       $rclause
       $imgClause
    };
-    populateHash( $dbh, $sql, \%geneOid2Ko, $taxon_oid );    
-    
+    populateHash( $dbh, $sql, \%geneOid2Ko, $taxon_oid );
+
     printEndWorkingDiv( );
 
     print $fh "gene_oid\t";

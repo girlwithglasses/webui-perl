@@ -8,7 +8,6 @@ use Role::Tiny;
 
 use IMG::IO::File;
 
-
 my $env;
 
 sub init {
@@ -23,8 +22,6 @@ sub section_decompress {
 	return ( $s_name =~ s/([a-z])([A-Z])/\1 \2/g );
 
 }
-
-
 
 =pod
 
@@ -335,8 +332,7 @@ sub print_app_header {
 				&& !$env->{img_edu} ) {
 
 				# w
-				my $file =
-				  $env->{webfs_data_dir} . "/hmp/img_w_home_page_v400.txt";
+				my $file = $env->{webfs_data_dir} . "/hmp/img_w_home_page_v400.txt";
 				$table_str = file2Str( $file, 1 );
 
 			}

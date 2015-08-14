@@ -9,6 +9,15 @@ use CGI;
 
 use Test::Taint;
 
+=cut
+
+For each of a set of URL params, compare the module and sub run and the other changes made by main.pl vs Dispatcher.pm
+
+
+
+
+=cut
+
 my $cgi = CGI->new();
 
 $cgi->param('section', 'StudyViewer');

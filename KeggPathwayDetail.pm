@@ -1,7 +1,7 @@
 ############################################################################
 # KeggPathwayDetail.pm - Show detail page for kegg pathway.
 #   --es 07/08/2005
-# $Id: KeggPathwayDetail.pm 33763 2015-07-17 21:27:42Z klchu $
+# $Id: KeggPathwayDetail.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package KeggPathwayDetail;
 my $section = "KeggPathwayDetail";
@@ -71,7 +71,7 @@ if ( getSessionParam("maxGeneListResults") ne "" ) {
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
 
 my $nvl = WebUtil::getNvl();

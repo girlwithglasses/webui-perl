@@ -3,7 +3,7 @@
 #   cumulative statistics.  Formerly taxonStatsRdbms.pl
 #      --es 07/07/2005
 #
-# $Id: CompareGenomes.pm 33883 2015-08-03 23:46:04Z aireland $
+# $Id: CompareGenomes.pm 33952 2015-08-09 18:44:19Z klchu $
 ############################################################################
 package CompareGenomes;
 my $section = "CompareGenomes";
@@ -4126,17 +4126,21 @@ sub printStats {
             printf( "<td class='img'   align='right'>%.2f%%</td>\n", 0 );
         }
         printf("</tr>\n");
-        if ( !$img_lite ) {
+        
+        #if ( !$img_lite ) {
+        if ( $stats{paralog_groups} > 0 ) {
             printf("<tr class='highlight'>\n");
-            printf("<th class='subhead'>Paralogous groups</th>\n");
+            #printf("<th class='subhead'>Paralogous groups</th>\n");
+            printf("<th class='subhead'>Internal clusters</th>\n");
             printf( "<td class='img'   align='right'>%s</td>\n",
                     $stats{paralog_groups} );
-            printf("<td class='img'   align='right'>100.00%%</td>\n");
+            #printf("<td class='img'   align='right'>100.00%%</td>\n");
+            print("<td class='img'   align='right'>&nbsp;</td>\n");
             printf("</tr>\n");
         }
 
         #
-        if ( !$img_lite ) {
+        if ( $stats{ortholog_groups} > 0 ) {
             printf("<tr class='highlight'>\n");
             printf("<th class='subhead'>Orthologous groups</th>\n");
             my $url;

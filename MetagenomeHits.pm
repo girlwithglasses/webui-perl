@@ -1,6 +1,6 @@
 ###########################################################################
 # Phylogenetic Distribution of Genes from taxon detail page
-# $Id: MetagenomeHits.pm 33804 2015-07-24 20:07:15Z jinghuahuang $
+# $Id: MetagenomeHits.pm 33936 2015-08-07 18:49:54Z klchu $
 ###########################################################################
 package MetagenomeHits;
 
@@ -3140,7 +3140,7 @@ sub processMetagenomeHitGenes {
                 and g.obsolete_flag = 'No'
                 and g.locus_type = 'CDS'
                 minus 
-                select dt.taxon_oid, 'd', 'p', dt.gene_oid
+                select dt.taxon_oid, dt.gene_oid
                 from dt_phylum_dist_genes dt
                 where dt.taxon_oid = ?
                 $clause

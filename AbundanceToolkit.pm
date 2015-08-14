@@ -3,7 +3,7 @@
 #     measurements.
 #        --es 05/19/2007
 #
-# $Id: AbundanceToolkit.pm 33080 2015-03-31 06:17:01Z jinghuahuang $
+# $Id: AbundanceToolkit.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package AbundanceToolkit;
 
@@ -37,10 +37,10 @@ my $max_query_taxons     = 20;
 my $max_reference_taxons = 200;
 my $r_bin                = $env->{r_bin};
 
-my $merfs_timeout_mins = $env->{merfs_timeout_mins}; 
-if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30;
-} 
+my $merfs_timeout_mins = $env->{merfs_timeout_mins};
+if ( ! $merfs_timeout_mins ) {
+    $merfs_timeout_mins = 60;
+}
 
 my $scaffold_cart  = $env->{scaffold_cart};
 
@@ -63,6 +63,7 @@ my $estNormalizationText = "Normalize to Total Size for Unassembled Only";
 ############################################################################
 sub dispatch {
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
 
     if ( paramMatch("abundanceResults") ne "" ) {
         printAbundanceResults();
@@ -149,7 +150,7 @@ sub printQueryForm {
     print "<br/>\n";
 
     my $name = "_section_${section}_abundanceResults";
-    print submit( -id => "go", -name => $name, 
+    print submit( -id => "go", -name => $name,
 		  -value => "Go", -class => "smdefbutton" );
     print nbsp(1);
     print reset( -id => "reset", -class => "smbutton" );
@@ -197,14 +198,14 @@ sub printAbundanceResults {
 
     #my @selectGenomes = param('genomeFilterSelections');
     #push(@queryGenomes, @selectGenomes);
-    
+
     my $function      = param("function");
     my $xcopy         = param("xcopy");
     my $normalization = param("normalization");
     my $data_type     = param("data_type");
     my $funcsPerPage  = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     # scaffold cart
     # new for merged forms - ken 2008-16-12
     my $display = param("display");
@@ -212,7 +213,7 @@ sub printAbundanceResults {
         $function     = param("cluster");
         if($function eq "") {
             $function = param("function");
-        }        
+        }
         @queryGenomes = param("profileTaxonOid");
     }
 
@@ -223,7 +224,7 @@ sub printAbundanceResults {
     if ($scaffold_cart) {
          my @scaffold_cart_names = param("scaffold_cart_name");
         $vir_count = $#scaffold_cart_names + 1;
-    }    
+    }
     if ( $nQueryGenomes == 0 && $vir_count == 0) {
         webError("Please select 1 to $max_query_taxons genomes.<br/>\n");
     }
@@ -236,9 +237,9 @@ sub printAbundanceResults {
     my $funcId2Name_href = getFuncDict($dbh, $function);
     #print Dumper($funcId2Name_href);
     #print "<br/>\n";
-        
+
     my %queryTaxonProfiles;
-    getProfileVectors( $dbh, "query", \@queryGenomes, $function, $xcopy, '', 
+    getProfileVectors( $dbh, "query", \@queryGenomes, $function, $xcopy, '',
         \%queryTaxonProfiles, $data_type );
     #print Dumper(\%queryTaxonProfiles);
     #print "<br/>\n";
@@ -280,7 +281,7 @@ sub writePagerFiles {
         $function = param("cluster");
         if($function eq "") {
             $function = param("function");
-        }        
+        }
     }
 
     my $normalization         = param("normalization");
@@ -300,7 +301,7 @@ sub writePagerFiles {
     my @taxon_oids = keys(%$queryTaxonProfiles_ref);
 
     my $nQueryGenomes    = @taxon_oids;
-    
+
     # scaffold cart
     my @query_taxon_oids = sortByTaxonName( $dbh, \@taxon_oids );
 
@@ -360,7 +361,7 @@ sub writePagerFiles {
         $name = excelHeaderName($name);
         $s .= "$name\t";
     }
-    
+
     chop $s;
     print $Fxls "$s\n";
 
@@ -411,7 +412,7 @@ sub writePagerFiles {
             $cnt = 0 if $cnt eq "";
             $cnt = sprintf( "%.2f", $cnt ) if $doGenomeNormalization;
             $r .= "$cnt\t";
-            
+
             my $url;
     	    if ( $mer_fs_taxons{$taxon_oid} ) {
                 $url = "main.cgi?section=MetaDetail&page=";
@@ -439,7 +440,7 @@ sub writePagerFiles {
     	    }
     	    else {
                 $url = "$section_cgi&page=geneList";
-                $url .= "&funcId=$funcId&function=$function&taxon_oid=$taxon_oid";    	        
+                $url .= "&funcId=$funcId&function=$function&taxon_oid=$taxon_oid";
     	    }
 
             if ( $url ) {
@@ -460,8 +461,8 @@ sub writePagerFiles {
                     next if($t eq $taxon_oid);
                     push(@othertoids, $t);
                 }
-                my $otherTaxonOids = join(",",@othertoids); 
-                
+                my $otherTaxonOids = join(",",@othertoids);
+
                 my $url = "main.cgi?section=MissingGenes&page=candidatesForm"
                 ."&taxon_oid=$taxon_oid"
                 ."&funcId=$funcId"
@@ -470,7 +471,7 @@ sub writePagerFiles {
             } elsif($cnt == 0) {
                 $link = 0;
             }
-            
+
             $r   .= "$link\t";
             $xls .= "$cnt\t";
         }
@@ -647,7 +648,7 @@ sub printOnePage {
             document.mainForm2.submit();
         }
         -->
-        </script>               
+        </script>
         };
 
         print qq{
@@ -658,7 +659,7 @@ sub printOnePage {
             document.mainForm3.submit();
         }
         -->
-        </script>               
+        </script>
         };
 
     }
@@ -670,7 +671,7 @@ sub printOnePage {
     my $normalization         = param("normalization");
     my $funcsPerPage          = param("funcsPerPage");
     $funcsPerPage = 500 if ($funcsPerPage == 0);
-    
+
     my $doGenomeNormalization = 0;
     $doGenomeNormalization = 1               if $normalization eq "genomeSize";
     $pageNo                = param("pageNo") if $pageNo        eq "";
@@ -855,12 +856,12 @@ sub printPageHeader {
         $formNum )
       = @_;
 
-    
+
     my $display = param("display");
 
     if ( $clusterMatchText ne "" ) {
         my $cluster = param("cluster");
-        
+
         print hiddenVar( "section",       "AbundanceToolkit" );
         print hiddenVar( "page",          "abundancePager" );
         print hiddenVar( "function",      "$function" );
@@ -974,7 +975,7 @@ sub getProfileVectors {
     if ( !$notScaffortCart ) {
         printStartWorkingDiv();
     }
-    
+
     ## get MER-FS taxons
     my %mer_fs_taxons = MerFsUtil::fetchTaxonsInFile( $dbh, @$taxonOids_ref );
 
@@ -989,7 +990,7 @@ sub getProfileVectors {
             }
             else {
                 print "Computing $taxon_oid $data_type $func est copy ...<br/>\n";
-                my ($profile_href, $last_id1) = getMetaTaxonFuncEstCopies( 
+                my ($profile_href, $last_id1) = getMetaTaxonFuncEstCopies(
                     $dbh, $taxon_oid, $func, $data_type, $last_id, $start_time );
                 $taxonProfiles_ref->{$taxon_oid} = $profile_href;
                 $last_id = $last_id1;
@@ -1000,7 +1001,7 @@ sub getProfileVectors {
 
             # DB
             my ( $cur, $scaffold_oids_str ) = getFuncProfileCur( $dbh, $xcopy, $func, $taxon_oid );
-    
+
             my %profile;
             for ( ; ; ) {
                 my ( $id, $cnt ) = $cur->fetchrow();
@@ -1031,9 +1032,9 @@ sub getProfileVectors {
                 $profile{$id} = $cnt;
             }
             $cur->finish();
-            OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
-                if ( $scaffold_oids_str =~ /gtt_num_id/i );         
-                        
+            OracleUtil::truncTable( $dbh, "gtt_num_id" )
+                if ( $scaffold_oids_str =~ /gtt_num_id/i );
+
             $taxonProfiles_ref->{$virtual_taxon_oid} = \%profile;
         }
     }
@@ -1041,7 +1042,7 @@ sub getProfileVectors {
     if ( !$notScaffortCart ) {
         printEndWorkingDiv();
     }
-    
+
     if ($last_id) {
         print
 "<p><font color='red'>It takes too long to compute $type -- stop at $last_id.</font>\n";
@@ -1101,7 +1102,7 @@ sub getMetaTaxonFuncEstCopies {
               $mer_data_dir . "/" . $taxon_oid . "/$t2/$copy_fname";
             if ( -e $cnt_file_name ) {
                 print "Computing $taxon_oid $t2 $func est copy through $copy_fname ...<br/>\n";
-                
+
                 my %funcs = MetaUtil::getTaxonFuncCopy( $taxon_oid, $t2, $func );
                 for my $k ( keys %funcs ) {
                     if ( $profile{$k} ) {
@@ -1111,22 +1112,22 @@ sub getMetaTaxonFuncEstCopies {
                         $profile{$k} = $funcs{$k};
                     }
                 }
-    
+
             }
             else {
-    
+
                 print "Retrieving gene estimated copies data ...<br/>\n";
                 my %gene_copies;
                 MetaUtil::getTaxonGeneEstCopy( $taxon_oid, 'assembled',
                     \%gene_copies );
-                    
+
                 #get all assembled func genes first
                 my %genes_h =
                   MetaUtil::getTaxonFuncsGenes( $taxon_oid, "assembled", $func );
 
                 if ( scalar( keys %genes_h ) > 0 ) {
                     print "Computing $taxon_oid $t2 $func est copy through the results of getTaxonFuncsGenes() ...<br/>\n";
-                    
+
                     for my $id ( sort ( keys %genes_h ) ) {
                         my @gene_list = split( /\t/, $genes_h{$id} );
                         for my $gene_oid (@gene_list) {
@@ -1141,8 +1142,8 @@ sub getMetaTaxonFuncEstCopies {
                                 $profile{$id} = $gene_copy;
                             }
                         }
-    
-                        if ( $start_time ne '' 
+
+                        if ( $start_time ne ''
                             && (( $merfs_timeout_mins * 60 ) - ( time() - $start_time )) < 100 )
                         {
                             $last_id = "$taxon_oid $id";
@@ -1159,7 +1160,7 @@ sub getMetaTaxonFuncEstCopies {
 
                     # use getTaxonFuncGeneEstCopy()
                     print "Computing $taxon_oid $t2 $func est copy through the use of getTaxonFuncGeneEstCopy() ...<br/>\n";
-    
+
                     my @ids = QueryUtil::getAllFuncList($dbh, $func);
                     #print "getMetaTaxonFuncEstCopies() ids: @ids<br/>\n";
                     for my $id (@ids) {
@@ -1167,8 +1168,8 @@ sub getMetaTaxonFuncEstCopies {
                           MetaUtil::getTaxonFuncGeneEstCopy( $taxon_oid, 'assembled', $id,
                             \%gene_copies );
                         $profile{$id} = $cnt;
-    
-                        if ( $start_time ne '' 
+
+                        if ( $start_time ne ''
                             && (( $merfs_timeout_mins * 60 ) - ( time() - $start_time )) < 100 )
                         {
                             $last_id = "$taxon_oid $id";
@@ -1176,12 +1177,12 @@ sub getMetaTaxonFuncEstCopies {
                         }
                     }
                 }
-                    
+
                 if ( tied(%gene_copies) ) {
                     untie(%gene_copies);
                 }
-                
-            }            
+
+            }
         }
     }
 
@@ -1300,13 +1301,13 @@ sub printGeneList {
 
     printAbundanceGeneListSubHeader( $dbh, $func_type, $funcId, $taxon_oid );
 
-    my $sql;    
+    my $sql;
     my @binds;
     if ($scaffold_cart && $taxon_oid < 0) {
         my $sname = ScaffoldCart::getCartNameForTaxonOid($taxon_oid);
         my $scaffold_oids_aref = ScaffoldCart::getScaffoldByCartName($sname);
         my $str = join(",",@$scaffold_oids_aref);
-        $sql = FuncCartStor::getDtGeneFuncQuery2($funcId, $str);  
+        $sql = FuncCartStor::getDtGeneFuncQuery2($funcId, $str);
 	    @binds = ( $taxon_oid, $funcId);
     }
     else {
@@ -1323,7 +1324,7 @@ sub printDbGeneList {
     my ( $dbh, $sql, $binds_ref, $est_copy ) = @_;
 
     my $cur = execSql( $dbh, $sql, $verbose, @$binds_ref );
-    
+
     my @gene_oids;
     for ( ; ; ) {
         my ($gene_oid) = $cur->fetchrow();
@@ -1339,9 +1340,9 @@ sub printDbGeneList {
     $it->addColSpec( "Gene ID",    "number asc", "right" );
     $it->addColSpec( "Locus Tag",         "char asc",   "left" );
     $it->addColSpec( "Gene Product Name", "char asc",   "left" );
- 
+
     HtmlUtil::flushGeneBatchSorting( $dbh, \@gene_oids, $it, '', 1 );
-     
+
     printGeneCartFooter() if $nGenes > 10;
     print "<p>\n";
     $it->printOuterTable(1);
@@ -1359,7 +1360,7 @@ sub printDbGeneList {
     else {
         $stLineText = "$nGenes gene(s) retrieved.";
     }
-    printStatusLine( $stLineText, 2 );    
+    printStatusLine( $stLineText, 2 );
 
 }
 
@@ -1369,7 +1370,7 @@ sub printMetaGeneList {
     print hiddenVar( "taxon_oid", $taxon_oid );
     print hiddenVar( "data_type", $data_type );
     print hiddenVar( "func_id",   $funcId );
-        
+
     my %genes     = MetaUtil::getTaxonFuncGenes( $taxon_oid, $data_type, $funcId );
     my @gene_oids = ( keys %genes );
     my $nGenes = @gene_oids;
@@ -1388,19 +1389,19 @@ sub printMetaGeneList {
     $it->addColSpec("Select");
     $it->addColSpec( "Gene ID",    "number asc", "right" );
     $it->addColSpec( "Gene Product Name", "char asc",   "left" );
-    
+
     my $select_id_name = "gene_oid";
-        
+
     my $gene_count = 0;
     for my $key (@gene_oids) {
         if ( $gene_count >= $maxGeneListResults ) {
             $trunc = 1;
             last;
         }
-    
+
         my $workspace_id = $genes{$key};
         my ( $tid, $dt, $id2 ) = split( / /, $workspace_id );
-    
+
         # checkbox
         my $row = $sd . "<input type='checkbox' name='$select_id_name' value='$workspace_id' />\t";
         $row .=
@@ -1408,7 +1409,7 @@ sub printMetaGeneList {
           . "<a href='main.cgi?section=MetaGeneDetail"
           . "&page=metaGeneDetail&taxon_oid=$tid"
           . "&data_type=$dt&gene_oid=$key'>$key</a></td>\t";
-    
+
         my ( $value, $source );
         if ( $nGenes > 1000 ) {
             $value = "-";
@@ -1416,19 +1417,19 @@ sub printMetaGeneList {
             ( $value, $source ) = MetaUtil::getGeneProdNameSource( $key, $tid, $dt );
         }
         $row .= $value . $sd . $value . "\t";
-    
+
         $it->addRow($row);
         $gene_count++;
     }
-    
+
     WebUtil::printGeneCartFooter() if ( $gene_count > 10 );
     $it->printOuterTable(1);
     WebUtil::printGeneCartFooter();
-    
+
     if ( $gene_count > 0 ) {
         WorkspaceUtil::printSaveGeneToWorkspace_withAllTaxonFuncGenes($select_id_name);
     }
-    
+
     if ($trunc) {
         my $s = "Results limited to $maxGeneListResults genes.\n";
         $s .= "( Go to " . alink( $preferences_url, "Preferences" )
@@ -1460,7 +1461,7 @@ sub printAbundanceDownload {
         $function = param("cluster");
         if($function eq "") {
             $function = param("function");
-        }        
+        }
     }
 
     my $xcopy         = param("xcopy");
@@ -1718,7 +1719,7 @@ sub printDScoreNote {
     print "<h1>D-score</h1>\n";
     print "<p>\n";
     print qq{
-       D-score uses a binomial distribution 
+       D-score uses a binomial distribution
        whereby the "difference" measurement is approximately normally
        distributed with mean 0 and unit variance, <i>N(0,1)</i>.<br/>
        <br/>
@@ -1728,7 +1729,7 @@ sub printDScoreNote {
        <i>x2</i> = count of a given function
            in reference group.<br/>
        <i>n1</i> = total counts of all function occurrences in query group.<br/>
-       <i>n2</i> = total counts of all function occurrences 
+       <i>n2</i> = total counts of all function occurrences
           in reference group.<br/>
        <br/>
        <b>Computations:</b><br/>
@@ -1797,7 +1798,7 @@ sub getFuncProfileCur {
     }
 
     my $sql;
-    
+
     if ( $func_type eq "cog" ) {
         if ( $scaffold_cart_name && !$taxon_oid ) {
             my $sql = qq{
@@ -1821,7 +1822,7 @@ sub getFuncProfileCur {
                 group by gcg.cog
             };
         }
-        
+
     } elsif ( $func_type eq "enzyme" ) {
         if ( $scaffold_cart_name && !$taxon_oid ) {
             $sql = qq{
@@ -1843,9 +1844,9 @@ sub getFuncProfileCur {
                 and g.locus_type = ?
                 and g.obsolete_flag = ?
                 group by ge.enzymes
-            };        
+            };
         }
-    
+
     } elsif ( $func_type eq "ko" ) {
         if ( $scaffold_cart_name && !$taxon_oid ) {
             $sql = qq{
@@ -1867,9 +1868,9 @@ sub getFuncProfileCur {
                 and g.locus_type = ?
                 and g.obsolete_flag = ?
                 group by gk.ko_terms
-            };        
+            };
         }
-    
+
     } elsif ( $func_type eq "pfam" ) {
         if ( $scaffold_cart_name && !$taxon_oid ) {
             $sql = qq{
@@ -1891,9 +1892,9 @@ sub getFuncProfileCur {
                 and g.locus_type = ?
                 and g.obsolete_flag = ?
                 group by gpf.pfam_family
-            };   
+            };
         }
-    
+
     } elsif ( $func_type eq "tigrfam" ) {
         if ( $scaffold_cart_name && !$taxon_oid ) {
             $sql = qq{
@@ -1915,8 +1916,8 @@ sub getFuncProfileCur {
                 and g.locus_type = ?
                 and g.obsolete_flag = ?
                 group by gtf.ext_accession
-            };  
-        }    
+            };
+        }
     }
     #print "getFuncProfileCur() sql: $sql<br/>\n";
 
@@ -1928,7 +1929,7 @@ sub getFuncProfileCur {
     }
 
     return ( $cur, $scaffold_oids_str );
-    
+
 }
 
 ############################################################################
@@ -1961,7 +1962,7 @@ sub getFuncName {
 
     my @ids = ($func_id);
     my %id2name_h;
-    
+
     if ( $func_type eq "cog" ) {
         QueryUtil::fetchCogIdNameHash( $dbh, \%id2name_h, @ids);
     } elsif ( $func_type eq "enzyme" ) {
@@ -1994,9 +1995,9 @@ sub printAbundanceGeneListSubHeader {
 
     print "<p>\n";
     print "$func_header ID: $func_id\n";
-    print "<br>$func_header Name: $func_name\n";    
+    print "<br>$func_header Name: $func_name\n";
     print "</p>\n";
-    
+
     my $taxon_name = QueryUtil::fetchTaxonName( $dbh, $taxon_oid );
 
     my $isTaxonInFile;
@@ -2009,7 +2010,7 @@ sub printAbundanceGeneListSubHeader {
             }
         }
     }
-    
+
     print "<p>\n";
     print "Taxon ID: <a href='main.cgi?section=TaxonDetail"
       . "&page=taxonDetail&taxon_oid=$taxon_oid'>"

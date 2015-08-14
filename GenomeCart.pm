@@ -1,6 +1,6 @@
 ###########################################################################
 # GenomeCart.pm
-# $Id: GenomeCart.pm 33880 2015-08-03 19:49:22Z jinghuahuang $
+# $Id: GenomeCart.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package GenomeCart;
 
@@ -48,7 +48,7 @@ my $img_ken          = $env->{ img_ken };
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 my $contact_oid;

@@ -1,7 +1,7 @@
 ###########################################################################
 # MissingGenes - Module for searching for missing genes.
 #
-# $Id: MissingGenes.pm 33818 2015-07-26 21:14:44Z imachen $
+# $Id: MissingGenes.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package MissingGenes;
 my $section = "MissingGenes";
@@ -918,7 +918,7 @@ sub printHomologCandidates {
     printStartWorkingDiv();
     my $merfs_timeout_mins = $env->{merfs_timeout_mins};
     if ( ! $merfs_timeout_mins ) {
-	$merfs_timeout_mins = 30;
+	$merfs_timeout_mins = 60;
     } 
     timeout( 60 * $merfs_timeout_mins );
     my $start_time  = time();

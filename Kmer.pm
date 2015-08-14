@@ -2,12 +2,12 @@
 # Kmer.pm - Get the kmer frequencies of a set of sequences
 #           -- originally developed by Konstantinos Mavrommatis, Dec 2011
 #
-#           This tool is used to identify the contigs/scaffolds 
+#           This tool is used to identify the contigs/scaffolds
 #           that have significantly different composition than
-#           the rest of the populations. The 4mer frequencies for 
+#           the rest of the populations. The 4mer frequencies for
 #           each scaffold are computed and then analyzed using PCA.
 #
-# $Id: Kmer.pm 33269 2015-04-26 03:07:31Z jinghuahuang $
+# $Id: Kmer.pm 33981 2015-08-13 01:12:00Z aireland $
 ###########################################################################
 package Kmer;
 
@@ -86,6 +86,7 @@ my $SCAF_FOLDER = "scaffold";
 ############################################################################
 sub dispatch {
     $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 minutes (from main.pl)
     if ( $page eq "plot" ) {
         kmerPlotTaxon();
     } elsif ( $page eq "plotScaffolds" ||
@@ -109,9 +110,9 @@ sub kmerPlotScaffolds {
     my $isSet = param('isSet');
     if ( scalar(@scaffold_oids) == 0 ) {
         if ($isSet) {
-            webError("No scaffold sets have been selected.");            
+            webError("No scaffold sets have been selected.");
         } else {
-            webError("No scaffolds have been selected.");            
+            webError("No scaffolds have been selected.");
         }
         return;
     }
@@ -219,7 +220,7 @@ sub writeScaffoldsMapFile {
     	    print $wfh "\n";
         }
         $cur->finish();
-        OracleUtil::truncTable( $dbh, "gtt_num_id" ) 
+        OracleUtil::truncTable( $dbh, "gtt_num_id" )
             if ( $oid_str =~ /gtt_num_id/i );
     }
     close $wfh;
@@ -231,14 +232,14 @@ sub writeScaffoldsMapFile {
 ############################################################################
 # kmerPlotTaxon - Print kmer frequency plot for a given taxon
 ############################################################################
-sub kmerPlotTaxon {    
+sub kmerPlotTaxon {
     my $taxon_oid = param("taxon_oid");
     webError("Taxon ID missing") if (!$taxon_oid);
     webError("Invalid Taxon ID") if (!isNumber($taxon_oid));
 
     my $dbh = dbLogin();
     my $sql = qq{
-        select s.scaffold_oid, s.ext_accession, 
+        select s.scaffold_oid, s.ext_accession,
                tx.taxon_display_name
         from scaffold s, taxon tx
         where s.taxon = tx.taxon_oid
@@ -247,7 +248,7 @@ sub kmerPlotTaxon {
     };
     my $cur = execSql($dbh, $sql, $verbose, $taxon_oid);
 
-    my $scaffoldsMapFile = "$tmp_dir/scaffolds$$.txt"; 
+    my $scaffoldsMapFile = "$tmp_dir/scaffolds$$.txt";
     my $wfh = newWriteFileHandle( $scaffoldsMapFile, "scaffoldsMap" );
     my $taxon_name;
     for ( ;; ) {
@@ -255,14 +256,14 @@ sub kmerPlotTaxon {
 	    = $cur->fetchrow();
         last if !$scaffold_oid;
     	$taxon_name = $taxon_display_name;
-        print $wfh "$ext_accession\t"; 
-        print $wfh "$scaffold_oid\n"; 
-    } 
-    close $wfh; 
+        print $wfh "$ext_accession\t";
+        print $wfh "$scaffold_oid\n";
+    }
+    close $wfh;
     $cur->finish();
 
-    my $url = "$main_cgi?section=TaxonDetail" 
-	    . "&page=taxonDetail&taxon_oid=$taxon_oid"; 
+    my $url = "$main_cgi?section=TaxonDetail"
+	    . "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<h1>Kmer Frequency Analysis</h1>";
     print "<p>".alink($url, $taxon_name)."</p>";
 
@@ -292,7 +293,7 @@ sub printKmerWindow {
     if ( ! $ignoreSettings ) {
         $outputPrefix = findKmerSettings();
     }
-    printKmerSettings($outputPrefix, $taxon_oid, $scaffold_oid_aref, 
+    printKmerSettings($outputPrefix, $taxon_oid, $scaffold_oid_aref,
 		      $set2scafs_href, $isSet);
 
     return $outputPrefix;
@@ -348,7 +349,7 @@ sub printKmerSettings {
     my ($outputPrefix, $taxon_oid, $scaffold_oid_aref, $set2scafs_href, $isSet) = @_;
 
     my $maidenRun = 1 if (!$outputPrefix);
-    printKmerHTML($taxon_oid, $scaffold_oid_aref, 
+    printKmerHTML($taxon_oid, $scaffold_oid_aref,
 		  $set2scafs_href, $isSet, $maidenRun);
     return 0 if $maidenRun;
 
@@ -395,20 +396,20 @@ sub printPage {
     print qq{
         <script type='text/javascript'>
         var tabview1 = new YAHOO.widget.TabView("kmerTab");
-        </script> 
-    }; 
+        </script>
+    };
     my @tabIndex = ( "#kmertab1", "#kmertab2" );
-    my @tabNames = ( "2D View", "3D View" ); 
-    TabHTML::printTabDiv("kmerTab", \@tabIndex, \@tabNames); 
+    my @tabNames = ( "2D View", "3D View" );
+    TabHTML::printTabDiv("kmerTab", \@tabIndex, \@tabNames);
 
-    print "<div id='kmertab1'>"; 
+    print "<div id='kmertab1'>";
     printHint("Mouse over a point to see the scaffold which it represents.  "
 	    . "<br/>Click on a point to go to the Chromosome Viewer."
 	    . "<br/>If .html and/or .kin files were not created, the system "
 	    . "could have run out of memory during computation, - "
 	    . "you may try to lower the 'Oligomer size' and recompute."
 	);
-  
+
     my $statLine = "";
     for (my $i = 1; ;$i++) {
     	my $filePath = "$tmp_dir/${outputPrefix}PC$i" .
@@ -426,7 +427,7 @@ sub printPage {
 		if ($i == 1) {
 		    print "<p style='padding-left:10px;font-style:italic'>";
 		    print "<img style='vertical-align:middle' "
-			. "src='$base_url/images/error.gif' border=0>" 
+			. "src='$base_url/images/error.gif' border=0>"
 			. nbsp(1) . "Could not find the .html data file. "
 			. "Please check whether the parameters to Kmer are "
 			. "within the range for your data.</p>";
@@ -443,20 +444,20 @@ sub printPage {
     }
     print "</div>"; # end kmertab1
 
-    print "<div id='kmertab2'>"; 
+    print "<div id='kmertab2'>";
     my $kinFile = "$tmp_dir/${outputPrefix}PC1-PC2-PC3.kin";
     if (!-e $kinFile) {
     	print "<p style='padding-left:10px;font-style:italic'>";
-    	print "<img style='vertical-align:middle' " 
-    	    . "src='$base_url/images/error.gif' border=0>" 
+    	print "<img style='vertical-align:middle' "
+    	    . "src='$base_url/images/error.gif' border=0>"
     	    . nbsp(1) . "Could not find the .kin file.</p>";
     } else {
     	use King;
     	King::plotFile($kinFile, $set2scafs_href, $isSet);
     }
     print "</div>"; # end kmertab2
-    TabHTML::printTabDivEnd(); 
- 
+    TabHTML::printTabDivEnd();
+
     printStatusLine($statLine . " loaded.");
 }
 
@@ -520,13 +521,13 @@ sub generatePlotTaxon {
     WebUtil::unsetEnvPath();
     my $env = "PATH='/bin:/usr/bin'; export PATH; cd $tmp_dir";
     my $cmd = "$env; $r_bin --slave "
-	    . "--file=$kMerRscript --args " 
-	    . "--input  '$kmerFile' " 
-	    . "--output '$outputPrefix' " 
-	    . "--pngurl '$tmp_url/' " 
-	    . "--doturl '$dotUrl' " 
-	    . "--label  '$taxon_name' " 
-	    . "--oid    '$taxon_oid' " 
+	    . "--file=$kMerRscript --args "
+	    . "--input  '$kmerFile' "
+	    . "--output '$outputPrefix' "
+	    . "--pngurl '$tmp_url/' "
+	    . "--doturl '$dotUrl' "
+	    . "--label  '$taxon_name' "
+	    . "--oid    '$taxon_oid' "
 	    . "--minvariation ${kmerParam{minVariation}{val}}";
     $cmd = each %{{$cmd,0}};  # untaint the variable to make it safe for Perl
     printLocalStatus("Creating plot.");
@@ -553,7 +554,7 @@ sub showScaffoldGraph {
     webError("Unable to proceed with missing scaffold name") if !$extAccession;
 
     if (!$scaffold_oid || $scaffold_oid eq "") {
-	webError("Unable to proceed with missing taxon_oid") 
+	webError("Unable to proceed with missing taxon_oid")
 	    if !$taxon_oid || $taxon_oid eq "";
     }
 
@@ -563,7 +564,7 @@ sub showScaffoldGraph {
     if ($taxon_oid && $taxon_oid ne "") {
 	my $sql = qq{
             select scf.scaffold_oid, st.seq_length
-    	    from scaffold scf, scaffold_stats st 
+    	    from scaffold scf, scaffold_stats st
     	    where scf.scaffold_oid = st.scaffold_oid
 	    and scf.taxon = st.taxon
             and scf.ext_accession = ?
@@ -646,7 +647,7 @@ sub getKmerSettingTableStr {
         my $unit = "bp"
             if ($key eq "fragmentWindow" || $key eq "fragmentStep");
         push @customizeText, "$text ($min - $max)";
-        push @customizeValues, 
+        push @customizeValues,
         qq{
         <input type="textbox" id="$key" name="$key" value="$val" maxLength="4" /> $unit
         };
@@ -657,7 +658,7 @@ sub getKmerSettingTableStr {
     if ( $isForJob ) {
         my $json = new JSON;
         $json->pretty;
-        my $kmerParamJSON = $json->encode(\%kmerParam);        
+        my $kmerParamJSON = $json->encode(\%kmerParam);
         $options = qq{
         <script type="text/javascript">
         function validateAndCheckSets(textFieldName, btnGrpName, setType) {
@@ -687,7 +688,7 @@ sub getKmerSettingTableStr {
                 }
                 return true;
             }
-        </script>        
+        </script>
         };
     }
     $options .= qq{
@@ -772,7 +773,7 @@ sub printKmerHTML {
 
     # Show settings dialog if running for the first time
     my $popupVisibility = $maidenRun ? "true" : "false";
- 
+
     my $json = new JSON;
     $json->pretty;
     my $kmerParamJSON = $json->encode(\%kmerParam);
@@ -809,9 +810,9 @@ sub printLocalStatus {
 sub extractKmerSettings {
     my ($outputPrefix) = @_;
 
-    my ($junk, $fragmentWindow, $fragmentStep, $kmerSize, $minVariation) 
+    my ($junk, $fragmentWindow, $fragmentStep, $kmerSize, $minVariation)
         = split(/\-/, $outputPrefix);
-        
+
     return ($fragmentWindow, $fragmentStep, $kmerSize, $minVariation);
 }
 
@@ -821,14 +822,14 @@ sub extractKmerSettings {
 sub getKmerSettingDisplay {
     my ($outputPrefix) = @_;
 
-    my ($fragmentWindow, $fragmentStep, $kmerSize, $minVariation) 
+    my ($fragmentWindow, $fragmentStep, $kmerSize, $minVariation)
         = extractKmerSettings($outputPrefix);
     my $text;
     $text .= "Fragment window: " . $fragmentWindow . " bp, ";
     $text .= "Fragment step: " . $fragmentStep . " bp, ";
     $text .= "Oligomer size: " . $kmerSize . ", ";
     $text .= "Minimum variation: " . $minVariation . " ";
-        
+
     return $text;
 }
 

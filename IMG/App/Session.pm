@@ -1,28 +1,335 @@
 ###########################################################################
 #
-# $Id: IMG::Session.pm 33673 2015-06-30 19:50:33Z klchu $
+# $Id: IMG::App::Session.pm 33673 2015-06-30 19:50:33Z klchu $
 #
 ############################################################################
-package IMG::Session;
+package IMG::App::Session;
 
 use IMG::Util::Base;
+use Moo::Role;
 
 use CGI::Session qw/-ip-match/;
 use HTTP::Cookies;
-use LWP::UserAgent;
-use Role::Tiny;
 
-has 'session' => (
-	is => 'rw'
+requires 'session', 'env', 'cookies';
+#has 'session' => (
+#	is => 'ro',
+#);
+
+#has 'cookies' => (
+#	is => 'ro',
+#);
+
+#has 'env' => (
+#	is => 'ro',
+#);
+
+has 'http_ua' => (
+	is => 'lazy',
 );
 
-has 'cookies' => (
-	is => 'rw'
-);
 
-has 'config' => (
-	is => 'rw'
-);
+sub _build_http_ua {
+	my $self = shift;
+	return HTTP::Tiny->new;
+}
+
+=head3 is_valid_session
+
+Check that a session is valid by pinging the JGI sign-on server
+
+=cut
+
+sub is_valid_session {
+	my $self = shift;
+    my $sid = $self->session->param("jgi_session_id");
+
+	return 0 unless $sid;
+
+#    webLog("isValidSession \n");
+#    return 0 if ( $sid eq "" || $sid eq 0 );
+
+    # https://signon.jgi-psf.org/api/sessions/
+    # my $url = $sso_api_url . $sid;
+    # new 2015-01-04 - ken
+	my $url = $self->env->{sso_api_url} . $sid . '.json';
+
+	my $resp = $self->http_ua->head( $url );
+
+	# 200 - OK
+	# 204 - ok but no content
+	# 410 or 404 - Gone
+	if ($resp->{status} == 200 || $resp->{status} == 204) {
+		return 1;
+	}
+
+	return 0;
+#	{
+#		status => $resp->{status},
+#		title  => 'JGI session error',
+#		message => $resp->{reason},
+#	};
+}
+
+sub get_jgi_user_json {
+	my $self = shift;
+	my $u_id = shift || die "No user ID supplied";
+
+	my $response = $self->http_ua->get( $self->cfg->{sso_url} . $u_id . '.json' );
+
+	if (! $response->{success}) {
+		warn "No user data found for $u_id";
+		return 0;
+	}
+
+	return decode_json $response->{content};
+
+}
+
+#
+# once login in sso call this to setup cgi session
+#
+# https://signon.jgi.doe.gov/api/users/3701.json
+# http://contacts.jgi-psf.org/api/contacts/3696
+#
+sub validate_user {
+	my $self = shift;
+	my $arg_h = shift;
+
+	my $conn = $arg_h->{conn};
+	my $cookies = $self->{cookies};
+
+	# check for session cookie and value
+	if (! $cookies->{ $self->cfg->{sso_session_cookie_name } } || ! $cookies->{ $self->cfg->{sso_session_cookie_name}}->value) {
+		return 0;
+	}
+
+#    webLog("here 4 $url\n");
+#    my $ua = WebUtil::myLwpUserAgent();
+
+#    my $req  = GET($url);
+#    my $res  = $ua->request($req);
+#    my $code = $res->code;
+
+    #webLog("here 5 $code\n");
+
+	my $sess_data = $self->get_jgi_user_data( $cookies->{ $self->cfg->{sso_session_cookie_name} }->value );
+	# ping the server
+
+	if (! $sess_data->{user}{login} || ! $sess_data->{user}{email_address}) {
+		return 0;
+	}
+
+	my $sess_id   = $sess_data->{id};
+	my $user_href = $sess_data->{user};
+	my $user_id   = $sess_data->{user}{id};
+
+	# contact_oid, username, super_user, name, email
+	my $user_h = getContactOid( $arg_h->{dbh}, $sess_data->{user}{id} );
+
+
+#	my ( $contact_oid, $username, $super_user, $name, $email2 ) = getContactOid( $dbh, $sess_data->{user}{id} );
+
+	return 0 unless $user_h->{contact_oid};
+
+=cut
+	my ( $ans, $login, $email, $userData_href ) = getUserInfo3( $user_id, $user_href );
+
+    my ( $id, $user_href ) = @_;
+
+    my $contact_id = $user_href->{contact_id};
+    my $login      = $user_href->{'login'};
+    my $email      = $user_href->{'email_address'};
+
+    if ( $email eq '' || $login eq '' ) {
+        return ( 0, '', '', '' );
+    }
+
+    my %userData = (
+        'username'     => $login,
+        'email'        => $email,
+        'name'         => $user_href->{'first_name'} . ' ' . $user_href->{'last_name'},
+        'phone'        => $user_href->{'phone_number'},
+        'organization' => $user_href->{'institution'},
+        'address'      => $user_href->{'address_1'},
+        'state'        => $user_href->{'state'},
+        'country'      => $user_href->{'country'},
+        'city'         => $user_href->{'city'},
+        'title'        => $user_href->{'prefix'},
+        'department'   => $user_href->{'department'},
+    );
+
+    webLog(" 1, $login, lc($email),\n");
+    return ( 1, $login, lc($email), \%userData );
+
+=cut
+
+        checkBannedUsers( $user_h->{username}, $user_h->{email}, $sess_data->{user}{email_address} );
+=cut
+        if ( $ans == 1 && $contact_oid eq "" ) {
+            $login = CGI::unescape($login);
+            $email = CGI::unescape( lc($email) );
+
+            my $emailExists = emailExist( $dbh, $email );
+            if ($emailExists) {
+
+                # update user's old img account with caliban data
+                updateUser( $login, $email, $user_id );
+            } else {
+
+                # user is an old jgi sso user, data not in img's contact table
+                #insertUser( $login, $email, $user_id, $userData_href );
+
+                imgAccounttForm( $email, $userData_href );
+            }
+            ( $contact_oid, $username, $super_user, $name, $email2 ) = getContactOid( $dbh, $user_id );
+        }
+=cut
+
+	setSessionParam( "contact_oid",       $user_h->{contact_oid} );
+	setSessionParam( "super_user",        $user_h->{super_user} );
+	setSessionParam( "username",          $user_h->{username} );
+	setSessionParam( "jgi_session_id",    $sess_data->{id} );
+	setSessionParam( "name",              $sess_data->{first_name} . ' ' . $sess_data->{last_name} );
+	setSessionParam( "email",             $user_h->{email} );
+	setSessionParam( "caliban_id",        $sess_data->{user}{id} );
+	setSessionParam( "caliban_user_name", $sess_data->{user}{login} );
+	return 1;
+}
+
+#
+# get user img contact oid via caliban_id
+#
+sub getContactOid {
+
+    my ( $dbh, $user_id ) = @_;
+
+	my @cols = qw( contact_oid username super_user name email );
+
+    my $sql = 'select '
+    	. join ( ", ", @cols )
+		. ' from contact where caliban_id = ? ';
+
+	my $cur = execSql( $dbh, $sql, $verbose, $user_id );
+
+	my %contact;
+	my $rslt = $cur->fetchrow_arrayref();
+
+	return { @contact{ @cols } = @$rslt } || undef;
+
+}
+
+
+
+
+#  we need to touch the session to keep active
+#
+# curl -X PUT -d "" -D headers.txt https://signon.jgi-psf.org/api/sessions/e8b6ef108302e1e4
+# ; cat headers.txt
+#
+#sub touch {
+#    my($sid) = @_;
+#
+#    webLog("running: curl -i -X PUT $sso_url/api/sessions/$sid \n");
+#
+
+#}
+
+# newer version
+# new user json url
+# https://signon.jgi-psf.org/api/sessions/01f3b5f748d90db59a4a4fbe5f1cbdb2.json
+# {"ip":"128.3.44.193","id":"01f3b5f748d90db59a4a4fbe5f1cbdb2",
+#  "user":{"created_at":"2011-02-15T14:52:51Z","email":"klchu@lbl.gov","id":3701,
+#    "last_authenticated_at":"2015-04-28T18:31:26Z","login":"klchu","updated_at":"2015-01-07T18:55:00Z",
+#    "contact_id":3696,"prefix":null,"first_name":"Ken","middle_name":null,"last_name":"Chu","suffix":null,
+#    "gender":null,"institution":"Joint Genome Institute","institution_type":"DOE Lab","department":null,
+#    "address_1":"2800 Mitchell Drive","address_2":"","city":"Walnut Creek","state":"CA","postal_code":"94598",
+#    "country":"United States","phone_number":"925-296-5670",
+#    "fax_number":null,"email_address":"klchu@lbl.gov",
+#    "comments":null,"internal":true}
+#    }
+sub getUserInfo3 {
+    my ( $id, $user_href ) = @_;
+
+    my $contact_id = $user_href->{contact_id};
+    my $login      = $user_href->{'login'};
+    my $email      = $user_href->{'email_address'};
+
+    if ( $email eq '' || $login eq '' ) {
+        return ( 0, '', '', '' );
+    }
+
+    my %userData = (
+        'username'     => $login,
+        'email'        => $email,
+        'name'         => $user_href->{'first_name'} . ' ' . $user_href->{'last_name'},
+        'phone'        => $user_href->{'phone_number'},
+        'organization' => $user_href->{'institution'},
+        'address'      => $user_href->{'address_1'},
+        'state'        => $user_href->{'state'},
+        'country'      => $user_href->{'country'},
+        'city'         => $user_href->{'city'},
+        'title'        => $user_href->{'prefix'},
+        'department'   => $user_href->{'department'},
+    );
+
+    webLog(" 1, $login, lc($email),\n");
+    return ( 1, $login, lc($email), \%userData );
+}
+
+#
+# check to see if username or email address has been banned
+#
+# - noly works for jgi sso logins
+# - img accounts are not found in the IsCalibanUser.cgi - get popup of bad login
+#
+sub checkBannedUsers {
+    my ( $cur_username, $curr_email, $curr_email2 ) = @_;
+
+    my $ans = getSessionParam("banned_checked");
+    if ( $ans eq 'Yes' ) {
+        return;
+    }
+
+    my $dbh = DataEntryUtil::connectGoldDatabase();
+    my $sql = qq{
+    select username, email
+    from cancelled_user
+    };
+
+    my $cur = execSql( $dbh, $sql, $verbose );
+    for ( ; ; ) {
+        my ( $username, $email ) = $cur->fetchrow();
+        last if !$username;
+
+        if (   ( $cur_username eq $username )
+            || ( lc($cur_username) eq lc($email) )
+            || ( lc($curr_email)   eq lc($email) )
+            || ( lc($curr_email2)  eq lc($email) ) )
+        {
+            my $text = qq{
+Your account has been locked. <br>
+If you believe this is an error please email us at:<br>
+imgsupp at lists.jgi-psf.org (imgsupp\@lists.jgi-psf.org)
+            };
+            $cur->finish();
+
+            main::printAppHeader("login");
+            print $text;
+            main::printContentEnd();
+            main::printMainFooter();
+            Caliban::logout(1);
+            WebUtil::webExit(0);
+        }
+    }
+
+    setSessionParam( "banned_checked", "Yes" );
+}
+
+
+
+
+
 
 sub initialize {
     $cgi = new CGI;
@@ -35,8 +342,8 @@ sub initialize {
     # also the cookie name is now system base url specific
     # - Ken
     $cookie_name = "CGISESSID_";
-    if ( $self->config->{urlTag} ) {
-        $cookie_name .= $self->config->{urlTag};
+    if ( $self->cfg->{urlTag} ) {
+        $cookie_name .= $self->cfg->{urlTag};
     } else {
         my @tmps = split( /\//, $base_url );
         $cookie_name = $cookie_name . $tmps[$#tmps];
@@ -392,11 +699,11 @@ sub validateUser {
 	my $arg_h = shift;
 
 	my $conn = $arg_h->{conn};
-	my $config = $self->{config};
+	my $cfg = $self->{cfg};
 	my $cookies = $self->{cookies};
 
 	# check for session cookie and value
-	if (! $cookies->{ $config->{sso_session_cookie_name } } || ! $cookies->{ $config->{sso_session_cookie_name}}->value) {
+	if (! $cookies->{ $cfg->{sso_session_cookie_name } } || ! $cookies->{ $cfg->{sso_session_cookie_name}}->value) {
 		return 0;
 	}
 
@@ -411,7 +718,7 @@ sub validateUser {
 
 	# ping the server
 	my $ua = LWP::UserAgent->new();
-	my $response = $ua->get( $config->{sso_url} . $cookies->{ $config->{sso_session_cookie_name} } . '.json' );
+	my $response = $ua->get( $cfg->{sso_url} . $cookies->{ $cfg->{sso_session_cookie_name} } . '.json' );
 
 	return 0 unless $response->is_success;
 
@@ -522,47 +829,6 @@ sub getContactOid {
 
 }
 
-#
-# is a session valid and do a "touch" too
-#
-sub isValidSession {
-
-    my $sid = getSessionParam("jgi_session_id");
-
-	return 0 unless $sid;
-
-    webLog("isValidSession \n");
-    return 0 if ( $sid eq "" || $sid eq 0 );
-
-    # https://signon.jgi-psf.org/api/sessions/
-    # my $url = $sso_api_url . $sid;
-    # new 2015-01-04 - ken
-    my $url = $sso_api_url . $sid . '.json';
-
-	my $ua = LWP::UserAgent->new();
-	my $resp = $ua->head( $sso_api_url . $sid . ".json" );
-
-	# 200 - OK
-	# 204 - ok but no content
-	# 410 or 404 - Gone
-	if ($res->code == 200 || $res->code == 204) {
-		return 1;
-	}
-	return 0;
-}
-
-sub _get_user_json {
-
-	my $url = shift // croak "No URL supplied!";
-
-
-	my $url = $config->{sso_url} . $cookies->{ $config->{sso_session_cookie_name} } . '.json';
-
-	# ping the server
-	my $ua = LWP::UserAgent->new();
-	my $response = $ua->get($url);
-
-	return 0 unless $response->is_success;
 
 
 
@@ -800,7 +1066,7 @@ sub loadUserPreferences {
 # save users preferences in workspace
 #
 # default use is for preferences
-# can be used for genome list config preferences
+# can be used for genome list cfg preferences
 # given the filename mygenomelistprefs ??? - TODO
 # - ken
 #

@@ -1,6 +1,6 @@
 ###########################################################################
 # WorkspaceGenomeSet.pm
-# $Id: WorkspaceGenomeSet.pm 33879 2015-08-03 18:21:55Z jinghuahuang $
+# $Id: WorkspaceGenomeSet.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package WorkspaceGenomeSet;
 
@@ -47,6 +47,8 @@ my $img_ken              = $env->{img_ken};
 my $tmp_dir              = $env->{tmp_dir};
 my $workspace_dir        = $env->{workspace_dir};
 my $public_nologin_site  = $env->{public_nologin_site};
+my $enable_genomelistJson = $env->{enable_genomelistJson};
+my $YUI                   = $env->{yui_dir_28};
 my $new_func_count       = $env->{new_func_count};
 
 my $cog_base_url       = $env->{cog_base_url};
@@ -58,6 +60,7 @@ my $kegg_orthology_url = $env->{kegg_orthology_url};
 my $mer_data_dir      = $env->{mer_data_dir};
 my $taxon_lin_fna_dir = $env->{taxon_lin_fna_dir};
 my $cgi_tmp_dir       = $env->{cgi_tmp_dir};
+my $cgi_url           = $env->{cgi_url};
 my $enable_ani        = $env->{enable_ani};
 
 my $blast_max_genome = $env->{blast_max_genome};
@@ -72,7 +75,7 @@ my $enable_workspace = $env->{enable_workspace};
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
+    $merfs_timeout_mins = 60;
 }
 
 # user's sub folder names
@@ -81,11 +84,6 @@ my $FUNC_FOLDER   = "function";
 
 my $max_workspace_view = 10000;
 my $max_profile_select = 50;
-
-my $merfs_timeout_mins = $env->{merfs_timeout_mins};
-if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 30;
-}
 
 my $ownerFilesetDelim = "|";
 my $ownerFilesetDelim_message = "::::";
@@ -183,6 +181,11 @@ sub dispatch {
     {
         submitJob('Pairwise ANI');
     }
+    elsif ( paramMatch("submitSaveFuncGene") ne ""
+        || $page eq "submitSaveFuncGene" )
+    {
+        Workspace::submitSaveFuncGene($GENOME_FOLDER);
+    }
     else {
         printGenomeSetMainForm();
     }
@@ -216,9 +219,9 @@ sub printGenomeSetMainForm {
     TabHTML::printTabAPILinks("genomesetTab");
     my @tabIndex =
       ( "#genomesettab1", "#genomesettab2", "#genomesettab3",
-        "#genomesettab4", "#genomesettab6" );
+        "#genomesettab4", "#genomesettab6", "#genomesettab7" );
     my @tabNames =
-      ( "Genome Sets", "Import & Export", "Function Profile", "Blast", "Set Operation" );
+      ( "Genome Sets", "Import & Export", "Function Profile", "Blast", "Set Creation", "Set Operation" );
 
     if ( $enable_ani ) {
         splice(@tabIndex, 4, 0, "#genomesettab5");
@@ -261,8 +264,8 @@ sub printGenomeSetMainForm {
 
     require WorkspaceJob;
     my ($genomeFuncSets_ref, $genomeBlastSets_ref, $genomePairwiseANISets_ref, $geneFuncSets_ref, 
-        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, 
-        $funcScafSearchSets_ref)
+        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, $funcScafSearchSets_ref, 
+        $genonmeSaveFuncGeneSets_ref, $geneSaveFuncGeneSets_ref, $scafSaveFuncGeneSets_ref)
         = WorkspaceJob::getExistingJobSets();
     
     Workspace::printSubmitComputation( $sid, $folder, 'func_profile', 
@@ -303,6 +306,14 @@ sub printGenomeSetMainForm {
     }
 
     print "<div id='genomesettab6'>";
+    print "<h2>Genome Set Creation</h2>\n"; 
+    WorkspaceUtil::printGenomeListForm();
+    my $name = "_section_Workspace_saveGenomeSetCreation";
+    WorkspaceUtil::printSaveSelectedGenomeToWorkspace( $name );
+
+    print "</div>\n";
+
+    print "<div id='genomesettab7'>";
     Workspace::printSetOperation( $folder, $sid );
     print "</div>\n";
 
@@ -926,13 +937,13 @@ sub showGenomeFuncSetProfile {
 
     my %func_names = QueryUtil::fetchFuncIdAndName( $dbh, \@func_ids );
 
-    print "Computing function counts ... <br/>\n";
     my %taxonOrset_cnt_h;
     my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( \@func_ids );
     foreach my $func_ids_ref (@func_groups) {
         if ($isSet) {
             # genome sets
             for my $x2 (@all_files) { 
+                print "Computing genome set $x2 function counts ... <br/>\n";
                 my($c_id, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $x2 ); 
                 my $fullname = "$workspace_dir/$c_id/$folder/$x";
                 my %func2count_h = getGenomeFuncSetCount( $dbh, $func_ids_ref, $fullname, '', $data_type );
@@ -950,6 +961,7 @@ sub showGenomeFuncSetProfile {
         else {
             # taxons
             for my $taxon_oid (@taxon_oids) {
+                print "Computing $taxon_oid function counts ... <br/>\n";
                 my %func2count_h = getGenomeFuncSetCount( $dbh, $func_ids_ref, $fileFullname, $taxon_oid, $data_type );
                 my $taxonOrset_func2count_href = $taxonOrset_cnt_h{$taxon_oid};
                 if ( $taxonOrset_func2count_href ) {
@@ -990,11 +1002,11 @@ sub showGenomeFuncSetProfile {
                 if ($func_cnt_href) {
                     $cnt = $func_cnt_href->{$func_id};
                 }
-                else {
-                    #should not be used
-                    my $fullname = "$workspace_dir/$c_id/$folder/$x";
-                    $cnt = getGenomeFuncCount( $dbh, $func_id, $fullname, "", $data_type );
-                }
+                #else {
+                #    #should not be used
+                #    my $fullname = "$workspace_dir/$c_id/$folder/$x";
+                #    $cnt = getGenomeFuncCount( $dbh, $func_id, $fullname, "", $data_type );
+                #}
                 $taxonOrset2cnt_h{$x2} = $cnt;
                 $total_cnt += $cnt;
             }    # end for x2
@@ -1006,10 +1018,10 @@ sub showGenomeFuncSetProfile {
                 if ($func_cnt_href) {
                     $cnt = $func_cnt_href->{$func_id};
                 }
-                else {
-                    #should not be used
-                    $cnt = getGenomeFuncCount( $dbh, $func_id, $fileFullname, $taxon_oid, $data_type );
-                }
+                #else {
+                #    #should not be used
+                #    $cnt = getGenomeFuncCount( $dbh, $func_id, $fileFullname, $taxon_oid, $data_type );
+                #}
                 $taxonOrset2cnt_h{$taxon_oid} = $cnt;
                 $total_cnt += $cnt;
             }    # end for taxon_oid
@@ -1114,6 +1126,15 @@ sub showGenomeFuncSetProfile {
     $it->printOuterTable(1);
     WebUtil::printFuncCartFooter();
     WorkspaceUtil::printFuncGeneSaveToWorkspace( $GENOME_FOLDER, $isSet );
+
+    require WorkspaceJob;
+    my ($genomeFuncSets_ref, $genomeBlastSets_ref, $genomePairwiseANISets_ref, $geneFuncSets_ref, 
+        $scafFuncSets_ref, $scafHistSets_ref, $scafKmerSets_ref, $scafPhyloSets_ref, $funcScafSearchSets_ref, 
+        $genomeSaveFuncGeneSets_ref, $geneSaveFuncGeneSets_ref, $scafSaveFuncGeneSets_ref)
+        = WorkspaceJob::getExistingJobSets();
+    
+    Workspace::printSubmitComputation( $sid, $folder, 'save_func_gene', 
+        '_section_WorkspaceGenomeSet_submitSaveFuncGene', '', $genomeSaveFuncGeneSets_ref );
 
     printStatusLine( "$row_cnt loaded", 2 );
     print end_form();
@@ -1259,12 +1280,14 @@ sub getGenomeFuncCount {
 sub getGenomeFuncSetCount {
     my ( $dbh, $func_ids_ref, $input_file, $input_taxon, $data_type ) = @_;
 
+    my @func_ids = @$func_ids_ref;
+    
     ## get MER-FS taxons
     my ($db_taxons_ref, $file_taxons_ref) 
         = findDbAndMetaTaxons( $dbh, $input_file, $input_taxon );
 
     my %func_count;
-    my $func_id = @$func_ids_ref[0];
+    my $func_id = $func_ids[0];
     
     # database
     if ( scalar(@$db_taxons_ref) > 0 ) {
@@ -1273,7 +1296,7 @@ sub getGenomeFuncSetCount {
         my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
 
         my ( $sql, @bindList ) = WorkspaceQueryUtil::getDbTaxonFuncsGeneCountSql(
-            $dbh, $func_ids_ref, $taxon_str, $rclause, $imgClause );
+            $dbh, \@func_ids, $taxon_str, $rclause, $imgClause );
         #print "getGenomeFuncSetCount() db sql=$sql, bindList=@bindList<br/>\n";
         if ( $sql ) {
             my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
@@ -1318,14 +1341,14 @@ sub getGenomeFuncSetCount {
                 $c_table_name = "taxon_ko_count";
             }
             elsif ( $func_id =~ /MetaCyc\:/i ) {
-                ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $func_ids_ref );
+                ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, \@func_ids );
                 my @ec_ids = keys %$ec2metacyc_href;
-                $func_ids_ref = \@ec_ids;
+                @func_ids = @ec_ids;
                 $c_table_name = "taxon_ec_count";
             }
             
             if ( $c_table_name ) {
-                my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @$func_ids_ref ); 
+                my $func_ids_str = OracleUtil::getFuncIdsInClause( $dbh, @func_ids ); 
                 my $taxon_str = OracleUtil::getNumberIdsInClause( $dbh, @$file_taxons_ref );
     
                 my $datatypeClause;
@@ -1380,7 +1403,7 @@ sub getGenomeFuncSetCount {
             my @type_list = MetaUtil::getDataTypeList($data_type);
             for my $taxon_oid (@$file_taxons_ref) {
                 for my $t2 ( @type_list ) {
-                    my %func_h2 = MetaUtil::getTaxonFuncsCnt( $taxon_oid, $t2, $func_ids_ref );;
+                    my %func_h2 = MetaUtil::getTaxonFuncsCnt( $taxon_oid, $t2, \@func_ids );;
                     for my $func2 ( keys %func_h2 ) {
                         my $cnt2 = $func_h2{$func2};
                         $func2 = WorkspaceQueryUtil::addBackFuncIdPrefix( $func_id, $func2 );

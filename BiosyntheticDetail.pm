@@ -1,6 +1,6 @@
 ############################################################################
 # BiosyntheticDetail - detail page for biosynthetic clusters
-# $Id: BiosyntheticDetail.pm 33689 2015-07-06 07:49:51Z jinghuahuang $
+# $Id: BiosyntheticDetail.pm 33949 2015-08-09 07:37:16Z jinghuahuang $
 ############################################################################
 package BiosyntheticDetail;
 my $section = "BiosyntheticDetail";
@@ -6235,8 +6235,6 @@ sub processBiosyntheticClusters {
     my @taxon_oids = keys %taxons_h;
     my ($taxon2name_href, $taxon_in_file_href, $taxon_db_href, $taxon_oids_str)
         = QueryUtil::fetchTaxonsOidAndNameFile($dbh, \@taxon_oids);
-    OracleUtil::truncTable( $dbh, "gtt_num_id" )
-      if ( $taxon_oids_str =~ /gtt_num_id/i );
 
     print "Getting pfam count per cluster (isolate taxons) ...<br/>\n";
     ## count experimental

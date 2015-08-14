@@ -2,7 +2,7 @@
 # ImgTermBrowser.pm - Browse IMG terms from this module.
 #   Include IMG term details.
 #
-# $Id: ImgTermBrowser.pm 31288 2014-06-27 18:29:30Z imachen $
+# $Id: ImgTermBrowser.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ############################################################################
 package ImgTermBrowser;
 my $section = "ImgTermBrowser";
@@ -45,7 +45,7 @@ my $content_list         = $env->{content_list};
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
 
 ############################################################################

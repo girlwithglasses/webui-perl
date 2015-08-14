@@ -1,6 +1,6 @@
 ###########################################################################
 # DotPlot.pm - Runs mummer for two genomes
-# $Id: DotPlot.pm 33080 2015-03-31 06:17:01Z jinghuahuang $
+# $Id: DotPlot.pm 33981 2015-08-13 01:12:00Z aireland $
 ############################################################################
 package DotPlot;
 my $section = "DotPlot";
@@ -43,11 +43,12 @@ my $YUI = $env->{ yui_dir_28 };
 sub dispatch {
     my ($numTaxon) = @_;
     my $page = param("page");
+    timeout( 60 * 40 );    # timeout in 40 minutes (from main.pl)
     if ($page eq "plot") {
-        printStatusLine("Loading ...", 1); 
+        printStatusLine("Loading ...", 1);
 
 	my $note = getNote();
-	if ($include_metagenomes) { 
+	if ($include_metagenomes) {
 	    WebUtil::printHeaderWithInfo
 		("DotPlot", $note,
 		 "show description for this tool",
@@ -55,37 +56,37 @@ sub dispatch {
 	} else {
 	    WebUtil::printHeaderWithInfo
 		("DotPlot", $note,
-		 "show description for this tool", 
+		 "show description for this tool",
 		 "Dot Plot Info", 0, "Dotplot.pdf");
 	}
 	print "<p style='width: 950px;'>$note</p>\n";
-    
-        printMainForm(); 
-	print "<p>\n"; 
-	print "<font color='#003366'>" 
+
+        printMainForm();
+	print "<p>\n";
+	print "<font color='#003366'>"
 	    . "Please select 2 genomes."
-	    . "</font>\n"; 
+	    . "</font>\n";
 	printForm();
 
-	print "<p>\n"; 
+	print "<p>\n";
 	print "<b>Algorithm</b>:<br/>\n";
 	print "<input type='radio' name='algorithm' "
 	    . "value='nucmer' checked />"
 	    . "Nucleotide sequence based comparisons<br/>\n";
 	print "<input type='radio' name='algorithm' "
 	    . "value='promer' />"
-	    . "Protein sequence based comparisons<br/>\n"; 
+	    . "Protein sequence based comparisons<br/>\n";
 	print "</p>\n";
- 
-        print "<p>\n"; 
+
+        print "<p>\n";
         print "<b>Reference</b>:<br/>\n";
         print "<input type='radio' name='reference' "
             . "value='1' checked />Use 1 as reference<br/>\n";
         print "<input type='radio' name='reference' "
             . "value='2' />Use 2 as reference<br/>\n";
-        print "</p>\n"; 
+        print "</p>\n";
 
-        my $name = "_section_DotPlot_runPlot"; 
+        my $name = "_section_DotPlot_runPlot";
 	GenomeListJSON::printHiddenInputType( $section, 'runPlot' );
 	my $button = GenomeListJSON::printMySubmitButtonXDiv
 	    ( 'go', $name, 'Dotplot', '', $section,
@@ -93,7 +94,7 @@ sub dispatch {
 	print $button;
 
         print nbsp(1);
-	print reset( -class => "smbutton" ); 
+	print reset( -class => "smbutton" );
         print end_form();
 	GenomeListJSON::showGenomeCart($numTaxon);
 
@@ -150,12 +151,12 @@ sub getNote {
 }
 
 ############################################################################
-# runPlot - calls mummer 
+# runPlot - calls mummer
 #     MUMmer program - takes as input two fasta sequence files
 ############################################################################
-sub runPlot { 
-    my $algorithm = param( "algorithm" ); 
-    my $reference = param( "reference" ); 
+sub runPlot {
+    my $algorithm = param( "algorithm" );
+    my $reference = param( "reference" );
     my $continue = param( "continue" );
     my @scaffolds1 = param( "scaffold_oid1" );
     my @scaffolds2 = param( "scaffold_oid2" );
@@ -171,9 +172,9 @@ sub runPlot {
     my $nTaxons = @oids;
     if ( $nTaxons != 2 ) {
 	webError( "Please select 2 genomes.<br/>\n" );
-    } 
+    }
 
-    printStatusLine( "Loading ...", 1 ); 
+    printStatusLine( "Loading ...", 1 );
     my $dbh = dbLogin();
     my $sql = qq{
 	select taxon_display_name, seq_status, genome_type
@@ -186,7 +187,7 @@ sub runPlot {
     $cur->finish();
     my $cur = execSql( $dbh, $sql, $verbose, $oids[1] );
     my ($name2, $seq_status2, $genome_type2) = $cur->fetchrow();
-    $cur->finish(); 
+    $cur->finish();
 
     if ($genome_type1 eq "metagenome" || $genome_type2 eq "metagenome") {
 	webError("Currently this tool does not support metagenomes. "
@@ -206,10 +207,10 @@ sub runPlot {
 	my $sql0 = qq{
 	    select distinct ext_accession
 	    from scaffold
-	    where taxon = ? 
-	    and scaffold_oid in ($scaffold_oids_str1) 
+	    where taxon = ?
+	    and scaffold_oid in ($scaffold_oids_str1)
 	    and ext_accession is not null
-	}; 
+	};
         my $cur = execSql( $dbh, $sql0, $verbose, $oids[0] );
         for ( ;; ) {
             my ($ext_accession) = $cur->fetchrow();
@@ -223,9 +224,9 @@ sub runPlot {
 	    my ($ext_accession) = $cur->fetchrow();
 	    last if !$ext_accession;
 	    push( @ext_accessions1, $ext_accession);
-	    
+
 	}
-	$cur->finish(); 
+	$cur->finish();
     }
 
     my @ext_accessions2;
@@ -239,26 +240,26 @@ sub runPlot {
             and ext_accession is not null
         };
         my $cur = execSql( $dbh, $sql0, $verbose, $oids[1] );
-        for ( ;; ) { 
+        for ( ;; ) {
             my ($ext_accession) = $cur->fetchrow();
-            last if !$ext_accession; 
+            last if !$ext_accession;
             push( @ext_accessions2, $ext_accession);
-        } 
-        $cur->finish(); 
-    } else { 
-	my $cur = execSql( $dbh, $sql, $verbose, $oids[1] ); 
-	for ( ;; ) { 
-	    my ($ext_accession) = $cur->fetchrow(); 
+        }
+        $cur->finish();
+    } else {
+	my $cur = execSql( $dbh, $sql, $verbose, $oids[1] );
+	for ( ;; ) {
+	    my ($ext_accession) = $cur->fetchrow();
 	    last if !$ext_accession;
 	    push( @ext_accessions2, $ext_accession);
-	    
-	} 
-	$cur->finish(); 
+
+	}
+	$cur->finish();
     }
 
     my $nScaffolds1 = scalar @ext_accessions1;
     my $nScaffolds2 = scalar @ext_accessions2;
-    if ( $reference eq "2" ) { 
+    if ( $reference eq "2" ) {
 	$nScaffolds1 = scalar @ext_accessions2;
 	$nScaffolds2 = scalar @ext_accessions1;
     }
@@ -270,8 +271,8 @@ sub runPlot {
 	    (scalar @ext_accessions1 > 2 * $max_scaffolds) ||
 	    (scalar @ext_accessions2 > 2 * $max_scaffolds)) {
 	    selectScaffolds($dbh, \@oids, $algorithm, $reference);
-	    printStatusLine( "Done.", 2 ); 
-	    #$dbh->disconnect(); 
+	    printStatusLine( "Done.", 2 );
+	    #$dbh->disconnect();
 	    return;
 	}
     }
@@ -279,23 +280,23 @@ sub runPlot {
     ### get the fasta file for all scaffolds for each genome:
     my $tmpFile1 = "$taxon_fna_dir/$oids[0].fna";
     my $tmpFile2 = "$taxon_fna_dir/$oids[1].fna";
-    if ( $reference eq "2" ) { 
-        $tmpFile1 = "$taxon_fna_dir/$oids[1].fna"; 
-        $tmpFile2 = "$taxon_fna_dir/$oids[0].fna"; 
-    } 
+    if ( $reference eq "2" ) {
+        $tmpFile1 = "$taxon_fna_dir/$oids[1].fna";
+        $tmpFile2 = "$taxon_fna_dir/$oids[0].fna";
+    }
 
     my $length1 = 0;
     my $txt = "";
     my $write = 0;
 
-    if (scalar @scaffolds1 > 0 && $continue eq "no") { 
+    if (scalar @scaffolds1 > 0 && $continue eq "no") {
 	my $tmpFile = "$cgi_tmp_dir/scaffolds1.fna$$.txt";
 	my $wfh = newWriteFileHandle( $tmpFile, "runPlot" );
 
 	my $file = "$taxon_fna_dir/$oids[0].fna";
 	my $rfh  = newReadFileHandle($file);
 	while ( my $line = $rfh->getline() ) {
-	    chomp $line;       
+	    chomp $line;
 	    # see if the line starts with ">scaffold name"
 	    if ($line=~/^>/) {
 		$write=0;
@@ -313,7 +314,7 @@ sub runPlot {
 	close $rfh;
 	close $wfh;
 
-	if ( $reference eq "2" ) { 
+	if ( $reference eq "2" ) {
 	    $tmpFile2 = $tmpFile;
 	} else {
 	    $tmpFile1 = $tmpFile;
@@ -324,24 +325,24 @@ sub runPlot {
     }
 
     my $length2 = 0;
-    if (scalar @scaffolds2 > 0 && $continue eq "no") { 
-        my $tmpFile = "$cgi_tmp_dir/scaffolds2.fna$$.txt"; 
+    if (scalar @scaffolds2 > 0 && $continue eq "no") {
+        my $tmpFile = "$cgi_tmp_dir/scaffolds2.fna$$.txt";
         my $wfh = newWriteFileHandle( $tmpFile, "runPlot" );
 
 	my $file = "$taxon_fna_dir/$oids[1].fna";
 	my $rfh  = newReadFileHandle($file);
 	while ( my $line = $rfh->getline() ) {
 	    chomp $line;
-	    # see if the line starts with ">scaffold name"                  
-	    if ($line=~/^>/) { 
-		$write=0; 
+	    # see if the line starts with ">scaffold name"
+	    if ($line=~/^>/) {
+		$write=0;
 		foreach my $acc2 (@ext_accessions2) {
 		    if ($line=~/\s*$acc2\s*/) {
 			$write=1;
 		    }
-		} 
-	    } 
-	    if ($write==1) { 
+		}
+	    }
+	    if ($write==1) {
 		$length2 += length($line);
 		print $wfh "$line\n";
 	    }
@@ -351,13 +352,13 @@ sub runPlot {
 
         if ( $reference eq "2" ) {
             $tmpFile1 = $tmpFile;
-        } else { 
+        } else {
             $tmpFile2 = $tmpFile;
-        } 
+        }
 	if ($length2 > 536870908) {
 	    $txt = "$tmpFile is $length2 in length.";
 	}
-    } 
+    }
 
 #    if ($length1 > 536870908 || $length2 > 536870908) {
 #        printStatusLine( "Input file is too large.", 2 );
@@ -368,29 +369,29 @@ sub runPlot {
 
     my $returnval = -s $tmpFile1;
     print STDERR "\n\nDotPlot: $returnval\n";
-    if ( $returnval == 0 ) { 
+    if ( $returnval == 0 ) {
         printStatusLine( "Cannot read sequence.", 2 );
 	#$dbh->disconnect();
         webError( "Sequence file for taxon_oid=$oids[0] " .
                   "is empty\n" );
-    } 
+    }
     my $returnval = -s $tmpFile2;
-    print STDERR "\n\nDotPlot: $returnval\n"; 
-    if ( $returnval == 0 ) { 
-        printStatusLine( "Cannot read sequence.", 2 ); 
+    print STDERR "\n\nDotPlot: $returnval\n";
+    if ( $returnval == 0 ) {
+        printStatusLine( "Cannot read sequence.", 2 );
 	#$dbh->disconnect();
         webError( "Sequence file for taxon_oid=$oids[1] " .
-                  "is empty\n" ); 
-    } 
+                  "is empty\n" );
+    }
 
-    #my $algorithm = param( "algorithm" ); 
+    #my $algorithm = param( "algorithm" );
     my $method = "nucmer";
-    if ( $algorithm eq "promer" ) { 
+    if ( $algorithm eq "promer" ) {
 	$method = "promer";
     }
 
     #my $reference = param( "reference" );
-    #if ( $reference eq "2" ) { 
+    #if ( $reference eq "2" ) {
     #	$tmpFile1 = "$taxon_fna_dir/$oids[1].fna";
     #	$tmpFile2 = "$taxon_fna_dir/$oids[0].fna";
     #} else {
@@ -417,7 +418,7 @@ sub runPlot {
     my $cmd = "$mummer_dir/$method --maxgap=500 --mincluster=100 "
 	. "--prefix=$tmp_dir/ref_qry$$ $tmpFile1 $tmpFile2";
 
-    $st = runCmdNoExit($cmd); 
+    $st = runCmdNoExit($cmd);
     print STDERR "\n$st";
 
     print "Calling show-coords to parse the delta alignment.<br/>";
@@ -428,10 +429,10 @@ sub runPlot {
     print STDERR "\n$st";
 
     close STDOUT;
-    open STDOUT, ">&", $oldout; 
+    open STDOUT, ">&", $oldout;
     print "Calling show-aligns to parse the delta alignment. ";
 
-    close STDOUT; 
+    close STDOUT;
     open STDOUT, "+>", $alignsFile;
     for my $id1( @ext_accessions1 ) {
 	for my $id2( @ext_accessions2 ) {
@@ -442,7 +443,7 @@ sub runPlot {
 	    }
 	    close STDOUT;
 
-	    open STDOUT, ">&", $oldout; 
+	    open STDOUT, ">&", $oldout;
 	    print ". ";
 	    close STDOUT;
 
@@ -453,8 +454,8 @@ sub runPlot {
 	}
     }
 
-    close STDOUT; 
-    open STDOUT, ">&", $oldout; 
+    close STDOUT;
+    open STDOUT, ">&", $oldout;
     print "<br/>";
 
     my $returnval = -s $alignsFile;
@@ -471,13 +472,13 @@ sub runPlot {
 
     close STDOUT;
     open STDOUT, ">", $filterFile;
-    $st = runCmdNoExit($cmd); 
+    $st = runCmdNoExit($cmd);
     print STDERR "\n$st";
 
-    close STDOUT; 
+    close STDOUT;
     $cmd = "$cgi_dir/mummerplot-basic.pl -p $tmp_dir/out$$ $filterFile "
 	. "-R $tmpFile1 -Q $tmpFile2 --filter --layout";
-    $st = runCmdNoExit("$perl -I $mummer_dir/scripts $cmd"); 
+    $st = runCmdNoExit("$perl -I $mummer_dir/scripts $cmd");
     print STDERR "\n$st";
 
     WebUtil::resetEnvPath();
@@ -486,16 +487,16 @@ sub runPlot {
 
     printEndWorkingDiv();
 
-    my $url1 = "$main_cgi?section=TaxonDetail" 
-	     . "&page=taxonDetail&taxon_oid=$oids[0]"; 
-    my $url2 = "$main_cgi?section=TaxonDetail" 
-	     . "&page=taxonDetail&taxon_oid=$oids[1]"; 
+    my $url1 = "$main_cgi?section=TaxonDetail"
+	     . "&page=taxonDetail&taxon_oid=$oids[0]";
+    my $url2 = "$main_cgi?section=TaxonDetail"
+	     . "&page=taxonDetail&taxon_oid=$oids[1]";
     my $link1 = alink($url1, $name1);
     my $link2 = alink($url2, $name2);
 
     my $label1 = $name1;
     my $label2 = $name2;
-    if ( $reference eq "2" ) { 
+    if ( $reference eq "2" ) {
 	print "<h2>$name2 vs. <br/>$name1</h2>\n";
 	$label1 = $name2;
 	$label2 = $name1;
@@ -505,22 +506,22 @@ sub runPlot {
 
     print "<p>Using <u>$method</u> to compare genomes:</p>";
 
-    #### PREPARE THE DOTCHART ###### 
+    #### PREPARE THE DOTCHART ######
     my $url = "xml.cgi?section=GeneDetail&page=neighborhoodAlignment";
-    my $chart = newDotChart(); 
-    $chart->WIDTH(800); 
-    $chart->HEIGHT(540); 
+    my $chart = newDotChart();
+    $chart->WIDTH(800);
+    $chart->HEIGHT(540);
     $chart->DOMAIN_AXIS_LABEL($label1);
-    $chart->RANGE_AXIS_LABEL($label2); 
-    $chart->INCLUDE_LEGEND("no"); 
-    $chart->INCLUDE_TOOLTIPS("yes"); 
-    $chart->INCLUDE_URLS("yes"); 
+    $chart->RANGE_AXIS_LABEL($label2);
+    $chart->INCLUDE_LEGEND("no");
+    $chart->INCLUDE_TOOLTIPS("yes");
+    $chart->INCLUDE_URLS("yes");
     $chart->ITEM_URL($url);
-    $chart->INCLUDE_SECTION_URLS("yes"); 
+    $chart->INCLUDE_SECTION_URLS("yes");
     $chart->IMAGEMAP_ONCLICK('neighborhood');
 
-    my @xchartdata; 
-    my @ychartdata; 
+    my @xchartdata;
+    my @ychartdata;
     my @xydirdata;
     my @chartscaffolds;
     #################################
@@ -528,36 +529,36 @@ sub runPlot {
     my $sql = "select scaffold_oid, ext_accession from scaffold "
             . "where taxon in ($oids[0], $oids[1]) and ext_accession = ?";
 
-    my @scaffolddata; 
+    my @scaffolddata;
     my $FH = newReadFileHandle("$tmp_dir/out$$.gp", "dotplot", 1);
-    while (my $s = $FH->getline()) { 
+    while (my $s = $FH->getline()) {
 	chomp $s;
         my( $a, $scf, $coord) = split( /:/, $s );
 	if (!$scf || $scf eq "") {
 	    push @scaffolddata, "$a: : :$coord";
 	    next;
 	}
-	my $cur = execSql( $dbh, $sql, $verbose, $scf ); 
-	for( ;; ) { 
-	    my ( $scaffold_oid, $ext_accession ) = $cur->fetchrow(); 
-	    last if !$scaffold_oid; 
+	my $cur = execSql( $dbh, $sql, $verbose, $scf );
+	for( ;; ) {
+	    my ( $scaffold_oid, $ext_accession ) = $cur->fetchrow();
+	    last if !$scaffold_oid;
 	    push @scaffolddata, "$a:$scaffold_oid:$ext_accession:$coord";
-	} 
-	$cur->finish(); 
-    } 
-    close($FH); 
+	}
+	$cur->finish();
+    }
+    close($FH);
     #$dbh->disconnect();
 
     my $scaffolddatastr = join(",", @scaffolddata);
     push @chartscaffolds, $scaffolddatastr;
 
     my (@fplot, @xdata, @ydata, @xydirs);
-    my $FH = newReadFileHandle("$tmp_dir/out$$.fplot", "dotplot", 1); 
-    while (my $s = $FH->getline()) { 
+    my $FH = newReadFileHandle("$tmp_dir/out$$.fplot", "dotplot", 1);
+    while (my $s = $FH->getline()) {
 	chomp $s;
 	push @fplot, $s;
-    } 
-    close($FH); 
+    }
+    close($FH);
     my @newfplot = sort {
 	substr($a,0,index($a,"-")) <=> substr($b,0,index($b,"-"))
     } @fplot;
@@ -569,14 +570,14 @@ sub runPlot {
     #print "ANNA: $a<br/>$e\n";
 
     foreach my $item(@newfplot) {
-        my( $xcoord, $ycoord, $xyd) = split( /,/, $item ); 
-        push @xdata, $xcoord; 
-        push @ydata, $ycoord; 
-        push @xydirs, $xyd; 
+        my( $xcoord, $ycoord, $xyd) = split( /,/, $item );
+        push @xdata, $xcoord;
+        push @ydata, $ycoord;
+        push @xydirs, $xyd;
     }
 
-    my $xdatastr = join(",", @xdata); 
-    my $ydatastr = join(",", @ydata); 
+    my $xdatastr = join(",", @xdata);
+    my $ydatastr = join(",", @ydata);
     my $xydirstr = join(",", @xydirs);
     push @xchartdata, $xdatastr;
     push @ychartdata, $ydatastr;
@@ -587,19 +588,19 @@ sub runPlot {
     while (my $s = $FH->getline()) {
 	chomp $s;
 	push @rplot, $s;
-    } 
-    close($FH); 
+    }
+    close($FH);
     my @newrplot = sort {
         substr($a,0,index($a,"-")) <=> substr($b,0,index($b,"-"))
     } @rplot;
 
     foreach my $item(@newrplot) {
         my( $xcoord, $ycoord, $xyd) = split( /,/, $item );
-        push @xdata, $xcoord; 
-        push @ydata, $ycoord; 
-        push @xydirs, $xyd; 
+        push @xdata, $xcoord;
+        push @ydata, $ycoord;
+        push @xydirs, $xyd;
     }
- 
+
     my $xdatastr = join(",", @xdata);
     my $ydatastr = join(",", @ydata);
     my $xydirstr = join(",", @xydirs);
@@ -607,35 +608,35 @@ sub runPlot {
     push @ychartdata, $ydatastr;
     push @xydirdata, $xydirstr;
 
-    $chart->XAXIS(\@xchartdata); 
-    $chart->YAXIS(\@ychartdata); 
+    $chart->XAXIS(\@xchartdata);
+    $chart->YAXIS(\@ychartdata);
     $chart->SLOPE(\@xydirdata);
     $chart->DATA(\@chartscaffolds);
 
     my @chartcategories;
     push @chartcategories, "fplot";
     push @chartcategories, "rplot";
-    $chart->CATEGORY_NAME(\@chartcategories); 
+    $chart->CATEGORY_NAME(\@chartcategories);
 
-    my $st = -1; 
-    if ($env->{ chart_exe } ne "") { 
-        $st = generateChart($chart); 
-    } 
+    my $st = -1;
+    if ($env->{ chart_exe } ne "") {
+        $st = generateChart($chart);
+    }
 
-    if ($env->{ chart_exe } ne "") { 
-        if ( $st == 0 ) { 
-            print "<script src='$base_url/overlib.js'></script>\n"; 
+    if ($env->{ chart_exe } ne "") {
+        if ( $st == 0 ) {
+            print "<script src='$base_url/overlib.js'></script>\n";
             my $FH = newReadFileHandle
-                ($chart->FILEPATH_PREFIX.".html", "runPlot", 1); 
+                ($chart->FILEPATH_PREFIX.".html", "runPlot", 1);
 	    if ($FH) {
-		while (my $s = $FH->getline()) { 
-		    print $s; 
-		} 
-		close ($FH); 
+		while (my $s = $FH->getline()) {
+		    print $s;
+		}
+		close ($FH);
 	    }
-            print "<img src='$tmp_url/".$chart->FILE_PREFIX.".png' BORDER=0 "; 
-            print " width=".$chart->WIDTH." HEIGHT=".$chart->HEIGHT; 
-            print " USEMAP='#".$chart->FILE_PREFIX."'>\n"; 
+            print "<img src='$tmp_url/".$chart->FILE_PREFIX.".png' BORDER=0 ";
+            print " width=".$chart->WIDTH." HEIGHT=".$chart->HEIGHT;
+            print " USEMAP='#".$chart->FILE_PREFIX."'>\n";
 
 	    print "<p>";
 	    my $pdf_url = "$tmp_url/".$chart->FILE_PREFIX.".pdf";
@@ -645,11 +646,11 @@ sub runPlot {
             my $tiff_url = "$tmp_url/".$chart->FILE_PREFIX.".tiff";
             print alink( $tiff_url, "Download TIFF", '', '', '', "_gaq.push(['_trackEvent', 'Export', '$contact_oid', 'img link dot plot TIFF']);" );
 	    print "</p>";
-        } 
+        }
 	else {
 	    print "<font color='red'>Error getting chart</font>";
 	}
-    } 
+    }
 
     wunlink( $tmpFile1 );
     wunlink( $tmpFile2 );
@@ -663,13 +664,13 @@ sub runPlot {
     printScript();
     # need div id for yui container
     print "<p><div id='container' class='yui-skin-sam'>";
-    print qq{ 
-        <script type='text/javascript'> 
-	    YAHOO.namespace("example.container"); 
+    print qq{
+        <script type='text/javascript'>
+	    YAHOO.namespace("example.container");
         YAHOO.util.Event.addListener(window, "load", initPanel("container"));
-        </script> 
+        </script>
 	};
-    print "</div>\n"; 
+    print "</div>\n";
 
 }
 
@@ -698,25 +699,25 @@ sub selectScaffolds {
     print hiddenVar("reference", $reference);
 
     my $name = "_section_DotPlot_continuePlot";
-    print submit( 
-            -name  => $name, 
+    print submit(
+            -name  => $name,
             -value => "Continue",
             -class => "meddefbutton"
-    ); 
+    );
 
-    my $sql = qq{ 
+    my $sql = qq{
         select taxon_display_name
-        from taxon 
-	where taxon_oid = ? 
-    }; 
-    my $cur = execSql( $dbh, $sql, $verbose, @$oids[0] ); 
-    my ($name1) = $cur->fetchrow(); 
-    $cur->finish(); 
-    my $cur = execSql( $dbh, $sql, $verbose, @$oids[1] ); 
+        from taxon
+	where taxon_oid = ?
+    };
+    my $cur = execSql( $dbh, $sql, $verbose, @$oids[0] );
+    my ($name1) = $cur->fetchrow();
+    $cur->finish();
+    my $cur = execSql( $dbh, $sql, $verbose, @$oids[1] );
     my ($name2) = $cur->fetchrow();
     $cur->finish();
 
-    my $url1 = "$main_cgi?section=TaxonDetail" 
+    my $url1 = "$main_cgi?section=TaxonDetail"
              . "&page=taxonDetail&taxon_oid=@$oids[0]";
     my $url2 = "$main_cgi?section=TaxonDetail"
              . "&page=taxonDetail&taxon_oid=@$oids[1]";
@@ -724,15 +725,15 @@ sub selectScaffolds {
     my $link2 = alink($url2, $name2, "_blank");
 
     print "<h2>Select Scaffolds</h2>";
-    if ( $reference eq "2" ) { 
+    if ( $reference eq "2" ) {
     print qq{
 	<p>
 	&nbsp;&nbsp;&nbsp;&nbsp;<a href="#genome2">
 	Select Scaffolds</a> for $link2
-	<br/> 
+	<br/>
 	&nbsp;&nbsp;&nbsp;&nbsp;<a href="#genome1">
 	Select Scaffolds</a> for $link1
-	<br/> 
+	<br/>
 	</p>
     };
     } else {
@@ -740,15 +741,15 @@ sub selectScaffolds {
 	<p>
 	&nbsp;&nbsp;&nbsp;&nbsp;<a href="#genome1">
 	Select Scaffolds</a> for $link1
-	<br/> 
+	<br/>
 	&nbsp;&nbsp;&nbsp;&nbsp;<a href="#genome2">
 	Select Scaffolds</a> for $link2
-	<br/> 
+	<br/>
 	</p>
     };
     }
 
-    if ( $reference eq "2" ) { 
+    if ( $reference eq "2" ) {
 	print WebUtil::getHtmlBookmark("genome2", "<h2>1. $name2</h2>");
 	printScaffolds($dbh, @$oids[1], 2);
 	print WebUtil::getHtmlBookmark("genome1", "<h2>2. $name1</h2>");
@@ -768,23 +769,23 @@ sub selectScaffolds {
 	    -name  => $name,
             -value => "Dotplot",
             -class => "meddefbutton"
-    ); 
-    print nbsp(1); 
+    );
+    print nbsp(1);
 
-    my @tables = ('scaffolds1', 'scaffolds2'); 
+    my @tables = ('scaffolds1', 'scaffolds2');
     printResetFormButton(\@tables);
-    print end_form(); 
+    print end_form();
 }
 
 ############################################################################
 # printScaffolds() - Show a list of scaffolds to choose for Dot Plot
 ############################################################################
 sub printScaffolds {
-    my ( $dbh, $taxon_oid, $cnt ) = @_; 
+    my ( $dbh, $taxon_oid, $cnt ) = @_;
 
     my $sql = qq{
 	select distinct s.scaffold_name, ss.seq_length,
-	       ss.count_total_gene, ss.gc_percent, s.read_depth, 
+	       ss.count_total_gene, ss.gc_percent, s.read_depth,
                s.scaffold_oid, s.mol_type, s.mol_topology
         from scaffold s, scaffold_stats ss
 	where s.taxon = ?
@@ -854,72 +855,72 @@ sub printScript {
 	href="$YUI/build/container/assets/skins/sam/container.css" />
 	<script type="text/javascript"
 	src="$YUI/build/yahoo-dom-event/yahoo-dom-event.js"></script>
-	<script type="text/javascript" 
+	<script type="text/javascript"
 	src="$YUI/build/dragdrop/dragdrop-min.js"></script>
 	<script type="text/javascript"
 	src="$YUI/build/container/container-min.js"></script>
 	<script src="$YUI/build/yahoo/yahoo-min.js"></script>
 	<script src="$YUI/build/event/event-min.js"></script>
 	<script src="$YUI/build/connection/connection-min.js"></script>
-    }; 
+    };
 
-    print qq { 
-	<script language="javascript" type="text/javascript"> 
-	function initPanel() { 
+    print qq {
+	<script language="javascript" type="text/javascript">
+	function initPanel() {
 	    if (!YAHOO.example.container.panelA) {
 		YAHOO.example.container.panelA = new YAHOO.widget.Panel
-		    ("panelA", { 
-		      visible:false, 
-			//draggable:true, 
+		    ("panelA", {
+		      visible:false,
+			//draggable:true,
 		      fixedcenter:true,
 		      dragOnly:true,
 		      underlay:"none",
 		      zindex:"10",
 			//context:['nbhood','bl','tr']
-			} ); 
+			} );
 		YAHOO.example.container.panelA.setHeader("Gene Neighborhood");
 		YAHOO.example.container.panelA.setBody("Test Panel.");
 		YAHOO.example.container.panelA.render("container");
 		//alert("initPanel");
-	    } 
+	    }
 	}
 
-	function handleSuccess(req) { 
-            try { 
+	function handleSuccess(req) {
+            try {
                 response = req.responseXML.documentElement;
-                var html = response.getElementsByTagName 
-                    ('div')[0].firstChild.data; 
-                YAHOO.example.container.panelA.setBody(html); 
-                YAHOO.example.container.panelA.render("container"); 
+                var html = response.getElementsByTagName
+                    ('div')[0].firstChild.data;
+                YAHOO.example.container.panelA.setBody(html);
+                YAHOO.example.container.panelA.render("container");
                 YAHOO.example.container.panelA.show();
-            } catch(e) { 
-                alert("exception: "+req.responseXML+" "+req.responseText); 
-            } 
+            } catch(e) {
+                alert("exception: "+req.responseXML+" "+req.responseText);
+            }
 	    YAHOO.example.container.wait.hide();
-	} 
+	}
 
-        function neighborhood(url) { 
+        function neighborhood(url) {
             YAHOO.namespace("example.container");
             if (!YAHOO.example.container.wait) {
                 initializeWaitPanel();
-            } 
+            }
 
 	    //alert("url: "+url);
 
-            var callback = { 
-              success: handleSuccess, 
-              failure: function(req) { 
-		  alert("failure : "+req); 
+            var callback = {
+              success: handleSuccess,
+              failure: function(req) {
+		  alert("failure : "+req);
                   YAHOO.example.container.wait.hide();
-              } 
-            }; 
+              }
+            };
 
-            if (url != null && url != "") { 
+            if (url != null && url != "") {
 		YAHOO.example.container.wait.show();
-                var request = YAHOO.util.Connect.asyncRequest 
-                    ('GET', url, callback); 
-            } 
-        } 
+                var request = YAHOO.util.Connect.asyncRequest
+                    ('GET', url, callback);
+            }
+        }
 	</script>
     };
 }

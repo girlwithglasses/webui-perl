@@ -1,7 +1,7 @@
 ###########################################################################
 #
 #
-# $Id: GeneCassetteProfiler.pm 33080 2015-03-31 06:17:01Z jinghuahuang $
+# $Id: GeneCassetteProfiler.pm 33981 2015-08-13 01:12:00Z aireland $
 #
 #
 #
@@ -109,6 +109,7 @@ sub dispatch {
     $numTaxon = 0 if ( $numTaxon eq "" );
 
     return if ( !$enable_cassette );
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
 
     my $sid = getContactOid();
 
@@ -192,7 +193,7 @@ sub fastBitFindCommonPropsInTaxa {
         <h1> Phylogenetic Profiler for Gene Cassettes Results </h1>
         <p>
         Powered by <a href="https://sdm.lbl.gov/fastbit/">Fastbit</a>
-        </p>        
+        </p>
     };
 
     my $type = param("cluster");    # cog or pfam
@@ -208,7 +209,7 @@ sub fastBitFindCommonPropsInTaxa {
     my $urClause  = urClause("gc.taxon");
     my $imgClause = WebUtil::imgClauseNoTaxon('gc.taxon');
     my $sql       = qq{
-       select distinct gc.taxon 
+       select distinct gc.taxon
        from gene_cassette gc
        where 1 = 1
        $urClause
@@ -276,8 +277,8 @@ sub fastBitFindCommonPropsInTaxa {
     my $taxonName = QueryUtil::fetchTaxonName( $dbh, $findList[0] );
     print "Getting genome name<br/>\n";
     if ($img_ken) {
-        print qq{ 
-       </p> 
+        print qq{
+       </p>
        </div>
        </div>
     };
@@ -437,8 +438,8 @@ sub fastBitFindCommonPropsInTaxa {
 
     print "Found cassette gene information from db<br/>\n";
     if ($img_ken) {
-        print qq{ 
-       </p> 
+        print qq{
+       </p>
        </div>
        </div>
     };
@@ -586,7 +587,7 @@ sub fastBitFindCommonPropsInTaxa3 {
         <h1> Phylogenetic Profiler for Gene Cassettes Results</h1>
         <p>
         Powered by <a href="https://sdm.lbl.gov/fastbit/">Fastbit</a>
-        </p>        
+        </p>
     };
 
     my $type = param("cluster");    # cog or pfam
@@ -627,8 +628,8 @@ sub fastBitFindCommonPropsInTaxa3 {
     my $taxonName = QueryUtil::fetchTaxonName( $dbh, $findList[0] );
     print "Getting genome name<br/>\n";
     if ($img_ken) {
-        print qq{ 
-       </p> 
+        print qq{
+       </p>
        </div>
        </div>
     };
@@ -788,8 +789,8 @@ sub fastBitFindCommonPropsInTaxa3 {
 
     print "Found cassette gene information from db<br/>\n";
     if ($img_ken) {
-        print qq{ 
-       </p> 
+        print qq{
+       </p>
        </div>
        </div>
     };
@@ -1062,7 +1063,7 @@ sub printTable_fastbit {
             <td class='img' >&nbsp; </td>
             <td class='img' >&nbsp; </td>
             <td class='img' >&nbsp; </td>
-            </tr>            
+            </tr>
         };
     }
     print "</table>";
@@ -1072,9 +1073,9 @@ sub printTable_fastbit {
     print qq{
         <p>
         Gene count: $size2
-        &nbsp;&nbsp;&nbsp; 
+        &nbsp;&nbsp;&nbsp;
         Set Count: $cass_count
-        &nbsp;&nbsp;&nbsp; 
+        &nbsp;&nbsp;&nbsp;
         Cassette Count: $size
         </p>
     };
@@ -1280,9 +1281,9 @@ sub printTopPage {
     print "</td>\n";
     print "<td class='img'>\n";
     print qq{
-        Find genes in genome (bin) of interest qualified by similarity to 
-        sequences in other genomes (based on BLASTP alignments). 
-        Only user-selected genomes appear in the profiler.        
+        Find genes in genome (bin) of interest qualified by similarity to
+        sequences in other genomes (based on BLASTP alignments).
+        Only user-selected genomes appear in the profiler.
     };
     print "</td>\n";
     print "</tr>\n";
@@ -1311,8 +1312,8 @@ sub printTopPage {
         print "<td class='img'>\n";
         print qq{
         IMG Cassette Profiler.
-        Find collocated genes that are part of a cassette in a query genome, 
-        that are also part of gene cassettes in other genomes of interest        
+        Find collocated genes that are part of a cassette in a query genome,
+        that are also part of gene cassettes in other genomes of interest
     };
         print "</td>\n";
         print "</tr>\n";
@@ -1349,7 +1350,7 @@ sub printNote {
 
         <p>
         <b>NOT Collocated IN:</b><br>
-        B<sub>set_not</sub> =  G<sub>fin</sub> &cap; (G<sub>cnot_1</sub> &cup; ... &cup; G<sub>cnot_j</sub> ) <br> 
+        B<sub>set_not</sub> =  G<sub>fin</sub> &cap; (G<sub>cnot_1</sub> &cup; ... &cup; G<sub>cnot_j</sub> ) <br>
         CL<sub>set_not</sub> = All clusters found in B<sub>set_not</sub> <br>
         CA<sub>set_not</sub> = G<sub>fin</sub> cassettes found in B<sub>set_not</sub> <br>
         </p>
@@ -1363,7 +1364,7 @@ sub printNote {
         Colloacted IN was not selected or B<sub>set_in</sub> was null <br>
         GL = CA<sub>set_not</sub> - CL<sub>set_not</sub>
         </p>
-        
+
         <p>
         <b>Where:</b><br>
         G<sub>fin</sub> - Find In Genome<br>
@@ -1380,8 +1381,8 @@ sub printNote {
         CA<sub>set_not</sub> - Not Collocated In Cassettes <br>
 
         GL - Gene List
-        </p>        
-        
+        </p>
+
     }
 }
 
@@ -1399,7 +1400,7 @@ sub printGeneContextPhyloProfiler3 {
     print qq{
         <br/>
         Powered by <a href="https://sdm.lbl.gov/fastbit/">Fastbit</a>
-        
+
     } if ($enable_fastbit);
 
     print "</p> <p>\n";
@@ -1471,7 +1472,7 @@ sub printGeneContextPhyloProfiler2 {
     print qq{
         <br/>
         Powered by <a href="https://sdm.lbl.gov/fastbit/">Fastbit</a>
-        
+
     } if ($enable_fastbit);
 
     print "</p> <p>\n";
@@ -1504,8 +1505,8 @@ sub printGeneContextPhyloProfiler2 {
     # find only taxon with cassettes
     # faster than doing join
     my $sql_phylo = qq{
-       select  tx1.domain, tx1.phylum, tx1.ir_class, tx1.ir_order, tx1.family, 
-          tx1.genus, tx1.species, tx1.strain, 
+       select  tx1.domain, tx1.phylum, tx1.ir_class, tx1.ir_order, tx1.family,
+          tx1.genus, tx1.species, tx1.strain,
           tx1.taxon_display_name, tx1.taxon_oid, tx1.seq_status
        from taxon tx1
        where tx1.taxon_oid in (select distinct gc.taxon from gene_cassette gc)
@@ -1513,7 +1514,7 @@ sub printGeneContextPhyloProfiler2 {
        $rclause
        $imgClause
        $publicClause
-       order by tx1.domain, tx1.phylum, tx1.ir_class, tx1.ir_order, tx1.family, 
+       order by tx1.domain, tx1.phylum, tx1.ir_class, tx1.ir_order, tx1.family,
           tx1.genus, tx1.species, tx1.strain, tx1.taxon_display_name
     };
     my $sql = $sql_phylo;
@@ -1901,12 +1902,12 @@ sub printProfilerStats {
         <p>
         <ul>
         <li>
-        <b>$cass_count ($cass)</b> gene cassettes in <b>query genome</b> 
+        <b>$cass_count ($cass)</b> gene cassettes in <b>query genome</b>
         from a total of <b>$genome_cass_count</b> gene cassettes considered.
         </li>
         <li>
-        <b>$tmp ($cass2)</b> genes in <b>query genome</b> 
-        from a total of <b>$genome_genes_in_cass_cnt</b> genes, 
+        <b>$tmp ($cass2)</b> genes in <b>query genome</b>
+        from a total of <b>$genome_genes_in_cass_cnt</b> genes,
         have collocated cassettes across all other genomes.
         </li>
         </ul>
@@ -1959,7 +1960,7 @@ sub printGeneContextPhyloProfilerRun2 {
     my $urClause  = urClause("gc.taxon");
     my $imgClause = WebUtil::imgClauseNoTaxon('gc.taxon');
     my $sql       = qq{
-       select distinct gc.taxon 
+       select distinct gc.taxon
        from gene_cassette gc
        where 1 = 1
        $urClause
@@ -2325,7 +2326,7 @@ sub getTaxonNameList {
 
     my $sql = qq{
         select taxon_oid, $nvl(taxon_display_name, taxon_name)
-        from taxon 
+        from taxon
         where taxon_oid in ($str)
         order by 2
         };
@@ -2361,7 +2362,7 @@ sub insertTemp {
             from cassette_box_cassettes_bbh cbcc2, cassette_box_cassettes_bbh b2
             where cbcc2.taxon in ($str, $instr)
             and cbcc2.box_oid = b2.box_oid
-            and b2.taxon = ?            
+            and b2.taxon = ?
         };
 
     } elsif ( $type eq "pfam" ) {
@@ -2373,7 +2374,7 @@ sub insertTemp {
             from cassette_box_cassettes_pfam cbcc2, cassette_box_cassettes_pfam b2
             where cbcc2.taxon in ($str, $instr)
             and cbcc2.box_oid = b2.box_oid
-            and b2.taxon = ?            
+            and b2.taxon = ?
         };
 
     } elsif ( $type eq "cog" ) {
@@ -2385,7 +2386,7 @@ sub insertTemp {
             from cassette_box_cassettes_cog cbcc2, cassette_box_cassettes_cog b2
             where cbcc2.taxon in ($str, $instr)
             and cbcc2.box_oid = b2.box_oid
-            and b2.taxon = ?            
+            and b2.taxon = ?
         };
     }
 
@@ -2723,24 +2724,24 @@ sub printCassetteGeneDetails2 {
             <td class='img' >&nbsp; </td>
             <td class='img' >&nbsp; </td>
             <td class='img' >&nbsp; </td>
-            </tr>            
+            </tr>
         };
     }
 
     print "</table>";
     print qq{
         <p>
-        Gene count: $row_count 
-        &nbsp;&nbsp;&nbsp; 
-        Cassette Count: $cass_count
-        &nbsp;&nbsp;&nbsp; 
-        <!--
-        Duplicate Genes: $dup_gene_count 
+        Gene count: $row_count
         &nbsp;&nbsp;&nbsp;
-        <br> 
+        Cassette Count: $cass_count
+        &nbsp;&nbsp;&nbsp;
+        <!--
+        Duplicate Genes: $dup_gene_count
+        &nbsp;&nbsp;&nbsp;
+        <br>
 
         Rejected Clusters: $rejectedClusterCount
-        &nbsp;&nbsp;&nbsp; 
+        &nbsp;&nbsp;&nbsp;
         Common Clusters: $commonClusterCount
         -->
         </p>
@@ -2858,12 +2859,12 @@ sub getCassetteBoxesNotIn {
         select distinct cbcc1.box_oid
         from gene_cassette gc1, cassette_box_cassettes_bbh cbcc1
         where gc1.cassette_oid = cbcc1.cassettes
-        and gc1.taxon in ($str)        
+        and gc1.taxon in ($str)
         and cbcc1.box_oid in (
             select distinct cbcc2.box_oid
             from gene_cassette gc2, cassette_box_cassettes_bbh cbcc2
             where gc2.cassette_oid = cbcc2.cassettes
-            and gc2.taxon in ($instr)   
+            and gc2.taxon in ($instr)
         )
         };
 
@@ -2872,13 +2873,13 @@ sub getCassetteBoxesNotIn {
         select distinct cbcc1.box_oid
         from gene_cassette gc1, cassette_box_cassettes_pfam cbcc1
         where gc1.cassette_oid = cbcc1.cassettes
-        and gc1.taxon in ($str)        
+        and gc1.taxon in ($str)
         and cbcc1.box_oid in (
             select distinct cbcc2.box_oid
             from gene_cassette gc2, cassette_box_cassettes_pfam cbcc2
             where gc2.cassette_oid = cbcc2.cassettes
             and gc2.taxon in ($instr)
-        )  
+        )
         };
 
     } else {
@@ -2886,13 +2887,13 @@ sub getCassetteBoxesNotIn {
         select distinct cbcc1.box_oid
         from gene_cassette gc1, cassette_box_cassettes_cog cbcc1
         where gc1.cassette_oid = cbcc1.cassettes
-        and gc1.taxon in ($str)        
+        and gc1.taxon in ($str)
         and cbcc1.box_oid in (
             select distinct cbcc2.box_oid
             from gene_cassette gc2, cassette_box_cassettes_cog cbcc2
             where gc2.cassette_oid = cbcc2.cassettes
             and gc2.taxon in ($instr)
-        )   
+        )
         };
     }
 
@@ -2935,7 +2936,7 @@ sub getContextBoxesCassettes {
             select 1
             from gtt_num_id
             where id = b1.box_oid
-         )        
+         )
         };
 
     } elsif ( $type eq "pfam" ) {
@@ -2947,7 +2948,7 @@ sub getContextBoxesCassettes {
             select 1
             from gtt_num_id
             where id = b1.box_oid
-         )        
+         )
         };
 
     } else {
@@ -2959,7 +2960,7 @@ sub getContextBoxesCassettes {
             select 1
             from gtt_num_id
             where id = b1.box_oid
-         )        
+         )
         };
     }
 
@@ -3067,7 +3068,7 @@ sub getCassetteGenes2 {
         and exists (
             select 1
             from gtt_num_id
-            where id = box.box_oid        
+            where id = box.box_oid
         )
         };
     } elsif ( $type eq "pfam" ) {
@@ -3093,7 +3094,7 @@ sub getCassetteGenes2 {
         and exists (
             select 1
             from gtt_num_id
-            where id = box.box_oid        
+            where id = box.box_oid
         )
         };
     } else {
@@ -3117,7 +3118,7 @@ sub getCassetteGenes2 {
         and exists (
             select 1
             from gtt_num_id
-            where id = box.box_oid        
+            where id = box.box_oid
         )
         };
     }
@@ -3203,7 +3204,7 @@ sub getBoxCluster {
         from cassette_box_bbh_xlogs b1, cassette_box_cassettes_bbh b2
         where b2.taxon = ?
         and b1.box_oid = b2.box_oid
-        and exists (            
+        and exists (
             select 1
             from gtt_num_id
             where id = b1.box_oid
@@ -3217,7 +3218,7 @@ sub getBoxCluster {
         from cassette_box_pfam_xlogs b1, cassette_box_cassettes_pfam b2
         where b2.taxon = ?
         and b1.box_oid = b2.box_oid
-        and exists (            
+        and exists (
             select 1
             from gtt_num_id
             where id = b1.box_oid
@@ -3229,7 +3230,7 @@ sub getBoxCluster {
         from cassette_box_cog_xlogs b1, cassette_box_cassettes_cog b2
         where b2.taxon = ?
         and b1.box_oid = b2.box_oid
-        and exists (            
+        and exists (
             select 1
             from gtt_num_id
             where id = b1.box_oid
@@ -3302,7 +3303,7 @@ sub printJavaScript2 {
     }
 
     print <<EOF;
-    
+
     <script language='JavaScript' type='text/javascript'>
 
 // document element start location of Find radio button
@@ -3355,7 +3356,7 @@ function selectGroupProfile(begin, end, offset, type) {
         selectGroupProfile(begin, end, (numOfCols - 1), 'ignore');
     } else if (type == 'notCollocated' && !checkNotCollCount(null)) {
         selectGroupProfile(begin, end, (numOfCols - 1), 'ignore');
-    }   
+    }
 }
 
 /*
@@ -3387,7 +3388,7 @@ function checkFindCount(obj) {
 }
 
 /*
- * 
+ *
  */
 function checkCollCount(obj) {
     var f = document.mainForm;
@@ -3439,9 +3440,9 @@ function checkNotCollCount(obj) {
     return true;
 }
 
-    
+
     </script>
-    
+
 EOF
 
 }

@@ -2,7 +2,7 @@
 # Similar to gene Ortholog Neighborhood viewer, but instead of coloring via
 # cog's we color genes within the same cassette box
 #
-# $Id: GeneCassette.pm 33667 2015-06-30 04:49:05Z jinghuahuang $
+# $Id: GeneCassette.pm 33981 2015-08-13 01:12:00Z aireland $
 #
 # When I say "query gene or query cassette" - I mean the initial gene from
 # gene detail page.
@@ -99,6 +99,7 @@ sub dispatch {
     ($numTaxon) = @_;    # number of saved genomes
     my $sid  = getContactOid();
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
 
     if ( $page eq "geneCassette" ) {
         # plot the gene cassette's chromosomal viewer
@@ -233,7 +234,7 @@ sub printCassetteList {
     print end_form();
     my $size = keys %distinctGenes;
     printStatusLine( "$count Rows $size Genes Loaded", 2 );
-    #$dbh->disconnect();    
+    #$dbh->disconnect();
 }
 
 # print list of genes
@@ -574,9 +575,9 @@ sub printViewer2 {
         <table  border=0>
         <tr  border=0>
         <td  style='border-left:1em solid $color2'> &nbsp;
-        Strand orientation by function <b>$center_func_id</b>                
+        Strand orientation by function <b>$center_func_id</b>
         </td>
-        </tr>        
+        </tr>
         </table>
         </p>
     };
@@ -1050,8 +1051,8 @@ sub getOtherScaffoldGenes {
         select g.scaffold
         from gene g, gene_cassette_genes gcg
         where g.gene_oid = gcg.gene
-        and gcg.cassette_oid = ? 
-        and rownum < 2     
+        and gcg.cassette_oid = ?
+        and rownum < 2
     };
     my $cur = execSql( $dbh, $sql, $verbose, $cassette_oid );
     my ($scaffold) = $cur->fetchrow();
@@ -1068,7 +1069,7 @@ sub getOtherScaffoldGenes {
         $sql = qq{
         select distinct g.gene_oid, g.start_coord, g.end_coord, gc.cluster_id,
         g.scaffold, g.strand, scf.scaffold_name
-        from gene g 
+        from gene g
         left join bbh_cluster_member_genes gc on g.gene_oid = gc.member_genes,
         scaffold scf
         where g.scaffold = ?
@@ -1078,8 +1079,8 @@ sub getOtherScaffoldGenes {
         and g.gene_oid not in (
             select gcg.gene
             from gene_cassette_genes gcg
-            where gcg.cassette_oid = ?        
-        ) 
+            where gcg.cassette_oid = ?
+        )
         };
 
     } elsif ( $type eq "pfam" ) {
@@ -1087,7 +1088,7 @@ sub getOtherScaffoldGenes {
         $sql = qq{
         select distinct g.gene_oid, g.start_coord, g.end_coord, gc.pfam_family,
         g.scaffold, g.strand, scf.scaffold_name
-        from gene g 
+        from gene g
         left join gene_pfam_families gc on g.gene_oid = gc.gene_oid,
         scaffold scf
         where g.scaffold = ?
@@ -1097,15 +1098,15 @@ sub getOtherScaffoldGenes {
         and g.gene_oid not in (
             select gcg.gene
             from gene_cassette_genes gcg
-            where gcg.cassette_oid = ?        
-        ) 
+            where gcg.cassette_oid = ?
+        )
         };
 
     } else {
         $sql = qq{
         select distinct g.gene_oid, g.start_coord, g.end_coord, gc.cog,
         g.scaffold, g.strand, scf.scaffold_name
-        from gene g 
+        from gene g
         left join gene_cog_groups gc on g.gene_oid = gc.gene_oid,
         scaffold scf
         where g.scaffold = ?
@@ -1115,17 +1116,17 @@ sub getOtherScaffoldGenes {
         and g.gene_oid not in (
             select gcg.gene
             from gene_cassette_genes gcg
-            where gcg.cassette_oid = ?        
-        )        
+            where gcg.cassette_oid = ?
+        )
         };
     }
 
     my $cur = execSql( $dbh, $sql, $verbose, @binds );
     for ( ; ; ) {
-        my ( $gene_oid, $start_coord, $end_coord, $cog, 
+        my ( $gene_oid, $start_coord, $end_coord, $cog,
 	     $scaffold, $strand, $scaffold_name ) = $cur->fetchrow();
         last if !$gene_oid;
-        push( @$results_aref, "$gene_oid\t$start_coord\t$end_coord\t$cog\t" 
+        push( @$results_aref, "$gene_oid\t$start_coord\t$end_coord\t$cog\t"
 	                    . "$scaffold\t$strand\t$scaffold_name" );
         #print "found $gene_oid $cog <br>\n";
     }
@@ -1158,7 +1159,7 @@ sub getCassetteData {
         gene_cassette_genes gcg, scaffold scf
         where g.gene_oid = gcg.gene
         and g.scaffold = scf.scaffold_oid
-        and gcg.cassette_oid = ?     
+        and gcg.cassette_oid = ?
         };
 
     } elsif ( $type eq "pfam" ) {
@@ -1170,7 +1171,7 @@ sub getCassetteData {
         gene_cassette_genes gcg, scaffold scf
         where g.gene_oid = gcg.gene
         and g.scaffold = scf.scaffold_oid
-        and gcg.cassette_oid = ?       
+        and gcg.cassette_oid = ?
         };
 
     } else {
@@ -1181,7 +1182,7 @@ sub getCassetteData {
         gene_cassette_genes gcg, scaffold scf
         where g.gene_oid = gcg.gene
         and g.scaffold = scf.scaffold_oid
-        and gcg.cassette_oid = ?  
+        and gcg.cassette_oid = ?
         };
     }
 
@@ -1193,7 +1194,7 @@ sub getCassetteData {
     for ( ; ; ) {
         my ( $gene_oid, $start_coord, $end_coord, $cog, $scaffold, $strand, $scaffold_name ) = $cur->fetchrow();
         last if !$gene_oid;
-        push( @result, "$gene_oid\t$start_coord\t$end_coord\t$cog\t" 
+        push( @result, "$gene_oid\t$start_coord\t$end_coord\t$cog\t"
 	             . "$scaffold\t$strand\t$scaffold_name" );
 
         $max = $end_coord   if ( $end_coord > $max );
@@ -1237,7 +1238,7 @@ sub getMaxCassetteSize {
         from gene g, gene_cassette_genes gcg
         where g.gene_oid = gcg.gene
         and gcg.cassette_oid in ( $str )
-        group by cassette_oid      
+        group by cassette_oid
     };
 
     my $size = 0;
@@ -1275,7 +1276,7 @@ sub getCassettesViaBoxFunc2 {
         from cassette_box_cassettes_bbh cb
         where cb.box_oid = ?
         $urclause
-        $imgClause     
+        $imgClause
         };
     } elsif ( $type eq "pfam" ) {
         $sql = qq{
@@ -1283,7 +1284,7 @@ sub getCassettesViaBoxFunc2 {
         from cassette_box_cassettes_pfam cb
         where cb.box_oid = ?
         $urclause
-        $imgClause  
+        $imgClause
         };
     } else {
         $sql = qq{
@@ -1353,14 +1354,14 @@ sub getCassettesViaBoxFunc {
         $imgClause
         };
         if ( $size > 0 ) {
-            my $tmpsql = qq{ 
+            my $tmpsql = qq{
             select distinct cbc2.cassettes
             from cassette_box_bbh_xlogs cx2, cassette_box_cassettes_bbh cbc2,
             cassette_box_cassettes_bbh cbc
             where cx2.box_oid = cbc2.box_oid
             and cx2.bbh_cluster in ( $str )
             and cbc2.cassettes = cbc.cassettes
-            and cbc.box_oid = ?               
+            and cbc.box_oid = ?
             };
             push( @binds, $box_oid );
             $sql = $sql . qq{
@@ -1378,14 +1379,14 @@ sub getCassettesViaBoxFunc {
         $imgClause
         };
         if ( $size > 0 ) {
-            my $tmpsql = qq{ 
+            my $tmpsql = qq{
             select distinct cbc2.cassettes
             from cassette_box_pfam_xlogs cx2, cassette_box_cassettes_pfam cbc2,
             cassette_box_cassettes_pfam cbc
             where cx2.box_oid = cbc2.box_oid
             and cx2.pfam_cluster in ( $str )
             and cbc2.cassettes = cbc.cassettes
-            and cbc.box_oid = ?               
+            and cbc.box_oid = ?
             };
             push( @binds, $box_oid );
             $sql = $sql . qq{
@@ -1403,14 +1404,14 @@ sub getCassettesViaBoxFunc {
         $imgClause
         };
         if ( $size > 0 ) {
-            my $tmpsql = qq{ 
+            my $tmpsql = qq{
             select distinct cbc2.cassettes
             from cassette_box_cog_xlogs cx2, cassette_box_cassettes_cog cbc2,
             cassette_box_cassettes_cog cbc
             where cx2.box_oid = cbc2.box_oid
             and cx2.cog_cluster in ( $str )
             and cbc2.cassettes = cbc.cassettes
-            and cbc.box_oid = ?                 
+            and cbc.box_oid = ?
             };
             push( @binds, $box_oid );
             $sql = $sql . qq{
@@ -1451,13 +1452,13 @@ sub getClusterIds {
         $sql = qq{
         select cx.bbh_cluster
         from cassette_box_bbh_xlogs cx
-        where cx.box_oid = ? 
+        where cx.box_oid = ?
         };
     } elsif ( $type eq "pfam" ) {
         $sql = qq{
         select cx.pfam_cluster
         from cassette_box_pfam_xlogs cx
-        where cx.box_oid = ?  
+        where cx.box_oid = ?
         };
     } else {
         $sql = qq{
@@ -1678,7 +1679,7 @@ sub printCassetteBoxDetails {
 
     # find all the gene cassettes
     # find cassette box left and right
-    my ( $scaffold_oid, $min_start, $max_end ) 
+    my ( $scaffold_oid, $min_start, $max_end )
 	= getGeneCassetteMinMax( $dbh, $gene_oid, $type, $biosynthetic_id );
 
     # find all the genes within the cassette box, even those not
@@ -1691,14 +1692,14 @@ sub printCassetteBoxDetails {
        where dt.scaffold = ?
        and dt.start_coord > 0
        and dt.end_coord > 0
-       and ( 
+       and (
           ( dt.start_coord >= ? and dt.end_coord <= ? ) or
       ( ( dt.end_coord + dt.start_coord ) / 2 >= ? and
         ( dt.end_coord + dt.start_coord ) / 2 <= ? )
        )
    };
 
-    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid, 
+    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid,
 		       $min_start, $max_end, $min_start, $max_end );
     for ( ; ; ) {
         my ($id) = $cur->fetchrow();
@@ -1774,7 +1775,7 @@ sub printCogPathwayMax {
 
     return if ( $#$cog_path_max_aref < 0 );
 
-    my $url = "<a href='$section_cgi&page=pathGeneList" 
+    my $url = "<a href='$section_cgi&page=pathGeneList"
 	    . "&cassette_oid=$cassette_oid&pathway_oid=";
 
     print "<h2>Preferred COG Pathways</h2>\n";
@@ -1879,7 +1880,7 @@ sub getCassetteCogStat {
     my $urclause  = urClause("cbc.taxon");
     my $imgClause = WebUtil::imgClauseNoTaxon('cbc.taxon');
     my $sql       = qq{
-        select c.box_oid, c.cluster_count, c.cass_count, c.taxon_count, gcg.cassette_oid 
+        select c.box_oid, c.cluster_count, c.cass_count, c.taxon_count, gcg.cassette_oid
         from gene_cassette_genes gcg, cassette_box_cassettes_cog cbc,
         cassette_box_cog c
         where gcg.gene = ?
@@ -1925,7 +1926,7 @@ sub getCassettePfamStat {
 
     my $urclause = urClause("cbc.taxon");
     my $sql      = qq{
-        select c.box_oid, c.cluster_count, c.cass_count, c.taxon_count, gcg.cassette_oid 
+        select c.box_oid, c.cluster_count, c.cass_count, c.taxon_count, gcg.cassette_oid
         from gene_cassette_genes gcg, cassette_box_cassettes_pfam cbc,
         cassette_box_pfam c
         where gcg.gene = ?
@@ -2023,7 +2024,7 @@ sub getPresentCog {
     }
 
     my $sql = qq{
-        select box_oid, cog_cluster 
+        select box_oid, cog_cluster
         from cassette_box_cog_xlogs
         where box_oid in ( $str )
     };
@@ -2079,7 +2080,7 @@ sub getPresentPfam {
     }
 
     my $sql = qq{
-        select box_oid, pfam_cluster 
+        select box_oid, pfam_cluster
         from cassette_box_pfam_xlogs
         where box_oid in ( $str )
     };
@@ -2141,7 +2142,7 @@ sub getPresentBBH {
     }
 
     my $sql = qq{
-        select box_oid, bbh_cluster 
+        select box_oid, bbh_cluster
         from cassette_box_bbh_xlogs
         where box_oid in ( $str )
     };
@@ -2376,21 +2377,21 @@ sub printFuncTable {
         var e = "";
         for( var i = 0; i < f.length; i++ ) {
             e = f.elements[ i ];
-            
+
             if( e.name == name ) {
                 break;
             }
          }
-       
+
         if(e.value == 'label' ) {
             return;
         }
-        
+
         if(e.value != 'cog' && e.value != 'pfam' && e.value != 'bbh') {
             return;
         }
-        
-        var url = "main.cgi?section=GeneCassette&page=geneCassette&gene_oid=" 
+
+        var url = "main.cgi?section=GeneCassette&page=geneCassette&gene_oid="
         + goid + "&type=";
         url +=  e.value;
         window.open( url, '_self' );
@@ -2603,7 +2604,7 @@ sub getCogPathwayMax {
         where gcg.cog = cpm.cog_members
         and cpm.cog_pathway_oid = cp.cog_pathway_oid
         and gcg.gene_oid in ( $str )
-        group by cpm.cog_pathway_oid, cp.cog_pathway_name        
+        group by cpm.cog_pathway_oid, cp.cog_pathway_name
     };
 
     # what about equal gene counts?
@@ -2641,11 +2642,11 @@ sub getCogPathwayGeneList {
     my ( $dbh, $cassette_oid, $pathway_oid ) = @_;
 
     my $sql = qq{
-        select g.gene_oid, g.gene_display_name 
-        from gene g, gene_cassette_genes gc, 
+        select g.gene_oid, g.gene_display_name
+        from gene g, gene_cassette_genes gc,
         gene_cog_groups gcg, cog_pathway_cog_members cpm
         where g.gene_oid = gc.gene
-        and gc.gene = gcg.gene_oid 
+        and gc.gene = gcg.gene_oid
         and gcg.cog = cpm.cog_members
         and cpm.cog_pathway_oid = ?
         and gc.cassette_oid = ?
@@ -2686,11 +2687,11 @@ sub getCogFunctions {
     }
 
     my $sql = qq{
-        select distinct $nvl(c.cog_id, '$NA' || g.gene_oid ), 
+        select distinct $nvl(c.cog_id, '$NA' || g.gene_oid ),
         $nvl(c.cog_name, '$NA'), g.gene_oid, g.gene_display_name, g.locus_tag
-        from gene g 
+        from gene g
         left join gene_cog_groups gcg on g.gene_oid = gcg.gene_oid
-        left join cog c on gcg.cog = c.cog_id  
+        left join cog c on gcg.cog = c.cog_id
         where g.gene_oid in ( $str )
     };
 
@@ -2744,10 +2745,10 @@ sub getPfamFunctions {
     }
 
     my $sql = qq{
-        select distinct $nvl(pf.ext_accession, '$NA' || g.gene_oid), 
+        select distinct $nvl(pf.ext_accession, '$NA' || g.gene_oid),
                $nvl(pf.name, '$NA' || g.gene_oid ),
                g.gene_oid, g.gene_display_name, g.locus_tag
-        from gene g 
+        from gene g
         left join gene_pfam_families gpf on g.gene_oid = gpf.gene_oid
         left join pfam_family pf on gpf.pfam_family = pf.ext_accession
         $str
@@ -2832,13 +2833,13 @@ sub getBBHFunctions {
 
     # find query
     my $sql = qq{
-    select distinct $nvl(bc.cluster_id, '$NA' || g.gene_oid), 
-    $nvl(bc.cluster_name, '$NA' || g.gene_oid), 
+    select distinct $nvl(bc.cluster_id, '$NA' || g.gene_oid),
+    $nvl(bc.cluster_name, '$NA' || g.gene_oid),
     g.gene_oid, g.gene_display_name, g.locus_tag
-    from gene g 
+    from gene g
     left join bbh_cluster_member_genes bg on g.gene_oid = bg.member_genes
     left join bbh_cluster bc on bg.cluster_id = bc.cluster_id
-    where g.gene_oid in ( $str )    
+    where g.gene_oid in ( $str )
     };
 
     my %cog_hash;
@@ -2922,19 +2923,19 @@ sub getOrthologs {
 	my $strand1 = getStrand( $dbh, $qgene_oid );
 	my $strand2 = getStrand( $dbh, $sgene_oid );
 	last if $count > $maxNeighborhoods;
-	
+
 	# find all cassette genes - do matching on function type later
 	# NOTE - the neighborhood plot which only red box genes associated
 	# to a function!
 	if ( $MIN_GENES > 0 && $type ne 'bio') {
 	    my $gcount = getGeneCassetteCount( $dbh, $ortholog, $type );
-	    
+
 	    # min genes in a cassette check
 	    #webLog("$i cassette gene count is $gcount record count $count\n");
 	    next if ( $gcount < $MIN_GENES );
 	}
 	$count++;
-	
+
 	# push the user's selected gene id
 	if ( $count == 1 ) {
 	    my $rec = "$gene_oid\t+";
@@ -2949,7 +2950,7 @@ sub getOrthologs {
     if ( $count == 0 ) {
         printStatusLine( "Loaded.", 2 );
         #$dbh->disconnect();
-        webError( "No orthologs for other gene neighborhoods found " 
+        webError( "No orthologs for other gene neighborhoods found "
 		. "for roughly the same sized gene." );
         return;
     }
@@ -3000,7 +3001,7 @@ sub getSortedCassettes {
     foreach my $r (@$recs_ref) {
         my ( $tmp_gene_oid, $panelStrand ) = split( /\t/, $r );
         print "Getting cassette for $tmp_gene_oid...<br>\n";
-        getGeneCassette( $dbh, $tmp_gene_oid, \%gene_cassette, 
+        getGeneCassette( $dbh, $tmp_gene_oid, \%gene_cassette,
 			 \%gene_cassette_cnt, $type, $biosynthetic_id );
 
         # rule 1. if no cassette on query gene - do not plot
@@ -3016,8 +3017,8 @@ sub getSortedCassettes {
 
     # end of working div
     print "</font></p></div>\n";
-    WebUtil::clearWorkingDiv(); 
-    
+    WebUtil::clearWorkingDiv();
+
     my $query_gene_aref = $gene_cassette{$gene_oid};
 
     # hash list of query gene's cassette cog/func => ""
@@ -3104,12 +3105,12 @@ sub printNeighborhoods {
     my $genomeCartFilter = param('genomeCartFilter');
     my $biosynthetic_id = param("biosynthetic_id");
     my $cassette_oid = param("cassette_oid");
-    
+
     $gene_oid = $gene_oid1 if ($gene_oid1 ne '');
     $type = $type1 if ($type1 ne '');
     $biosynthetic_id = $cluster_id if $cluster_id ne '';
     $type = 'bio' if ($biosynthetic_id ne '');
-    
+
     my $dbh = dbLogin();
 
     $type = "cog" if ($type eq "");
@@ -3157,13 +3158,13 @@ sub printNeighborhoods {
 
     my $box = "cassette";
     $box = "cluster" if $type eq "bio";
-    my $hint = 
+    my $hint =
 	 "Mouse over a gene to see details (once page has loaded).<br>"
        . "Click red dashed box <font color='red'>- - -</font> for "
        . "functions associated with this $box.<br>"
        . "Genes are colored by <u>$title</u> association.<br>"
        . "Yellow colored genes have <b>no</b> $title association";
-    $hint .= " or an outside cassette box" if $type ne "bio";    
+    $hint .= " or an outside cassette box" if $type ne "bio";
     $hint .=
          ".<br/>Small <font color='red'>red</font> box indicates query gene"
        . "<br/>Sequence range is limited to $flank_length bps and centered "
@@ -3174,7 +3175,7 @@ sub printNeighborhoods {
     print "<br/>\n";
 
     printNeighborhoodPanels
-	( $dbh, "orth", $sort_recs_ref, $count, $gene_cassette_ref, 
+	( $dbh, "orth", $sort_recs_ref, $count, $gene_cassette_ref,
 	  $type, $gene_cassette_cnt_ref, $biosynthetic_id );
 
     #$dbh->disconnect();
@@ -3193,7 +3194,7 @@ sub getScaffold {
     my $sql = qq{
       select g.scaffold, g.start_coord, g.end_coord
       from gene g
-      where g.gene_oid = $gene_oid  
+      where g.gene_oid = $gene_oid
     };
     my $cur = execSql( $dbh, $sql, $verbose );
     my ( $scaffold_oid, $start_coord, $end_coord ) = $cur->fetchrow();
@@ -3231,12 +3232,12 @@ sub getGeneCassette {
     my $left_flank = $mid_coord - $flank_length + 1;
     my $right_flank = $mid_coord + $flank_length + 1;
 
-    my $genes_href; # for bio 
+    my $genes_href; # for bio
 
     # find the gene cassette
     if ( $type eq "pfam" ) {
         $sql = qq{
-        select g.gene_oid, g.start_coord, g.end_coord, gp.pfam_family 
+        select g.gene_oid, g.start_coord, g.end_coord, gp.pfam_family
         from gene g left join gene_pfam_families gp on g.gene_oid = gp.gene_oid
         where g.scaffold = ?
         and g.start_coord >= ?
@@ -3245,13 +3246,13 @@ sub getGeneCassette {
             (select gcg2.gene
              from gene_cassette_genes gcg1, gene_cassette_genes gcg2
              where gcg1.cassette_oid = gcg2.cassette_oid
-             and gcg1.gene = ?)        
+             and gcg1.gene = ?)
         };
 
     } elsif ( $type eq "bbh" ) {
         $sql = qq{
-        select g.gene_oid, g.start_coord, g.end_coord, gb.cluster_id 
-        from gene g left join bbh_cluster_member_genes gb 
+        select g.gene_oid, g.start_coord, g.end_coord, gb.cluster_id
+        from gene g left join bbh_cluster_member_genes gb
                     on g.gene_oid = gb.member_genes
         where g.scaffold = ?
         and g.start_coord >= ?
@@ -3259,13 +3260,13 @@ sub getGeneCassette {
         and g.gene_oid in
             (select gcg2.gene
              from gene_cassette_genes gcg1, gene_cassette_genes gcg2
-             where gcg1.cassette_oid = gcg2.cassette_oid 
-             and gcg1.gene = ?)        
+             where gcg1.cassette_oid = gcg2.cassette_oid
+             and gcg1.gene = ?)
         };
 
     } else {
         $sql = qq{
-        select g.gene_oid, g.start_coord, g.end_coord, dt.cog 
+        select g.gene_oid, g.start_coord, g.end_coord, dt.cog
         from gene g left join gene_cog_groups dt on g.gene_oid = dt.gene_oid
         where g.scaffold = ?
         and g.start_coord >= ?
@@ -3278,14 +3279,14 @@ sub getGeneCassette {
         };
     }
 
-    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid, 
+    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid,
 		       $left_flank, $right_flank, $gene_oid );
 
     my $count = 0;
     my @recs;
     for ( ; ; ) {
         my ( $gene_oid, $start_coord, $end_coord, $cog ) = $cur->fetchrow();
-        last if !$gene_oid;        
+        last if !$gene_oid;
         $count++;
         push( @recs, "$gene_oid\t$start_coord\t$end_coord\t$cog" );
     }
@@ -3302,15 +3303,15 @@ sub getGeneCassetteMinMax {
     my ( $dbh, $gene_oid, $type, $biosynthetic_id ) = @_;
     my ( $scaffold_oid, $start_coord, $end_coord )
 	= getScaffold( $dbh, $gene_oid );
-    
+
     my $sql = qq{
-        select min(dt.start_coord), max(dt.end_coord) 
+        select min(dt.start_coord), max(dt.end_coord)
         from gene dt
         where dt.scaffold = ?
         and dt.gene_oid in
             (select gcg2.gene
-            from gene_cassette_genes gcg1, gene_cassette_genes gcg2 
-            where gcg1.cassette_oid = gcg2.cassette_oid 
+            from gene_cassette_genes gcg1, gene_cassette_genes gcg2
+            where gcg1.cassette_oid = gcg2.cassette_oid
             and gcg1.gene = ?)
         };
 
@@ -3368,7 +3369,7 @@ sub getGeneCounts {
         where g2.taxon = ?
         and g2.scaffold = ?
         and g2.start_coord >= ?
-        and g2.end_coord <= ?       
+        and g2.end_coord <= ?
     };
 
     my $cur = execSql( $dbh, $sql, $verbose, $taxon, $scaffold, $start, $end );
@@ -3387,7 +3388,7 @@ sub getGeneCounts {
 #     count -  Current count of neighborhoods to be printed.
 ############################################################################
 sub printNeighborhoodPanels {
-    my ( $dbh, $tag, $recs_ref, $count, $gene_cassette_href, 
+    my ( $dbh, $tag, $recs_ref, $count, $gene_cassette_href,
 	 $type, $gene_cassette_cnt_ref, $cluster_id ) = @_;
 
     ## Print neighborhoods
@@ -3397,7 +3398,7 @@ sub printNeighborhoodPanels {
         webLog "print gene_oid='$gene_oid' " . currDateTime() . "\n"
 	    if $verbose >= 1;
         printOneNeighborhood( $dbh, $tag, $gene_oid, $panelStrand,
-			      $gene_cassette_href, $type, 
+			      $gene_cassette_href, $type,
 			      $gene_cassette_cnt_ref,
 			      $cluster_id );
         print "<br/>\n";
@@ -3431,14 +3432,14 @@ sub printNeighborhoodPanels {
 #      groupColors_ref - Reference to mapping of COG to group colors.
 ############################################################################
 sub printOneNeighborhood {
-    my ( $dbh, $tag, $gene_oid0, $panelStrand, $gene_cassette_href, 
+    my ( $dbh, $tag, $gene_oid0, $panelStrand, $gene_cassette_href,
 	 $type, $gene_cassette_cnt_ref, $biosynthetic_oid ) = @_;
 
     my $sql = qq{
         select scf.scaffold_oid, scf.scaffold_name, ss.seq_length,
-               g.start_coord, g.end_coord, g.strand, 
+               g.start_coord, g.end_coord, g.strand,
                tx.taxon_oid, tx.taxon_display_name
-        from gene g, scaffold scf, scaffold_stats ss, taxon tx 
+        from gene g, scaffold scf, scaffold_stats ss, taxon tx
         where g.taxon = tx.taxon_oid
         and g.gene_oid = ?
         and g.scaffold = scf.scaffold_oid
@@ -3449,8 +3450,8 @@ sub printOneNeighborhood {
         and scf.ext_accession is not null
     };
     my $cur = execSql( $dbh, $sql, $verbose, $gene_oid0 );
-    my ( $scaffold_oid, $scaffold_name, $scf_seq_length, 
-	 $start_coord0, $end_coord0, $strand0, $taxon_oid, 
+    my ( $scaffold_oid, $scaffold_name, $scf_seq_length,
+	 $start_coord0, $end_coord0, $strand0, $taxon_oid,
 	 $taxon_display_name ) = $cur->fetchrow();
     return if !$scaffold_oid;
 
@@ -3476,50 +3477,50 @@ sub printOneNeighborhood {
     my $sql;
     if ( $type eq "pfam" ) {
         $sql = qq{
-        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name, 
+        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name,
         g.locus_type, g.locus_tag, g.start_coord, g.end_coord, g.strand,
-        g.aa_seq_length, gp.pfam_family, g.scaffold, g.is_pseudogene, 
-        g.cds_frag_coord        
+        g.aa_seq_length, gp.pfam_family, g.scaffold, g.is_pseudogene,
+        g.cds_frag_coord
         from gene g left join gene_pfam_families gp on g.gene_oid = gp.gene_oid
         where g.scaffold = ?
-        and (( g.start_coord >= ? and g.end_coord <= ? ) 
-           or (( g.end_coord + g.start_coord ) / 2 >= ? 
+        and (( g.start_coord >= ? and g.end_coord <= ? )
+           or (( g.end_coord + g.start_coord ) / 2 >= ?
            and ( g.end_coord + g.start_coord ) / 2 <= ? ))
         order by g.start_coord, g.end_coord, gp.pfam_family $myOrder
         };
 
     } elsif ( $type eq "bbh" ) {
         $sql = qq{
-        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name, 
+        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name,
         g.locus_type, g.locus_tag, g.start_coord, g.end_coord, g.strand,
-        g.aa_seq_length, gb.cluster_id, g.scaffold, g.is_pseudogene, 
+        g.aa_seq_length, gb.cluster_id, g.scaffold, g.is_pseudogene,
         g.cds_frag_coord
-        from gene g left join bbh_cluster_member_genes gb 
+        from gene g left join bbh_cluster_member_genes gb
         on g.gene_oid = gb.member_genes
         where g.scaffold = ?
-        and (( g.start_coord >= ? and g.end_coord <= ? ) 
-           or (( g.end_coord + g.start_coord ) / 2 >= ? 
+        and (( g.start_coord >= ? and g.end_coord <= ? )
+           or (( g.end_coord + g.start_coord ) / 2 >= ?
            and ( g.end_coord + g.start_coord ) / 2 <= ? ))
         order by g.start_coord, g.end_coord, gb.cluster_id $myOrder
         };
 
     } else {
         $sql = qq{
-        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name, 
+        select distinct g.gene_oid, g.gene_symbol, g.gene_display_name,
         g.locus_type, g.locus_tag, g.start_coord, g.end_coord, g.strand,
         g.aa_seq_length, dt.cog, g.scaffold, g.is_pseudogene, g.cds_frag_coord
         from gene g left join gene_cog_groups dt on g.gene_oid = dt.gene_oid
         where g.scaffold = ?
         and g.start_coord > 0
         and g.end_coord > 0
-        and (( g.start_coord >= ? and g.end_coord <= ? ) 
+        and (( g.start_coord >= ? and g.end_coord <= ? )
            or (( g.end_coord + g.start_coord ) / 2 >= ?
            and ( g.end_coord + g.start_coord ) / 2 <= ? ))
         order by g.start_coord, g.end_coord, dt.cog $myOrder
         };
     }
 
-    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid, 
+    my $cur = execSql( $dbh, $sql, $verbose, $scaffold_oid,
 		       $left_flank, $right_flank, $left_flank, $right_flank );
 
     # duplicate pfam and bbh ids ???
@@ -3551,7 +3552,7 @@ sub printOneNeighborhood {
             # for the label to show all protein
             $duplicate{$gene_oid} = $duplicate{$gene_oid} . ", $cluster_id";
 	    if ($type ne "bio") {
-		$duplicate_cnt{"$start_coord-$end_coord"} 
+		$duplicate_cnt{"$start_coord-$end_coord"}
 	        = $duplicate_cnt{"$start_coord-$end_coord"} + 1;
 	    }
         } else {
@@ -3635,12 +3636,12 @@ sub printOneNeighborhood {
 
         # if drawn and outside cassette box just skip it
         if ( $drawn_genes{"$start_coord-$end_coord"} > 0
-            && !( $start_coord >= $min_cassette_start 
+            && !( $start_coord >= $min_cassette_start
 		  && $end_coord <= $max_cassette_end ) ) {
             next;
         }
 
-	    next if ($type eq "bio" && $cluster_genes{$gene_oid} 
+	    next if ($type eq "bio" && $cluster_genes{$gene_oid}
 		 && $cluster_id ne $biosynthetic_oid);
 
         my $label = $gene_symbol;
@@ -3663,7 +3664,7 @@ sub printOneNeighborhood {
             && $end_coord <= $max_cassette_end )
         {
             if ( $cluster_id eq "" ) {
-                $color = $sp->{color_yellow}; 
+                $color = $sp->{color_yellow};
             } else {
                 # get color based on function type
                 if ( $type eq "pfam" ) {
@@ -3686,14 +3687,14 @@ sub printOneNeighborhood {
 	    my $item = $duplicate{$gene_oid};
         $cog = "($item)" if $item ne "";
 
-        if ( $gene_oid eq $gene_oid0 && 
+        if ( $gene_oid eq $gene_oid0 &&
 	     !(exists $cluster_genes{ $gene_oid }) ) {
            my @coordLines = GeneUtil::getMultFragCoords( $dbh, $gene_oid, $cds_frag_coord );
            if ( scalar(@coordLines) > 1 ) {
                 foreach my $line (@coordLines) {
                     my ( $frag_start, $frag_end ) = split( /\.\./, $line );
                     my $tmp_label = $label . " $frag_start..$frag_end ${cog} ";
-                    $sp->addBox( $frag_start, $frag_end, $sp->{color_red}, 
+                    $sp->addBox( $frag_start, $frag_end, $sp->{color_red},
 				    $strand, $gene_oid, $tmp_label );
 
                 }
@@ -3703,7 +3704,7 @@ sub printOneNeighborhood {
                 # only draw the red box under the centering gene
                 # only if the func id exist
                 # - i removed above criteria - ken 2009-05-15
-                $sp->addBox( $start_coord, $end_coord, $sp->{color_red}, 
+                $sp->addBox( $start_coord, $end_coord, $sp->{color_red},
 			     $strand, $gene_oid, $tmp_label );
 
             }
@@ -4024,7 +4025,7 @@ sub getBBHColorIndex {
 
 sub printJavaScript {
     print qq{
-    <script language='JavaScript' type="text/javascript">        
+    <script language='JavaScript' type="text/javascript">
     function selectAllCheckBoxesCog( x ) {
         var f = document.mainForm;
         for( var i = 0; i < f.length; i++ ) {
@@ -4034,7 +4035,7 @@ sub printJavaScript {
             }
         }
     }
-    </script>        
+    </script>
     };
 }
 
@@ -4201,9 +4202,9 @@ sub printProteinSelection {
 
     print "$label &nbsp;\n" if ( $label ne "" );
 
-    print qq{  
+    print qq{
         <select name='$name' onChange='$jsFunction'>
-        <option value="label" selected>-- Select Protein Cluster 
+        <option value="label" selected>-- Select Protein Cluster
         --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
         <option value="cog">COG</option>
     };
@@ -4215,7 +4216,7 @@ sub printProteinSelection {
     }
 
     if ($include_cassette_pfam) {
-        print qq{    
+        print qq{
         <option value="pfam">Pfam</option>
         };
     }
@@ -4223,8 +4224,8 @@ sub printProteinSelection {
     if($enable_biocluster) {
     my $include_cassette_bioSyn = isBioSynGene($dbh, $gene_oid);
     if ($include_cassette_bioSyn) {
-        print qq{    
-        <option value="bio">Biosynthetic Cluster</option> 
+        print qq{
+        <option value="bio">Biosynthetic Cluster</option>
         };
     }
     }
@@ -4239,7 +4240,7 @@ sub printProteinSelection {
 sub isBioSynGene {
     my ($dbh, $gene_oid) = @_;
     return 0  if ($dbh eq '' || $gene_oid eq '');
-    
+
     my $sql = qq{
         select bcg.gene_oid
         from bio_cluster_features_new bcg
@@ -4266,9 +4267,9 @@ sub getProteinSelection {
     my $str = "";
     $str = "$label &nbsp;" if ( $label ne "" );
 
-    $str .= qq{  
+    $str .= qq{
         <select name='$name' onChange='$jsFunction'>
-        <option value="label" selected>-- Select Protein Cluster 
+        <option value="label" selected>-- Select Protein Cluster
         --&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option>
         <option value="cog">COG</option>
     };
@@ -4281,11 +4282,11 @@ sub getProteinSelection {
 
     if ($include_cassette_pfam) {
         $str .= qq{
-        <option value="pfam">Pfam</option> 
+        <option value="pfam">Pfam</option>
     };
     }
     $str .= qq{
-        </select>       
+        </select>
     };
 
     return $str;
@@ -4306,7 +4307,7 @@ sub getGeneCountOccurrence {
         group by gcg.cassette_oid
         ) a
     group by a.cnt
-    order by 1 desc 
+    order by 1 desc
     };
 
     my @recs;
@@ -4393,7 +4394,7 @@ sub printOccurrenceGeneList {
         WorkspaceUtil::printSaveGeneToWorkspace_withAllCassetteOccurrenceGenes($select_id_name);
     }
 
-    printStatusLine( $s, 2 );    
+    printStatusLine( $s, 2 );
     print end_form();
 
 }

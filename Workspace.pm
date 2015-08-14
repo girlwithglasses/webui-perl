@@ -7,7 +7,7 @@
 # filenames with white spaces     $filename =~ s/\s/_/g;
 # - ken
 #
-# $Id: Workspace.pm 33905 2015-08-05 20:24:41Z klchu $
+# $Id: Workspace.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 #
 ############################################################################
 package Workspace;
@@ -77,7 +77,7 @@ my $maxGeneListResults = getSessionParam("maxGeneListResults") || 1000;
 my $enable_workspace = $env->{enable_workspace};
 my $in_file          = $env->{in_file};
 
-my $merfs_timeout_mins = $env->{merfs_timeout_mins} || 30;
+my $merfs_timeout_mins = $env->{merfs_timeout_mins} || 60;
 
 # user's sub folder names
 my $GENE_FOLDER   = "gene";
@@ -178,8 +178,6 @@ sub dispatch {
         folderList($page);
     } elsif ( $page eq $GENOME_FOLDER ) {
         folderList($page);
-    } elsif ($page eq $BC_FOLDER) {
-        folderList($BC_FOLDER);
     } elsif ( $page eq $RULE_FOLDER ) {
         folderList($page);
 
@@ -288,6 +286,8 @@ sub dispatch {
         saveGenomeCart();
     } elsif ( paramMatch("saveAllBrowserGenomeList") ) {
         saveAllBrowserGenomeList();
+    } elsif ( paramMatch("saveGenomeSetCreation") ) {
+        saveGenomeSetCreation();
     } elsif ( paramMatch("addSharing") ) {
         addSharing();
     } elsif ( paramMatch("removeSharing") ) {
@@ -384,19 +384,27 @@ sub saveUserPreferences {
 }
 
 sub loadUserPreferences {
-    my $pref_file = shift;
+    my ($customFilename) = @_;
 
-	return {} if ! $user_restricted_site;
+    my %hash;
+    if ( !$user_restricted_site ) {
+        return \%hash;
+    }
 
     my $sid      = getContactOid();
-	$pref_file //= "$workspace_dir/$sid/mypreferences";
+    my $filename = "$workspace_dir/$sid/mypreferences";
+    if ( $customFilename ne '' ) {
+        $filename = "$workspace_dir/$sid/$customFilename";
+    }
 
-	return {} if ! -e $pref_file;
+    if ( !-e $filename ) {
+        return \%hash;
+    }
 
     # read file
     # return hash
     my %hash;
-    my $rfh = newReadFileHandle($pref_file);
+    my $rfh = newReadFileHandle($filename);
     while ( my $line = $rfh->getline() ) {
         chomp $line;
         next if ( $line eq "" );
@@ -407,14 +415,7 @@ sub loadUserPreferences {
     return \%hash;
 }
 
-sub loadUserPreferencesByContactOid {
 
-	my $c_oid = shift // croak 'No contact ID supplied!';
-	my $f_name = "$workspace_dir/$c_oid/mypreferences";
-
-	return IMG::IO::File::file_to_hash( $f_name );
-
-}
 
 # main page
 # list summary of how many files saved - each cart
@@ -759,9 +760,17 @@ sub saveGeneCart2 {
 sub saveAllGeneCart {
     my $sid = getContactOid();
 
+    my @all_files;
     my @input_files = param("input_file");
-    #print "saveAllGeneCart() input_files @input_files<br/>\n";
-    if ( scalar(@input_files) == 0 ) {
+    if ( scalar(@input_files) > 0 ) {
+        push(@all_files, @input_files);
+    }
+    my @share_input_files = param("share_input_file");
+    if ( scalar(@share_input_files) > 0 ) {
+        push(@all_files, @share_input_files);
+    }
+    #print "saveAllGeneCart() all_files: @all_files<br/>\n";
+    if ( scalar(@all_files) == 0 ) {
         webError("There are no genes to save. Please select genes.");
         return;
     }
@@ -790,9 +799,10 @@ sub saveAllGeneCart {
     my $total = 0;
     if ( scalar(@func_ids) > 0 ) {
         my $dbh = dbLogin();
-        for my $input_file (@input_files) {
+        for my $input_file (@all_files) {
             print "Processing input_file $input_file ...<br/>\n";
-            my $fullname = "$workspace_dir/$sid/$folder/$input_file";
+            my($c_id, $x) = WorkspaceUtil::splitOwnerFileset( $sid, $input_file ); 
+            my $fullname = "$workspace_dir/$c_id/$folder/$x";
             my @func_groups = QueryUtil::groupFuncIdsIntoOneArray( \@func_ids );
             foreach my $func_ids_ref (@func_groups) {
                 my $cnt = outputFuncsGenes( $res, $dbh, $func_ids_ref, $folder, $fullname, $data_type, $gene_href );
@@ -1236,7 +1246,8 @@ sub outputFuncsGenes {
 
     my %taxon_datatype_h;
 
-    my $func_id = @$func_ids_ref[0];
+    my @func_ids = @$func_ids_ref;
+    my $func_id = $func_ids[0];
     my $func_tag = MetaUtil::getFuncTagFromFuncId( $func_id );
 
     open( FH, "$input_file" )
@@ -1245,9 +1256,6 @@ sub outputFuncsGenes {
     my $rclause   = WebUtil::urClause('g.taxon');
     my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
 
-    my @gene_oids    = param('gene_oid');
-    my $min_gene_oid = 0;
-    my $max_gene_oid = 0;
     my $gene_count   = 0;
 
     if ( $folder eq $GENOME_FOLDER ) {
@@ -1289,15 +1297,15 @@ sub outputFuncsGenes {
                 }
 
                 if ( $func_id =~ /MetaCyc/i ) {
-                    my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $func_ids_ref );
+                    my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, \@func_ids );
                     my @ec_ids = keys %$ec2metacyc_href;
-                    $func_ids_ref = \@ec_ids;
+                    @func_ids = @ec_ids;
                 }
 
                 my @type_list = MetaUtil::getDataTypeList($data_type);
                 for my $t2 (@type_list) {
-                    my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $t2, $func_tag, $func_ids_ref );
-                    for my $func_id ( @$func_ids_ref ) {
+                    my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $t2, $func_tag, \@func_ids );
+                    for my $func_id ( @func_ids ) {
                         my @func_genes = split( /\t/, $func_genes{$func_id} );
                         for my $gene_oid (@func_genes) {
                             my $workspace_id = "$taxon_oid $t2 $gene_oid";
@@ -1311,6 +1319,9 @@ sub outputFuncsGenes {
                                     print $res "$workspace_id\n";
                                 }
                                 $gene_count++;
+                                if ( ( $gene_count % 200 ) == 0 ) {
+                                    print ".";
+                                }
                             }
                         }
                     }
@@ -1320,7 +1331,7 @@ sub outputFuncsGenes {
             else {
 
                 # database
-                my ( $sql, @bindList ) = WorkspaceQueryUtil::getDbTaxonFuncsGenesSql( $dbh, $func_ids_ref, $taxon_oid, $rclause, $imgClause );
+                my ( $sql, @bindList ) = WorkspaceQueryUtil::getDbTaxonFuncsGenesSql( $dbh, \@func_ids, $taxon_oid, $rclause, $imgClause );
                 if ($sql) {
                     my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
                     for ( ; ; ) {
@@ -1337,6 +1348,9 @@ sub outputFuncsGenes {
                                 print $res "$gene_oid\n";
                             }
                             $gene_count++;
+                            if ( ( $gene_count % 200 ) == 0 ) {
+                                print ".";
+                            }
                         }
                     }
                     $cur->finish();
@@ -1359,13 +1373,21 @@ sub outputFuncsGenes {
             } else {
                 $scaf_hash{$line} = 1;
             }
-            #print "outputFuncsGenes() scaffold=$line data_type=$data_type<br/>\n";
-            $gene_count += outputScaffoldFuncsGenesCore( $dbh, $res, $func_ids_ref, $line, $gene_href );
         }    # end while line
+        foreach my $scaffold_oid (keys %scaf_hash) {
+            #print "Computing scaffold $scaffold_oid ...<br/>\n";
+            #print "outputFuncsGenes() scaffold=$scaffold_oid data_type=$data_type<br/>\n";
+            $gene_count += outputScaffoldFuncsGenesCore( $dbh, $res, \@func_ids, $scaffold_oid, $gene_href );
+            $gene_count++;
+            if ( ( $gene_count % 200 ) == 0 ) {
+                print ".";
+            }
+        }
 
     } else {
 
         # gene folder
+        my @gene_oids = param('gene_oid');
         if ( scalar(@gene_oids) == 0 ) {
             while ( my $line = <FH> ) {
                 chomp($line);
@@ -1380,13 +1402,6 @@ sub outputFuncsGenes {
             if ( WebUtil::isInt($line) ) {
                 $gene_oid = $line;
                 $key = "database";
-
-                if ( !$min_gene_oid || $gene_oid < $min_gene_oid ) {
-                    $min_gene_oid = $gene_oid;
-                }
-                if ( $gene_oid > $max_gene_oid ) {
-                    $max_gene_oid = $gene_oid;
-                }
             }
             else {
                 my ($taxon_oid, $d2, $gene_oid0)  = split( / /, $line );
@@ -1422,8 +1437,10 @@ sub outputFuncsGenes {
 
             if ( $key eq 'database' ) {
                 # database
+                my @db_genes = keys $h_ref;
+                my $gene_str = OracleUtil::getNumberIdsInClause( $dbh, @db_genes );
                 my ( $sql, @bindList ) =
-                  WorkspaceQueryUtil::getDbFuncsGenesSql( $dbh, $func_ids_ref, $min_gene_oid, $max_gene_oid, $rclause, $imgClause );
+                  WorkspaceQueryUtil::getDbFuncsGenesSql( $dbh, \@func_ids, $gene_str, $rclause, $imgClause );
 
                 if ($sql) {
                     my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
@@ -1445,6 +1462,9 @@ sub outputFuncsGenes {
                                 print $res "$gene_oid\n";
                             }
                             $gene_count++;
+                            if ( ( $gene_count % 200 ) == 0 ) {
+                                print ".";
+                            }
                         }
                     }
                     $cur->finish();
@@ -1461,10 +1481,18 @@ sub outputFuncsGenes {
                         next;
                 }
 
-                my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $d2, $func_tag, $func_ids_ref );
-                for my $func_id ( @$func_ids_ref ) {
+                if ( $func_id =~ /MetaCyc/i ) {
+                    my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, \@func_ids );
+                    my @ec_ids = keys %$ec2metacyc_href;
+                    @func_ids = @ec_ids;
+                }
+
+                my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid, $d2, $func_tag, \@func_ids );
+                for my $func_id ( @func_ids ) {
                     my @func_genes = split( /\t/, $func_genes{$func_id} );
                     for my $gene_oid (@func_genes) {
+                        next if ( ! $h_ref->{$gene_oid} );
+
                         my $workspace_id = "$taxon_oid $d2 $gene_oid";
                         if ( $gene_href && $gene_href->{$workspace_id} ) {
                             # already in
@@ -1476,6 +1504,9 @@ sub outputFuncsGenes {
                                 print $res "$workspace_id\n";
                             }
                             $gene_count++;
+                            if ( ( $gene_count % 200 ) == 0 ) {
+                                print ".";
+                            }
                         }
                     }
                 }
@@ -1782,6 +1813,7 @@ sub outputScaffoldFuncsGenes {
 sub outputScaffoldFuncsGenesCore {
     my ( $dbh, $res, $func_ids_ref, $input_scaffold, $gene_href ) = @_;
 
+    my @func_ids = @$func_ids_ref;
     my $gene_count = 0;
 
     if ( WebUtil::isInt($input_scaffold) ) {
@@ -1790,7 +1822,7 @@ sub outputScaffoldFuncsGenesCore {
         my $imgClause = WebUtil::imgClauseNoTaxon('g.taxon');
 
         my ( $sql, @bindList ) =
-          WorkspaceQueryUtil::getDbScaffoldFuncsGenesSql( $dbh, $func_ids_ref, $input_scaffold, $rclause, $imgClause );
+          WorkspaceQueryUtil::getDbScaffoldFuncsGenesSql( $dbh, \@func_ids, $input_scaffold, $rclause, $imgClause );
         if ( $sql ) {
             my $cur = execSqlBind( $dbh, $sql, \@bindList, $verbose );
             for ( ; ; ) {
@@ -1808,6 +1840,9 @@ sub outputScaffoldFuncsGenesCore {
                         print $res "$gene_oid\n";
                     }
                     $gene_count++;
+                    if ( ( $gene_count % 200 ) == 0 ) {
+                        print ".";
+                    }
                 }
             }
             $cur->finish();
@@ -1816,7 +1851,7 @@ sub outputScaffoldFuncsGenesCore {
     }
     else {
         # file
-        my $func_id = @$func_ids_ref[0];
+        my $func_id = $func_ids[0];
         my $func_tag = MetaUtil::getFuncTagFromFuncId( $func_id );
         if ( !$func_tag ) {
             print "<p>Unknown function ID $func_id\n";
@@ -1824,9 +1859,9 @@ sub outputScaffoldFuncsGenesCore {
         }
 
         if ( $func_id =~ /MetaCyc/i ) {
-            my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, $func_ids_ref );
+            my ( $metacyc2ec_href, $ec2metacyc_href ) = QueryUtil::fetchMetaCyc2EcHash( $dbh, \@func_ids );
             my @ec_ids = keys %$ec2metacyc_href;
-            $func_ids_ref = \@ec_ids;
+            @func_ids = @ec_ids;
         }
 
         my %taxon_datatype_h;
@@ -1861,8 +1896,8 @@ sub outputScaffoldFuncsGenesCore {
             }
 
             my ( $taxon_oid2, $t2 ) = split( / /, $key );
-            my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid2, $t2, $func_tag, $func_ids_ref );
-            for my $func_id ( @$func_ids_ref ) {
+            my %func_genes = MetaUtil::getTaxonFuncsGenes( $taxon_oid2, $t2, $func_tag, \@func_ids );
+            for my $func_id ( @func_ids ) {
                 my @func_genes = split( /\t/, $func_genes{$func_id} );
                 for my $gene_oid (@func_genes) {
                     next if ( ! $h_ref->{$gene_oid} );
@@ -1878,6 +1913,9 @@ sub outputScaffoldFuncsGenesCore {
                             print $res "$workspace_id\n";
                         }
                         $gene_count++;
+                        if ( ( $gene_count % 200 ) == 0 ) {
+                            print ".";
+                        }
                     }
                 }
             }
@@ -2529,6 +2567,33 @@ sub execSaveAllGeneList {
 sub prepareSaveToWorkspace {
     my ( $sid, $folder ) = @_;
 
+    my ( $filename, $ws_save_mode ) = inspectSaveToWorkspace( $sid, $folder );
+
+    my $res;
+    my %h2;
+    if ( $ws_save_mode eq 'append' ) {
+        my $fh = newReadFileHandle("$workspace_dir/$sid/$folder/$filename");
+        while ( my $id = $fh->getline() ) {
+            chomp $id;
+            next if ( $id eq "" );
+            $h2{$id} = 1;
+        }
+        close $fh;
+
+        $res = newAppendFileHandle("$workspace_dir/$sid/$folder/$filename");
+    } else {
+        $res = newWriteFileHandle("$workspace_dir/$sid/$folder/$filename");
+    }
+
+    return ($filename, $res, \%h2);
+}
+
+###############################################################################
+# inspectSaveToWorkspace
+###############################################################################
+sub inspectSaveToWorkspace {
+    my ( $sid, $folder ) = @_;
+
     my $filename = param("workspacefilename");
 
     my $ws_save_mode = param('ws_save_mode');
@@ -2559,23 +2624,7 @@ sub prepareSaveToWorkspace {
         return;
     }
 
-    my $res;
-    my %h2;
-    if ( $ws_save_mode eq 'append' ) {
-        my $fh = newReadFileHandle("$workspace_dir/$sid/$folder/$filename");
-        while ( my $id = $fh->getline() ) {
-            chomp $id;
-            next if ( $id eq "" );
-            $h2{$id} = 1;
-        }
-        close $fh;
-
-        $res = newAppendFileHandle("$workspace_dir/$sid/$folder/$filename");
-    } else {
-        $res = newWriteFileHandle("$workspace_dir/$sid/$folder/$filename");
-    }
-
-    return ($filename, $res, \%h2);
+    return ( $filename, $ws_save_mode );
 }
 
 ###############################################################################
@@ -3658,8 +3707,7 @@ sub saveFunctionCart {
 }
 
 ################################################################################
-# genome cart
-# todo: merge with the one in WorkspaceGenomeSet
+# save genome cart
 ################################################################################
 sub saveGenomeCart {
     my $sid = getContactOid();
@@ -3742,9 +3790,48 @@ sub saveAllBrowserGenomeList {
     folderList( $folder, $text );
 }
 
-#
+################################################################################
+# saveGenomeSetCreation
+################################################################################
+sub saveGenomeSetCreation {
+    my $sid = getContactOid();
+
+    # get the genomes in the selected box:
+    my @oids = param("selectedGenome1");
+    if ( scalar(@oids) == 0 ) {
+        webError("Please select some genomes to save.");
+        return;
+    }
+
+    my $folder = $GENOME_FOLDER;
+    my ($filename, $res, $h2_href) = prepareSaveToWorkspace( $sid, $folder );
+
+    my $count = 0;
+    foreach my $id (@oids) {
+        if ( $h2_href->{$id} ) {
+            # already in
+            next;
+        }
+        print $res "$id\n";
+        $h2_href->{$id} = 1;
+        $count++;
+    }
+    close $res;
+
+    my $text = qq{
+        <p>
+        $count genomes saved to file <b>$filename</b>
+        </p>
+    };
+
+    folderList( $folder, $text );
+}
+
+
+################################################################################
+# checkFolder
 # lets make sure the folder name is correct
-#
+################################################################################
 sub checkFolder {
     my ($f) = @_;
 
@@ -3960,17 +4047,22 @@ sub deleteFile {
         WebUtil::checkFileName($filename);
 
         # this also untaints the name
-	my $db_file_name = $filename;
-	$db_file_name =~ s/'/''/g;    # replace ' with ''
+    	my $db_file_name = $filename;
+    	$db_file_name =~ s/'/''/g;    # replace ' with ''
         $filename = WebUtil::validFileName($filename);
 
-	my $sql2 = "delete from contact_workspace_group\@imgsg_dev " .
-	    "where contact_oid = $sid " .
-	    " and data_set_type = '" . $folder .
-	    "' and data_set_name = '" . $db_file_name . "'";
-	push @sqlList, ( $sql2 );
+    	my $sql2 = "delete from contact_workspace_group\@imgsg_dev " .
+    	    "where contact_oid = $sid " .
+    	    " and data_set_type = '" . $folder .
+    	    "' and data_set_name = '" . $db_file_name . "'";
+    	push @sqlList, ( $sql2 );
 
         wunlink("$workspace_dir/$sid/$folder/$filename");
+
+        my $file_in_sandbox = "$workspace_sandbox_dir/$sid/$folder/$filename";
+        if ( -e $file_in_sandbox ) {
+            wunlink($file_in_sandbox);
+        }
 
         $text .= qq{
             <p>
@@ -6747,6 +6839,7 @@ sub printSubmitComputation {
     my $wsSaveMode = 'ws_save_mode';
     my $jobResultName = 'job_result_name';
     my $selectedJobName = 'selected_job_name';
+    my $folder_set = "$folder set";
 
     if ( $jobPrefix ) {
         if ( $jobPrefix =~ /func_profile/i ) {
@@ -6770,6 +6863,10 @@ sub printSubmitComputation {
         elsif ( $jobPrefix =~ /func_scaf_search/i ) {
             $jobType = 'Function Scaffold Search';
         }
+        elsif ( $jobPrefix =~ /save_func_gene/i ) {
+            $folder_set = '';
+            $jobType = 'Save Genes of Selected Function to Workspace';
+        }
         $wsSaveMode = $jobPrefix . '_save_mode';
         $jobResultName = $jobPrefix . '_job_result_name';
         $selectedJobName = $jobPrefix . '_selected_job_name';
@@ -6778,7 +6875,7 @@ sub printSubmitComputation {
     print "<p>\n";
     print "<h2>Submit as Computation Job Using Message System</h2>\n";
 
-    print "<p>You may submit a $folder set $jobType computation to run in the background.\n";
+    print "<p>You may submit a $folder_set $jobType computation to run in the background.\n";
     if ( $moreInfo ) {
         print "<br/>\n";
         print $moreInfo;
@@ -6811,6 +6908,12 @@ sub printSubmitComputation {
         elsif ( $jobPrefix && $jobPrefix =~ /pairwise_ani/i ) {
             $onclickCall = "return checkTwoSetsIncludingShareAndFileName('$jobResultName', '$wsSaveMode', '$folder');";
         }
+        elsif ( $jobPrefix && $jobPrefix =~ /func_scaf_search/i ) {
+            $onclickCall = "return myValidationBeforeSubmit4('$jobResultName', '$wsSaveMode', '$folder', 'selectedGenome1', '1', '', '');";
+        }
+        elsif ( $jobPrefix =~ /save_func_gene/i ) {
+            $onclickCall = "return checkFileName('$jobResultName', '$wsSaveMode');";
+        }
         else {
             $onclickCall = "return checkSetsIncludingShareAndFileName('$jobResultName', '$wsSaveMode', '$folder');";
         }
@@ -6821,6 +6924,12 @@ sub printSubmitComputation {
         }
         elsif ( $jobPrefix && $jobPrefix =~ /pairwise_ani/i ) {
             $onclickCall = "return checkTwoSetsIncludingShareAndFilled('$jobResultName', '$folder');";
+        }
+        elsif ( $jobPrefix && $jobPrefix =~ /func_scaf_search/i ) {
+            $onclickCall = "return myValidationBeforeSubmit3('$jobResultName', '$folder', 'selectedGenome1', '1', '', '');";
+        }
+        elsif ( $jobPrefix =~ /save_func_gene/i ) {
+            $onclickCall = "return checkFilled('$jobResultName');";
         }
         else {
             $onclickCall = "return checkSetsIncludingShareAndFilled('$jobResultName', '$folder');";
@@ -7067,6 +7176,150 @@ sub submitFuncProfile {
 }
 
 #####################################################################
+# submitSaveFuncGene
+#####################################################################
+sub submitSaveFuncGene {
+    my ($folder) = @_;
+
+    printMainForm();
+
+    if ( !$folder ) {
+        $folder = param("directory");    
+    }
+    if ( !$folder ) {
+        # default is gene folder
+        $folder = $GENE_FOLDER;
+    }
+    #print "submitSaveFuncGene() folder $folder<br/>\n";
+
+    my $folder_uc = '';
+    if ( $folder =~ /genome/i ) {
+        $folder_uc = 'Genome';
+    } elsif ( $folder =~ /gene/i ) {
+        $folder_uc = 'Gene';
+    } elsif ( $folder =~ /scaffold/i ) {
+        $folder_uc = 'Scaffold';
+    }
+
+    my $data_type = param('data_type');
+    #print "submitSaveFuncGene() data_type=$data_type<br/>\n";
+
+    my @func_ids = param("func_id");
+    #print "submitSaveFuncGene() func_ids @func_ids<br/>\n";
+    if ( scalar(@func_ids) == 0 ) {
+        webError("There are no genes to save. Please select a function.");
+        return;
+    }
+    my $oidsFileName = "oidsfile.txt";
+
+    my $dbh = dbLogin();
+    my $sid = WebUtil::getContactOid();
+    $sid = sanitizeInt($sid);
+
+    my ( $fname, $d_type ) = inspectSaveToWorkspace( $sid, $folder );
+
+    my $set_names;
+    my $share_set_names;
+    my $set_names_message;
+
+    my @all_files;
+    my @input_files = param("input_file");
+    if ( scalar(@input_files) > 0 ) {
+        push(@all_files, @input_files);
+    }
+    my @share_input_files = param("share_input_file");
+    if ( scalar(@share_input_files) > 0 ) {
+        push(@all_files, @share_input_files);
+    }
+    #print "submitSaveFuncGene() all_files: @all_files<br/>\n";
+    if ( scalar(@all_files) == 0 ) {
+        webError("There are no genes to save. Please select genes.");
+        return;
+    }
+    
+    for my $file_set_name (@all_files) {
+        my ( $owner, $x ) = WorkspaceUtil::splitAndValidateOwnerFileset( $sid, $file_set_name, $ownerFilesetDelim, $folder );
+        $x = MetaUtil::sanitizeGeneId3($x);
+        my $share_set_name = WorkspaceUtil::fetchShareSetName( $dbh, $owner, $x, $sid );
+        my $f2 = WorkspaceUtil::getOwnerFilesetName( $owner, $x, $ownerFilesetDelim_message, $sid );
+        if ($set_names) {
+            $set_names .= "," . $file_set_name;
+            $share_set_names .= "," . $share_set_name;
+            $set_names_message .= "," . $f2;
+        } else {
+            $set_names = $file_set_name;
+            $share_set_names = $share_set_name;
+            $set_names_message = $f2;
+        }
+
+    }
+    if ( !$set_names ) {
+        webError("Please select at least one function set.");
+        return;
+    }
+
+    my $jobPrefix = "$folder_uc Save Function Gene";
+        
+    print "<h2>Computation Job Submission ($jobPrefix)</h2>\n";
+    print "<p>Function: @func_ids<br/>\n";
+    print "$folder_uc Set(s): $share_set_names<br/>\n";
+    HtmlUtil::printMetaDataTypeSelection( $data_type, 2 ) if ($data_type);
+
+    my $output_name = Workspace::validJobSetNameToSaveOrReplace( 'save_func_gene' );
+    my $job_file_dir = Workspace::getJobFileDirReady( $sid, $output_name );
+
+    ## output info file
+    my $info_file = "$job_file_dir/info.txt";
+    my $info_fs   = newWriteFileHandle($info_file);
+    print $info_fs "$jobPrefix\n";
+    print $info_fs "--$folder $share_set_names\n";
+    print $info_fs "--datatype $data_type\n" if ( $data_type );
+    print $info_fs "--dtype $d_type\n" if ( $d_type );
+    print $info_fs "--fname $fname\n" if ( $fname );
+    if ( scalar(@func_ids) > 0 ) {
+        print $info_fs "--oidsfile $oidsFileName\n";
+        my $oidsFile = "$job_file_dir/$oidsFileName";
+        my $wfh = newWriteFileHandle( $oidsFile, "SaveFuncGene" );
+        foreach my $id ( @func_ids ) {
+            print $wfh "$id\n";            
+        }
+        close $wfh;
+    }
+    print $info_fs currDateTime() . "\n";
+    close $info_fs;
+
+    my $queue_dir = $env->{workspace_queue_dir};
+    #print "submitSaveFuncGene() queue_dir=$queue_dir<br/>\n";
+    my $queue_filename = $sid . '_' . $folder. 'savefuncgene' . '_' . $output_name;
+    #print "submitSaveFuncGene() queue_filename=$queue_filename<br/>\n";
+    my $wfh = newWriteFileHandle($queue_dir . $queue_filename);
+
+    if ( $folder =~ /genome/i ) {
+        print $wfh "--program=genomeSaveFuncGene\n";
+        print $wfh "--genomeset=$set_names_message\n";
+    } elsif ( $folder =~ /gene/i ) {
+        print $wfh "--program=geneSaveFuncGene\n";
+        print $wfh "--geneset=$set_names_message\n";
+    } elsif ( $folder =~ /scaffold/i ) {
+        print $wfh "--program=scafSaveFuncGene\n";
+        print $wfh "--scafset=$set_names_message\n";
+    }
+    print $wfh "--contact=$sid\n";
+    print $wfh "--output=$output_name\n";
+    print $wfh "--datatype=$data_type\n" if ( $data_type );
+    print $wfh "--dtype=$d_type\n" if ( $d_type );
+    print $wfh "--fname=$fname\n" if ( $fname );
+    print $wfh "--oidsfile=$oidsFileName\n";
+    close $wfh;
+
+    rsync($sid);
+    print "<p>Job is submitted successfully.\n";
+
+    print end_form();
+}
+
+
+#####################################################################
 # validJobSetNameToSaveOrReplace
 #####################################################################
 sub validJobSetNameToSaveOrReplace {
@@ -7075,6 +7328,7 @@ sub validJobSetNameToSaveOrReplace {
     my $job_result_name;
     my $save_mode_param = $lcJobPrefix . '_save_mode';
     my $wsSaveMode = param($save_mode_param);
+    #print "validJobSetNameToSaveOrReplace() save_mode_param=$save_mode_param wsSaveMode=$wsSaveMode<br/>\n";
     if ( $wsSaveMode eq 'save' ) {
         my $job_result_param = $lcJobPrefix . '_job_result_name';
         $job_result_name = param($job_result_param);

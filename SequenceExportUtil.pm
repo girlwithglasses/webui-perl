@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# $Id: SequenceExportUtil.pm 32648 2015-01-29 09:25:14Z jinghuahuang $
+# $Id: SequenceExportUtil.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 #
 ###########################################################################
 package SequenceExportUtil;
@@ -45,7 +45,7 @@ my $cgi_tmp_dir         = $env->{cgi_tmp_dir};
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( ! $merfs_timeout_mins ) { 
-    $merfs_timeout_mins = 30; 
+    $merfs_timeout_mins = 60; 
 } 
 
 my $gene_batch_size = 20000;

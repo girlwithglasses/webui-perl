@@ -1,4 +1,4 @@
-# $Id: ANI.pm 33859 2015-07-30 17:39:14Z aratner $
+# $Id: ANI.pm 33940 2015-08-08 03:48:10Z aratner $
 package ANI;
 use strict;
 use CGI qw( :standard);
@@ -305,7 +305,7 @@ sub printCliqueInfoForGenome {
 
     print "<b>Average Nucleotide Identity (ANI)</b>" if !$show_title;
 
-    my ($phylum, $genus, $species) = getGenusSpecies4Taxon($dbh, $taxon_oid);
+    my ($domain, $phylum, $genus, $species) = getGenusSpecies4Taxon($dbh, $taxon_oid);
     my $speciesCnt = getGenomesInSpeciesCnt($dbh, $taxon_oid);
     my $key;
     if ($genus eq "unclassified") {
@@ -318,7 +318,8 @@ sub printCliqueInfoForGenome {
 	$key = "$genus $species";
     }
     
-    my $url1 = "$section_cgi&page=genomesForGenusSpecies&genus_species=$key";
+    my $dm = substr( $domain, 0, 1 );
+    my $url1 = "$section_cgi&page=genomesForGenusSpecies&genus_species=$key&domain=$dm";
     my $link1 = alink($url1, $speciesCnt);
 
     print "<p><u>Species</u>: $key";
@@ -831,7 +832,7 @@ sub doPairwise {
         if ( $tx_str =~ /gtt_num_id/i );
 
     my $hasGenome2Genome = 0;
-    if ($nTaxons1 > 1 && $nTaxons2 > 1) {
+    if ($nTaxons1 > 0 && $nTaxons2 > 0) {
 	$hasGenome2Genome = 1;
 	my ($dataRecs_aref, $precomputed_href) 
 	    = computePairwiseANI($dbh, \@oids1, \@oids2);
@@ -841,7 +842,7 @@ sub doPairwise {
 	printPairwiseTable(\%taxon2name, $dataRecs_aref, $precomputed_href, $msg);
     }
 
-    if ($nTaxons2 > 1 && scalar @localfiles1 > 0) {
+    if ($nTaxons2 > 0 && scalar @localfiles1 > 0) {
 	# upload the local files using file_upload input and @oids2... -anna
 	my @dataRecsFiles;
 	computePairwiseANIWithUpload(\@dataRecsFiles, \@oids2, "file_upload");
@@ -1453,7 +1454,7 @@ sub plotSameSpeciesPairwise {
 	OracleUtil::truncTable( $dbh, "gtt_num_id" )
 	    if ( $taxonClause2 =~ /gtt_num_id/i );
 
-	last if $nTaxons > 500;
+#	last if $nTaxons > 500;
     }
 
     print encode_json(\@array);
@@ -1624,7 +1625,7 @@ sub printAllSpeciesInfo {
 	my @txs = split(",", $genus_species2txs{$item});
 	my $tx_cnt = scalar @txs;
 
-	my $link = alink($txurl.WebUtil::massageToUrl2($item), $tx_cnt);
+	my $link = alink($txurl.WebUtil::massageToUrl2($item)."&domain=$domain", $tx_cnt);
 	my $link = alink($txurl.$item, $tx_cnt);
 	$row .= $tx_cnt.$sd.$link."\t";
 
@@ -1760,6 +1761,7 @@ sub printGenomesForGenusSpecies {
     my ($genus_species, $seqstatus, $table_only) = @_;
     my $genus_species0 = param("genus_species");
     my $seqstatus0 = param("seqstatus");
+    my $dm0 = param("domain");
 
     $table_only = 0 if $table_only eq "";
     $genus_species = $genus_species0 if $genus_species eq "";
@@ -1812,6 +1814,11 @@ sub printGenomesForGenusSpecies {
         my ($taxon_oid, $taxon_name, $species, $domain, $phylum,
             $class, $order, $family, $clique_id) = $cur->fetchrow();
         last if ( !$taxon_oid );
+
+	if ($dm0 && $dm0 ne "") {
+	    my $dm = substr( $domain, 0, 1 );
+	    next if $dm ne $dm0;
+	}
 
 	if ($genus0 eq "unclassified") {
 	    # $species0 is then actually phylum
@@ -2111,10 +2118,14 @@ sub getLineage {
             $class, $order, $family) = $cur->fetchrow();
         last if ( !$taxon_oid );
 
-        my @a = split( /\s+/, $species );
-        if ( $#a >= 1 ) {
-            $species = $a[1];
-        }
+	if ($genus0 eq "unclassified") {
+	    $species = $phylum;
+	} else {
+	    my @a = split( /\s+/, $species );
+	    if ( $#a >= 1 ) {
+		$species = $a[1];
+	    }
+	}
 
         next if $species ne $species0;
 
@@ -2486,13 +2497,13 @@ sub printSpeciesForGenomeForClique {
 sub getGenusSpecies4Taxon {
     my($dbh, $taxon_oid) = @_;
     my $sql = qq{
-        select phylum, genus, species 
+        select domain, phylum, genus, species 
         from taxon where taxon_oid = ?
     };
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid );
-    my ( $phylum, $genus, $species ) = $cur->fetchrow();
+    my ( $domain, $phylum, $genus, $species ) = $cur->fetchrow();
     
-    return ($phylum, $genus, $species);    
+    return ($domain, $phylum, $genus, $species);    
 }
 
 
@@ -2505,7 +2516,7 @@ sub printGenomesInSpecies {
     printStatusLine( "Loading...", 1 );
 
     my $dbh = dbLogin();
-    my ( $phylum, $genus, $species ) = getGenusSpecies4Taxon($dbh, $taxon_oid);
+    my ( $domain, $phylum, $genus, $species ) = getGenusSpecies4Taxon($dbh, $taxon_oid);
     
     my @a = split( /\s+/, $species );
     if ( $#a >= 1 ) {
@@ -2560,7 +2571,7 @@ sub printGenomesInSpecies {
 sub getGenomesInSpeciesCnt {
     my ( $dbh, $taxon_oid ) = @_;
 
-    my ( $phylum, $genus, $species ) = getGenusSpecies4Taxon($dbh, $taxon_oid);
+    my ( $domain, $phylum, $genus, $species ) = getGenusSpecies4Taxon($dbh, $taxon_oid);
     my @a = split( /\s+/, $species );
     if ( $#a >= 1 ) {
         $species = $a[1]; # like search?

@@ -1,7 +1,7 @@
 ###########################################################################
 # New Phylogenetic Distribution of Genes from taxon detail page
 #
-# $Id: GenomeHits.pm 32605 2015-01-22 22:51:26Z aratner $
+# $Id: GenomeHits.pm 33981 2015-08-13 01:12:00Z aireland $
 ###########################################################################
 package GenomeHits;
 
@@ -66,6 +66,7 @@ my $MAX_METAGENOMES = 5000;
 sub dispatch {
     my ($numTaxon) = @_;        # number of saved genomes
     my $page = param("page");
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
     if ( $page eq "plot1" ) {
         printPlot1();
     } elsif ( $page eq "plot2" ) {
@@ -106,7 +107,7 @@ sub printForm3 {
     print qq{
         <h1>Single Genome vs. Metagenomes</h1>
         <p>
-        View the phylogenetic distribution of genes for an 
+        View the phylogenetic distribution of genes for an
         isolate genome run against a <b>limited</b> set of metagenomes<sup>1</sup>.
         <br/>
         Please select <b>ONE</b> isolate genome.
@@ -149,7 +150,7 @@ sub printForm3 {
 
     print "<p>\n";
     print qq{
-        <b>Percent Identity</b><br/>    
+        <b>Percent Identity</b><br/>
         <input type="radio" checked="checked" value="suc" name="percentage_count"> Successive (30% to 59%, 60% to 89%, 90%+)<br/>
         <input type="radio" value="cum" name="percentage_count"> Cumulative (30%+, 60%+, 90%+)<br/>
     };
@@ -197,7 +198,7 @@ sub printForm3 {
     print $button;
 
     print end_form();
-    
+
     GenomeListJSON::showGenomeCart($numTaxon);
 
     printStatusLine( "Loaded.", 2 );
@@ -205,8 +206,8 @@ sub printForm3 {
     print qq{
         <p>
         1 - Large metagenomes cannot be processed at this time due to computation limits. We are currently
-        working on a solution to handle large metagenomes. 
-        </p> 
+        working on a solution to handle large metagenomes.
+        </p>
     };
 }
 
@@ -218,7 +219,7 @@ sub printForm {
     print qq{
         <h1>Single Genome vs. Metagenomes</h1>
         <p>
-        View the phylogenetic distribution of genes for an 
+        View the phylogenetic distribution of genes for an
         isolate genome run against a <b>limited</b> set of metagenomes<sup>1</sup>.
         <br/>
         Please select <b>ONE</b> isolate genome.
@@ -264,7 +265,7 @@ sub printForm {
 
     print "<p>\n";
     print qq{
-        <b>Percent Identity</b><br/>    
+        <b>Percent Identity</b><br/>
         <input type="radio" checked="checked" value="suc" name="percentage_count"> Successive (30% to 59%, 60% to 89%, 90%+)<br/>
         <input type="radio" value="cum" name="percentage_count"> Cumulative (30%+, 60%+, 90%+)<br/>
     };
@@ -302,8 +303,8 @@ sub printForm {
     print qq{
         <p>
         1 - Large metagenomes cannot be processed at this time due to computation limits. We are currently
-        working on a solution to handle large metagenomes. 
-        </p> 
+        working on a solution to handle large metagenomes.
+        </p>
     };
 }
 
@@ -352,7 +353,7 @@ sub printFormJS {
 	    oList.innerHTML = "(Metagenomes selected: " + cnt + ")";
 	else
 	    oList.innerHTML = "";
-	    
+
     }
 
     </script>
@@ -390,7 +391,7 @@ sub printMetagenomeList {
         my ( $taxon_oid, $taxon_display_name ) = $cur->fetchrow();
         last if ( !$taxon_oid );
         print qq{
-            <option value='$taxon_oid'> $taxon_display_name </option>   
+            <option value='$taxon_oid'> $taxon_display_name </option>
         };
         $cnt++;
     }
@@ -453,7 +454,7 @@ sub printGeneList {
         my $rclause = PhyloUtil::getPercentClause( $percent, $plus );
 
         my $sql = qq{
-            select dt.gene_oid, mg.gene_display_name, dt.homolog, g.gene_display_name 
+            select dt.gene_oid, mg.gene_display_name, dt.homolog, g.gene_display_name
             from gene mg, dt_phylum_dist_genes dt, gene g
             where mg.gene_oid = dt.gene_oid
             and dt.taxon_oid = mg.taxon
@@ -673,14 +674,14 @@ sub printPlot1 {
         <script language="javascript" type="text/javascript">
         function plotZoom(main_cgi) {
             var f = document.mainForm;
-            var range = f.elements['zoom_select'].value; 
+            var range = f.elements['zoom_select'].value;
             if(range == '-') {
                 return;
             }
             document.mainForm.submit();
         }
-        </script>        
-        
+        </script>
+
         };
 
         print "<p>View Range &nbsp;&nbsp;";
@@ -771,7 +772,7 @@ sub getHits {
     	    select mg.gene_oid, mg.gene_display_name, mg.start_coord, mg.end_coord, mg.scaffold,
     	    mg.strand, ms.scaffold_name,
     	    g.gene_oid, g.gene_display_name, g.start_coord, g.end_coord, g.scaffold,
-    	    g.strand, 
+    	    g.strand,
     	    dt.percent_identity
     	    from dt_phylum_dist_genes dt, gene mg, gene g, scaffold ms
     	    where dt.gene_oid = mg.gene_oid
@@ -997,7 +998,7 @@ sub printSummary {
 # (new one using dt_phylo_taxon_stats)
 ############################################################################################
 sub printHits {
-    my $taxon_oid        = param('selectedGenome1');   
+    my $taxon_oid        = param('selectedGenome1');
     my $phylum           = param("phylum");             # metag phylum
     my $ir_class         = param("ir_class");           # metag ir_class
     my $percentage_count = param("percentage_count");
@@ -1066,7 +1067,7 @@ sub printHits {
         my $urclause  = urClause("t.taxon_oid");
         my $imgClause = WebUtil::imgClause('t');
         my $sql2      = qq{
-            select dt.taxon_oid, t.taxon_display_name, 
+            select dt.taxon_oid, t.taxon_display_name,
                   dt.gene_count_30, dt.gene_count_60, dt.gene_count_90
             from taxon t, dt_phylo_taxon_stats dt
             where dt.homolog_taxon = ?
@@ -1235,7 +1236,7 @@ sub printHits {
 
     function clearAll( ) {
 	var f = document.mainForm.metag_oid;
-	
+
 	for( var i = 0; i < f.length; i++ ) {
 	    var e = f[ i ];
 	    if(e.name == "metag_oid" && e.type == "checkbox" ) {
@@ -1329,7 +1330,7 @@ sub getMetaGenomes {
     my $sql = qq{
         select dt.taxon_oid, t.taxon_display_name, count(distinct g.scaffold), count(distinct mg.scaffold)
         from dt_phylum_dist_genes dt,  gene g, taxon t,  gene mg, taxon mt
-        where  dt.gene_oid = mg.gene_oid 
+        where  dt.gene_oid = mg.gene_oid
         and dt.taxon_oid = mg.taxon
         and mg.taxon = mt.taxon_oid
         and dt.taxon_oid = mt.taxon_oid
@@ -1436,7 +1437,7 @@ sub getMetaGenomes2 {
     my $sql = qq{
         select dt.taxon_oid, mg.scaffold
         from dt_phylum_dist_genes dt, gene mg, taxon mt
-        where  dt.gene_oid = mg.gene_oid 
+        where  dt.gene_oid = mg.gene_oid
         and dt.taxon_oid = mg.taxon
         and dt.taxon_oid = mt.taxon_oid
         and mg.taxon = mt.taxon_oid
@@ -1494,10 +1495,10 @@ sub getMetaGenomesSummary {
     my $imgClause = WebUtil::imgClause('t');
 
     my $sql = qq{
-        select t.phylum, t.ir_class, count(distinct g.scaffold), count(distinct mg.scaffold), 
+        select t.phylum, t.ir_class, count(distinct g.scaffold), count(distinct mg.scaffold),
         count(distinct dt.taxon_oid)
         from dt_phylum_dist_genes dt,  gene g, taxon t,  gene mg, taxon mt
-        where  dt.gene_oid = mg.gene_oid 
+        where  dt.gene_oid = mg.gene_oid
         and dt.taxon_oid = mg.taxon
         and dt.taxon_oid = mt.taxon_oid
         and mt.genome_type = 'metagenome'
@@ -1736,7 +1737,7 @@ sub printIsolateGenomeDistribution {
 
     printIsolateGenomeTitle($dbh, $isolate_taxon_oid, $data_type, $list_type);
 
-    my @filter_levels = 
+    my @filter_levels =
 	( "phylum", "ir_class", "ir_order", "family", "genus", "species" );
     my %itemLevel_h = (
         default  => "Phylum",
@@ -1767,13 +1768,13 @@ sub printIsolateGenomeDistribution {
         # always print this message
         print qq{
             This analysis shows how genes in this single genome are matched
-            by BLAST to genes in different metagenomes or 
+            by BLAST to genes in different metagenomes or
             metagenomic categories.<br>
         };
 
         # print this message only for category view, not for metagenome view
         print qq{
-            Click on a category name (<i>e.g. engineered, environmental</i>) 
+            Click on a category name (<i>e.g. engineered, environmental</i>)
             to view results in each category.<br>\n
             The numbers not in brackets ( ) are hit metagenome counts.
             The numbers in brackets ( ) are hit gene counts
@@ -1790,7 +1791,7 @@ sub printIsolateGenomeDistribution {
 
         # print this message when hits are filtered by phylum, order ...
         print qq{
-            The statistics below only include BLAST hits in 
+            The statistics below only include BLAST hits in
             <b><i>$filter_desc</i></b>.
         } if ($filter_desc);
 
@@ -1870,8 +1871,8 @@ sub printIsolateGenomeDistribution_gene {
     my @hit_gene_oids = keys %isolate_hit_genes_h;
     my $oid_str       = OracleUtil::getNumberIdsInClause( $dbh, @hit_gene_oids );
     my $sql           = qq{
-        select g.gene_oid, g.locus_tag, g.gene_display_name 
-        from gene g 
+        select g.gene_oid, g.locus_tag, g.gene_display_name
+        from gene g
         where g.gene_oid in ($oid_str)
     };
     my $cur = execSql( $dbh, $sql, $verbose );
@@ -2353,7 +2354,7 @@ sub getPhyloMetagenomeTotalCount {
 
     my $sql = qq{
        select count(distinct t.taxon_oid)
-       from taxon t 
+       from taxon t
        where t.genome_type = ?
        $phylo_clause
        $filter_clause

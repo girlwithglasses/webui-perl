@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: PhyloUtil.pm 33804 2015-07-24 20:07:15Z jinghuahuang $
+# $Id: PhyloUtil.pm 33963 2015-08-10 23:37:20Z jinghuahuang $
 ###########################################################################
 package PhyloUtil;
 
@@ -51,7 +51,7 @@ my $max_scaffold_list = 20;
 
 my $merfs_timeout_mins = $env->{merfs_timeout_mins};
 if ( !$merfs_timeout_mins ) {
-    $merfs_timeout_mins = 20;
+    $merfs_timeout_mins = 60;
 }
 
 my %distMethodText = (

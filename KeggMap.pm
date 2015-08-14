@@ -1,7 +1,7 @@
 ###########################################################################
 # Display kegg map and do appropriate highlighting.
 # --es  11/03/2004
-# $Id: KeggMap.pm 33819 2015-07-27 16:04:05Z imachen $
+# $Id: KeggMap.pm 33981 2015-08-13 01:12:00Z aireland $
 ###########################################################################
 package KeggMap;
 my $section = "KeggMap";
@@ -36,7 +36,7 @@ my $preferences_url    = "$main_cgi?section=MyIMG&form=preferences";
 my $maxGeneListResults = 1000;
 if ( getSessionParam("maxGeneListResults") ne "" ) {
     $maxGeneListResults = getSessionParam("maxGeneListResults");
-} 
+}
 
 my $ko_base_url      = $env->{kegg_orthology_url};
 my $ec_base_url      = $env->{enzyme_base_url};
@@ -56,7 +56,7 @@ my %badmaps = ('map01100' => 1);
 sub dispatch {
     my $page = param("page");
     my $map_id   = param("map_id");
-    
+    timeout( 60 * 20 );    # timeout in 20 mins (from main.pl)
     if ( exists $badmaps{$map_id}) {
         my $str = qq{
             <a href='http://www.genome.jp/kegg/pathway/map/map01100.html'>
@@ -141,21 +141,21 @@ sub printKeggMapByGeneOid {
 	    ($gene_oid, $taxon_oid, $data_type);
     }
     else {
-	my $sql = qq{ 
-	    select distinct g.gene_display_name, g.locus_tag, 
+	my $sql = qq{
+	    select distinct g.gene_display_name, g.locus_tag,
 	           tx.taxon_oid, tx.taxon_display_name
             from gene g, taxon tx
 	    where g.gene_oid = ?
 	    and g.taxon = tx.taxon_oid
-        }; 
+        };
 	my $cur = execSql( $dbh, $sql, $verbose, $gene_oid );
 	($name, $locus, $taxon_oid, $taxon_name) = $cur->fetchrow();
 	$cur->finish();
     }
 
-    my $urlg = "$main_cgi?section=GeneDetail" 
+    my $urlg = "$main_cgi?section=GeneDetail"
  	     . "&page=geneDetail&gene_oid=$gene_oid";
-    my $urlt = "$main_cgi?section=TaxonDetail" 
+    my $urlt = "$main_cgi?section=TaxonDetail"
 	     . "&page=taxonDetail&taxon_oid=$taxon_oid";
 
     if ( $taxon_in_fs ) {
@@ -199,7 +199,7 @@ sub printKeggMapByGeneOid {
                 and irk.roi_id = iroi.roi_id
                 and iroi.roi_type in ('ko_term', 'enzyme')
                 and irk.ko_terms in ( $ko_list )
-                and iroi.pathway = pw.pathway_oid        
+                and iroi.pathway = pw.pathway_oid
             };
 	    print "Getting current gene <br/>\n";
 	    my $cur = execSql( $dbh, $sql, $verbose );
@@ -227,12 +227,12 @@ sub printKeggMapByGeneOid {
 		#}
 		next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 		next if ($height <= 0); # can't display this roi
-		
-		my $r = "$x_coord\t"; 
-		$r .= "$y_coord\t"; 
-		$r .= "$width\t"; 
-		$r .= "$height\t"; 
-		$r .= "$shape\t"; 
+
+		my $r = "$x_coord\t";
+		$r .= "$y_coord\t";
+		$r .= "$width\t";
+		$r .= "$height\t";
+		$r .= "$shape\t";
 		$r .= "$taxon_oid $data_type $gene_oid";
 
 		push( @redRecs, $r );
@@ -252,7 +252,7 @@ sub printKeggMapByGeneOid {
             and iroi.roi_type in ('ko_term', 'enzyme')
             and irk.ko_terms = gk.ko_terms
             and gk.gene_oid = g.gene_oid
-            and iroi.pathway = pw.pathway_oid        
+            and iroi.pathway = pw.pathway_oid
             and g.gene_oid = ?
             and g.taxon = ?
             and g.locus_type = 'CDS'
@@ -283,12 +283,12 @@ sub printKeggMapByGeneOid {
 	    #}
 	    next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	    next if ($height <= 0); # can't display this roi
-	    
-	    my $r = "$x_coord\t"; 
-	    $r .= "$y_coord\t"; 
-	    $r .= "$width\t"; 
-	    $r .= "$height\t"; 
-	    $r .= "$shape\t"; 
+
+	    my $r = "$x_coord\t";
+	    $r .= "$y_coord\t";
+	    $r .= "$width\t";
+	    $r .= "$height\t";
+	    $r .= "$shape\t";
 	    $r .= "$gene";
 
 	    push( @redRecs, $r );
@@ -308,7 +308,7 @@ sub printKeggMapByGeneOid {
                 iroi.width, iroi.height
            from image_roi_ko_terms irk, gene_ko_terms gk, gene g,
 	        image_roi iroi, kegg_pathway pw,
-                positional_cluster_genes pcg1, 
+                positional_cluster_genes pcg1,
 	        positional_cluster_genes pcg2
            where pw.image_id = ?
            and irk.roi_id = iroi.roi_id
@@ -322,16 +322,16 @@ sub printKeggMapByGeneOid {
            and pcg1.genes = ?
            and pcg1.group_oid = pcg2.group_oid
            and pcg2.genes != ?
-           and pcg2.genes = gk.gene_oid 
+           and pcg2.genes = gk.gene_oid
            order by iroi.x_coord, iroi.y_coord,
            iroi.width, iroi.height, g.gene_oid
            };
 	print "Positional cluster genes <br/>\n";
-	my $cur = execSql( $dbh, $sql, $verbose, 
+	my $cur = execSql( $dbh, $sql, $verbose,
 			   $map_id, $taxon_oid, $gene_oid, $gene_oid );
 
-	my $old_roi; 
-	my %unique_genes; 
+	my $old_roi;
+	my %unique_genes;
 	for ( ;; ) {
 	    my ( $gene, $shape, $x_coord, $y_coord, $coord_str,
 		 $width, $height ) = $cur->fetchrow();
@@ -353,27 +353,27 @@ sub printKeggMapByGeneOid {
 	    #}
 	    next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	    next if ($height <= 0); # can't display this roi
-	    
-	    my $r = "$x_coord\t"; 
-	    $r .= "$y_coord\t"; 
-	    $r .= "$width\t"; 
-	    $r .= "$height\t"; 
-	    $r .= "$shape"; 
 
-	    if ( $old_roi eq "" ) { 
-		$old_roi = $r; 
-	    } 
-	    if ( $old_roi eq $r ) { 
-		$unique_genes{$gene} = 1; 
-	    } else { 
-		my $geneStr = join(",", sort(keys(%unique_genes))); 
-		%unique_genes = (); 
-		
-		$old_roi .= "\t$geneStr"; 
-		push( @greenRecs, $old_roi ); 
-		$unique_genes{$gene} = 1; 
-	    } 
-	    $old_roi = $r; 
+	    my $r = "$x_coord\t";
+	    $r .= "$y_coord\t";
+	    $r .= "$width\t";
+	    $r .= "$height\t";
+	    $r .= "$shape";
+
+	    if ( $old_roi eq "" ) {
+		$old_roi = $r;
+	    }
+	    if ( $old_roi eq $r ) {
+		$unique_genes{$gene} = 1;
+	    } else {
+		my $geneStr = join(",", sort(keys(%unique_genes)));
+		%unique_genes = ();
+
+		$old_roi .= "\t$geneStr";
+		push( @greenRecs, $old_roi );
+		$unique_genes{$gene} = 1;
+	    }
+	    $old_roi = $r;
 	}
 	my $geneStr = join(",", keys(%unique_genes));
 	$old_roi .= "\t$geneStr";
@@ -387,7 +387,7 @@ sub printKeggMapByGeneOid {
 	# FS
 	my %all_ko = MetaUtil::getTaxonFuncCount($taxon_oid, 'both', 'ko');
 	my $sql = qq{
-               select distinct iroi.roi_id, irk.ko_terms, 
+               select distinct iroi.roi_id, irk.ko_terms,
                       kt.ko_name, kt.definition,
                       iroi.roi_label, iroi.shape,
                       iroi.x_coord, iroi.y_coord, iroi.coord_string,
@@ -411,7 +411,7 @@ sub printKeggMapByGeneOid {
 	my $r2 = "";
 	for ( ;; ) {
 	    my ( $roi_id, $ko_term, $ko_name, $ko_defn, $roi_label,
-                 $shape, $x_coord, $y_coord, $coord_str, $width, $height ) 
+                 $shape, $x_coord, $y_coord, $coord_str, $width, $height )
 		= $cur->fetchrow();
 	    last if !$roi_id;
 
@@ -439,8 +439,8 @@ sub printKeggMapByGeneOid {
 			$ko_str = $ko_term;
 		    }
 
-		    my $label2 = "$roi_label, $ko_name"; 
-		    $label2 .= ", $ko_defn" if $ko_defn ne ""; 
+		    my $label2 = "$roi_label, $ko_name";
+		    $label2 .= ", $ko_defn" if $ko_defn ne "";
 
 		    if ( $ko_label ) {
 			$ko_label .= "; " . $label2;
@@ -464,8 +464,8 @@ sub printKeggMapByGeneOid {
 		$prev_roi_id = $roi_id;
 		$prev_ko_id = $ko_term;
 		$ko_str = $ko_term;
-		my $label2 = "$roi_label, $ko_name"; 
-		$label2 .= ", $ko_defn" if $ko_defn ne ""; 
+		my $label2 = "$roi_label, $ko_name";
+		$label2 .= ", $ko_defn" if $ko_defn ne "";
 		$ko_label = $label2;
 
 		next if $shape eq "line";
@@ -485,11 +485,11 @@ sub printKeggMapByGeneOid {
 		next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 		next if ($height <= 0); # can't display this roi
 
-		$r2 = "$x_coord\t"; 
-		$r2 .= "$y_coord\t"; 
-		$r2 .= "$width\t"; 
-		$r2 .= "$height\t"; 
-		$r2 .= "$shape\t"; 
+		$r2 = "$x_coord\t";
+		$r2 .= "$y_coord\t";
+		$r2 .= "$width\t";
+		$r2 .= "$height\t";
+		$r2 .= "$shape\t";
 	    }
 	}
 	$cur->finish();
@@ -516,7 +516,7 @@ sub printKeggMapByGeneOid {
            and iroi.roi_type in ('ko_term', 'enzyme')
 	   and irk.ko_terms = gk.ko_terms
 	   and gk.gene_oid = g.gene_oid
-	   and iroi.pathway = pw.pathway_oid  
+	   and iroi.pathway = pw.pathway_oid
 	   and g.taxon = ?
 	   and g.locus_type = 'CDS'
 	   and g.obsolete_flag = 'No'
@@ -529,8 +529,8 @@ sub printKeggMapByGeneOid {
 	my $cur = execSql( $dbh, $sql, $verbose,
 			   $map_id, $taxon_oid, $gene_oid );
 
-	my $old_roi; 
-	my %unique_ko; 
+	my $old_roi;
+	my %unique_ko;
 	for ( ;; ) {
 	    my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str,
 		 $width, $height, $ko_name, $ko_defn ) = $cur->fetchrow();
@@ -552,40 +552,40 @@ sub printKeggMapByGeneOid {
 	    #}
 	    next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	    next if ($height <= 0); # can't display this roi
-	    
-	    my $r = "$x_coord\t";
-	    $r .= "$y_coord\t"; 
-	    $r .= "$width\t"; 
-	    $r .= "$height\t"; 
-	    $r .= "$shape"; 
 
-	    my $ko = "$roi_label"; 
-	    my $koLabel = "$roi_label, $ko_name"; 
-	    $koLabel .= ", $ko_defn" if $ko_defn ne ""; 
- 
-	    if ( $old_roi eq "" ) { 
-		$old_roi = $r; 
-	    } 
-	    if ( $old_roi eq $r ) { 
-		$unique_ko{$ko} = $koLabel; 
-	    } else { 
-		my $koStr = join(",", sort(keys(%unique_ko))); 
-		my $koLabelStr = join("; \n", sort(values(%unique_ko))); 
- 
-		%unique_ko = (); 
- 
-		$old_roi .= "\t$koStr" . "\t$koLabelStr"; 
-		push( @blueRecs, $old_roi ); 
-		$unique_ko{$ko} = $koLabel; 
-	    } 
-	    $old_roi = $r; 
-	} 
- 
-	my $koStr = join(",", keys(%unique_ko)); 
-	my $koLabelStr = join(",", values(%unique_ko)); 
- 
-	$old_roi .= "\t$koStr" . "\t$koLabelStr"; 
-	push( @blueRecs, $old_roi ); 
+	    my $r = "$x_coord\t";
+	    $r .= "$y_coord\t";
+	    $r .= "$width\t";
+	    $r .= "$height\t";
+	    $r .= "$shape";
+
+	    my $ko = "$roi_label";
+	    my $koLabel = "$roi_label, $ko_name";
+	    $koLabel .= ", $ko_defn" if $ko_defn ne "";
+
+	    if ( $old_roi eq "" ) {
+		$old_roi = $r;
+	    }
+	    if ( $old_roi eq $r ) {
+		$unique_ko{$ko} = $koLabel;
+	    } else {
+		my $koStr = join(",", sort(keys(%unique_ko)));
+		my $koLabelStr = join("; \n", sort(values(%unique_ko)));
+
+		%unique_ko = ();
+
+		$old_roi .= "\t$koStr" . "\t$koLabelStr";
+		push( @blueRecs, $old_roi );
+		$unique_ko{$ko} = $koLabel;
+	    }
+	    $old_roi = $r;
+	}
+
+	my $koStr = join(",", keys(%unique_ko));
+	my $koLabelStr = join(",", values(%unique_ko));
+
+	$old_roi .= "\t$koStr" . "\t$koLabelStr";
+	push( @blueRecs, $old_roi );
 	$cur->finish();
     }
 
@@ -617,8 +617,8 @@ sub printKeggMapByGeneOid {
             iroi.width, iroi.height, iroi.roi_label
         };
 
-	my $old_roi; 
-	my %unique_ko; 
+	my $old_roi;
+	my %unique_ko;
 	my $contact_oid = getContactOid();
 	if ( $contact_oid > 0 && $show_myimg_login ) {
 	    my $cur = execSql( $dbh, $sql, $verbose,
@@ -650,27 +650,27 @@ sub printKeggMapByGeneOid {
 		$r .= "$width\t";
 		$r .= "$height\t";
 		$r .= "$shape";
- 
-		my $ko = "$roi_label"; 
-		if ( $old_roi eq "" ) { 
-		    $old_roi = $r; 
-		} 
-		if ( $old_roi eq $r ) { 
-		    $unique_ko{$ko} = 1; 
-		} else { 
-		    my $koStr = join(",", sort(keys(%unique_ko))); 
-		    %unique_ko = (); 
- 
-		    $old_roi .= "\t$koStr"; 
-		    push( @cyanRecs, $old_roi ); 
-		    $unique_ko{$ko} = 1; 
-		} 
-		$old_roi = $r; 
-	    } 
- 
-	    my $koStr = join(",", keys(%unique_ko)); 
-	    $old_roi .= "\t$koStr"; 
-	    push( @cyanRecs, $old_roi ); 
+
+		my $ko = "$roi_label";
+		if ( $old_roi eq "" ) {
+		    $old_roi = $r;
+		}
+		if ( $old_roi eq $r ) {
+		    $unique_ko{$ko} = 1;
+		} else {
+		    my $koStr = join(",", sort(keys(%unique_ko)));
+		    %unique_ko = ();
+
+		    $old_roi .= "\t$koStr";
+		    push( @cyanRecs, $old_roi );
+		    $unique_ko{$ko} = 1;
+		}
+		$old_roi = $r;
+	    }
+
+	    my $koStr = join(",", keys(%unique_ko));
+	    $old_roi .= "\t$koStr";
+	    push( @cyanRecs, $old_roi );
 	    $cur->finish();
 	}
     }
@@ -679,10 +679,10 @@ sub printKeggMapByGeneOid {
     my @orangeRecs;
     my $sql = qq{
            select distinct ir.roi_label, ir.shape,
-                  ir.x_coord, ir.y_coord, ir.coord_string, 
+                  ir.x_coord, ir.y_coord, ir.coord_string,
                   ir.width, ir.height,
                   dt.taxon, kt.ko_name, kt.definition
-           from dt_gene_ko_module_pwys dt, ko_term kt, 
+           from dt_gene_ko_module_pwys dt, ko_term kt,
                 image_roi ir, image_roi_ko_terms irk
            where dt.taxon != ?
            and dt.image_id = ?
@@ -692,22 +692,22 @@ sub printKeggMapByGeneOid {
            and ir.roi_label = kt.ko_id
            order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
     };
-    
+
     print "Getting all genomes <br/>\n";
     my %validTaxons = WebUtil::getAllTaxonsHashed($dbh);
 
     print "EC equivalogs <br/>\n";
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid, $map_id );
 
-    my $old_roi; 
-    my %unique_tx; 
+    my $old_roi;
+    my %unique_tx;
     my %unique_ko;
 
     my $tmpcnt = 0;
     my $tmpcnt2 = 1;
     print "Getting data <br/>";
     for ( ;; ) {
-	my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str, 
+	my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str,
 	     $width, $height, $taxon, $ko_name, $ko_defn ) = $cur->fetchrow();
 	last if !$roi_label;
 
@@ -720,9 +720,9 @@ sub printKeggMapByGeneOid {
 	if($tmpcnt2 % 80 == 0) {
 	    print "<br/>\n";
 	    $tmpcnt2 = 1;
-	} 
+	}
 	next if $validTaxons{$taxon} eq "";
-        
+
         next if $shape eq "line";
         if ($shape eq "poly") {
             # anna: strip the coord_str to get only the coords:
@@ -741,44 +741,44 @@ sub printKeggMapByGeneOid {
         next if ($height <= 0); # can't display this roi
 
 	my $r = "$x_coord\t";
-	$r .= "$y_coord\t"; 
-	$r .= "$width\t"; 
-	$r .= "$height\t"; 
-	$r .= "$shape"; 
+	$r .= "$y_coord\t";
+	$r .= "$width\t";
+	$r .= "$height\t";
+	$r .= "$shape";
 
 	my $ko = "$roi_label";
 	my $koLabel = "$roi_label, $ko_name";
 	$koLabel .= ", $ko_defn" if $ko_defn ne "";
- 
+
 	if ( $old_roi eq "" ) {
 	    $old_roi = $r;
-	} 
-	if ( $old_roi eq $r ) { 
-	    $unique_ko{$ko} = $koLabel; 
-	    $unique_tx{$taxon} = 1; 
-	} else { 
+	}
+	if ( $old_roi eq $r ) {
+	    $unique_ko{$ko} = $koLabel;
+	    $unique_tx{$taxon} = 1;
+	} else {
 	    my @keys = keys(%unique_tx);
 	    my $count = @keys;
 	    my $koStr = join(",", sort(keys(%unique_ko)));
-	    my $koLabelStr = join("; \n", sort(values(%unique_ko))); 
- 
-	    %unique_tx = (); 
+	    my $koLabelStr = join("; \n", sort(values(%unique_ko)));
+
+	    %unique_tx = ();
 	    %unique_ko = ();
- 
+
 	    $old_roi .= "\t$count" . "\t$koStr" . "\t$koLabelStr";
 	    push( @orangeRecs, $old_roi );
- 
+
 	    $unique_ko{$ko} = $koLabel;
 	    $unique_tx{$taxon} = 1;
-	} 
-	$old_roi = $r; 
-    } 
- 
-    my @keys = keys(%unique_tx); 
+	}
+	$old_roi = $r;
+    }
+
+    my @keys = keys(%unique_tx);
     my $count = @keys;
     my $koStr = join(",", keys(%unique_ko));
     my $koLabelStr = join(",", values(%unique_ko));
- 
+
     $old_roi .= "\t$count" . "\t$koStr" . "\t$koLabelStr";
     push( @orangeRecs, $old_roi );
     $cur->finish();
@@ -811,8 +811,8 @@ sub printKeggMapByGeneOid {
     binmode $wfh;
     print $wfh $im->png;
     close $wfh;
-    
-    my $taxon_filter_oid_str = WebUtil::getTaxonFilterOidStr();    
+
+    my $taxon_filter_oid_str = WebUtil::getTaxonFilterOidStr();
     printGeneLegend( $taxon_name, $taxon_filter_oid_str, $myimg );
 
     print "<image src='$tmpPngUrl' usemap='#mapdata' border='0' />\n";
@@ -831,7 +831,7 @@ sub printKeggMapByGeneOid {
 	printKoMapCoords( \@blueRecs, $map_id, $taxon_oid, $gene_oid );
     }
     else {
-	printKoMapCoords( \@blueRecs, $map_id, $taxon_oid, 
+	printKoMapCoords( \@blueRecs, $map_id, $taxon_oid,
 			  "$taxon_oid $data_type $locus" );
     }
 
@@ -891,31 +891,31 @@ sub printKeggMapByTaxonOid {
     my %bc_ko_h;
     if ( $cluster_id ) {
 	if ( $taxon_in_fs ) {
-	    my $sql = "select feature_id from bio_cluster_features_new " . 
-		      "where cluster_id = ? and feature_type = 'gene'"; 
-	    my $cur = execSql( $dbh, $sql, $verbose, $cluster_id ); 
-	    for ( ;; ) { 
-		my ($gene_id) = $cur->fetchrow(); 
-		last if ! $gene_id; 
-		$bc_gene_h{$gene_id} = 1; 
+	    my $sql = "select feature_id from bio_cluster_features_new " .
+		      "where cluster_id = ? and feature_type = 'gene'";
+	    my $cur = execSql( $dbh, $sql, $verbose, $cluster_id );
+	    for ( ;; ) {
+		my ($gene_id) = $cur->fetchrow();
+		last if ! $gene_id;
+		$bc_gene_h{$gene_id} = 1;
 
 		my @kos = MetaUtil::getGeneKoId($gene_id, $taxon_oid, 'assembled');
 		for my $ko ( @kos ) {
 		    $bc_ko_h{$ko} = 1;
 		}
-	    } 
-	    $cur->finish(); 
+	    }
+	    $cur->finish();
 	}
 	else {
 	    my $sql = "select bcf.gene_oid, gkt.ko_terms " .
 		"from bio_cluster_features_new bcf, gene_ko_terms gkt " .
 		"where bcf.cluster_id = ? and feature_type = 'gene' " .
 		"and bcf.gene_oid = gkt.gene_oid (+) ";
-	    my $cur = execSql( $dbh, $sql, $verbose, $cluster_id ); 
-	    for ( ;; ) { 
-		my ($gene_id, $ko) = $cur->fetchrow(); 
-		last if ! $gene_id; 
-		$bc_gene_h{$gene_id} = 1; 
+	    my $cur = execSql( $dbh, $sql, $verbose, $cluster_id );
+	    for ( ;; ) {
+		my ($gene_id, $ko) = $cur->fetchrow();
+		last if ! $gene_id;
+		$bc_gene_h{$gene_id} = 1;
 		if ( $ko ) {
 		    $bc_ko_h{$ko} = 1;
 		}
@@ -931,7 +931,7 @@ sub printKeggMapByTaxonOid {
 	# FS
 	my %all_ko = MetaUtil::getTaxonFuncCount($taxon_oid, 'both', 'ko');
 	my $sql = qq{
-            select distinct iroi.roi_id, irk.ko_terms, 
+            select distinct iroi.roi_id, irk.ko_terms,
                    kt.ko_name, kt.definition,
                    iroi.roi_label, iroi.shape,
                    iroi.x_coord, iroi.y_coord, iroi.coord_string,
@@ -955,7 +955,7 @@ sub printKeggMapByTaxonOid {
 	my $in_bc = 0;
 	for ( ;; ) {
 	    my ( $roi_id, $ko_term, $ko_name, $ko_defn, $roi_label,
-                 $shape, $x_coord, $y_coord, $coord_str, $width, $height ) 
+                 $shape, $x_coord, $y_coord, $coord_str, $width, $height )
 		= $cur->fetchrow();
 	    last if !$roi_id;
 
@@ -982,8 +982,8 @@ sub printKeggMapByTaxonOid {
 			$ko_str = $ko_term;
 		    }
 
-		    my $label2 = "$roi_label, $ko_name"; 
-		    $label2 .= ", $ko_defn" if $ko_defn ne ""; 
+		    my $label2 = "$roi_label, $ko_name";
+		    $label2 .= ", $ko_defn" if $ko_defn ne "";
 
 		    if ( $ko_label ) {
 			$ko_label .= "; " . $label2;
@@ -1014,8 +1014,8 @@ sub printKeggMapByTaxonOid {
 		$prev_roi_id = $roi_id;
 		$prev_ko_id = $ko_term;
 		$ko_str = $ko_term;
-		my $label2 = "$roi_label, $ko_name"; 
-		$label2 .= ", $ko_defn" if $ko_defn ne ""; 
+		my $label2 = "$roi_label, $ko_name";
+		$label2 .= ", $ko_defn" if $ko_defn ne "";
 		$ko_label = $label2;
 
 		next if $shape eq "line";
@@ -1035,11 +1035,11 @@ sub printKeggMapByTaxonOid {
 		next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 		next if ($height <= 0); # can't display this roi
 
-		$r2 = "$x_coord\t"; 
-		$r2 .= "$y_coord\t"; 
-		$r2 .= "$width\t"; 
-		$r2 .= "$height\t"; 
-		$r2 .= "$shape\t"; 
+		$r2 = "$x_coord\t";
+		$r2 .= "$y_coord\t";
+		$r2 .= "$width\t";
+		$r2 .= "$height\t";
+		$r2 .= "$shape\t";
 		$in_bc = 0;
 	    }
 	}
@@ -1086,7 +1086,7 @@ sub printKeggMapByTaxonOid {
 	my $old_roi;
 	my $old_in_bc = 0;
 	my $in_bc = 0;
-	my %unique_ko; 
+	my %unique_ko;
 	for ( ;; ) {
 	    my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str,
 		 $width, $height, $ko_name, $ko_defn, $ko_id )
@@ -1122,21 +1122,21 @@ sub printKeggMapByTaxonOid {
 
 	    my $ko = "$roi_label";
 	    my $koLabel = "$roi_label, $ko_name";
-	    $koLabel .= ", $ko_defn" if $ko_defn ne ""; 
+	    $koLabel .= ", $ko_defn" if $ko_defn ne "";
 
-	    if ( $old_roi eq "" ) { 
-		$old_roi = $r; 
+	    if ( $old_roi eq "" ) {
+		$old_roi = $r;
 		$old_in_bc = $in_bc;
-	    } 
-	    if ( $old_roi eq $r ) { 
-		$unique_ko{$ko} = $koLabel; 
-	    } else { 
-		my $koStr = join(",", sort(keys(%unique_ko))); 
-		my $koLabelStr = join("; \n", sort(values(%unique_ko))); 
- 
-		%unique_ko = (); 
+	    }
+	    if ( $old_roi eq $r ) {
+		$unique_ko{$ko} = $koLabel;
+	    } else {
+		my $koStr = join(",", sort(keys(%unique_ko)));
+		my $koLabelStr = join("; \n", sort(values(%unique_ko)));
 
-		$old_roi .= "\t$koStr" . "\t$koLabelStr"; 
+		%unique_ko = ();
+
+		$old_roi .= "\t$koStr" . "\t$koLabelStr";
 		if ( $old_in_bc ) {
 		    push( @bcRecs, $old_roi );
 		    $old_in_bc = 0;
@@ -1146,13 +1146,13 @@ sub printKeggMapByTaxonOid {
 		}
 		$unique_ko{$ko} = $koLabel;
 	    }
-	    $old_roi = $r; 
+	    $old_roi = $r;
 	    $old_in_bc = $in_bc;
 	}
 
-	my $koStr = join(",", keys(%unique_ko)); 
+	my $koStr = join(",", keys(%unique_ko));
 	my $koLabelStr = join(",", values(%unique_ko));
- 
+
 	$old_roi .= "\t$koStr" . "\t$koLabelStr";
 	if ( $old_in_bc ) {
 	    push( @bcRecs, $old_roi );
@@ -1188,12 +1188,12 @@ sub printKeggMapByTaxonOid {
             and g.taxon = ?
             and g.locus_type = 'CDS'
             and g.obsolete_flag = 'No'
-            order by iroi.x_coord, iroi.y_coord, 
-            iroi.width, iroi.height, iroi.roi_label 
+            order by iroi.x_coord, iroi.y_coord,
+            iroi.width, iroi.height, iroi.roi_label
         };
 
-	my $old_roi; 
-	my %unique_ko; 
+	my $old_roi;
+	my %unique_ko;
 	my $contact_oid = getContactOid();
 	if ( $contact_oid > 0 && $show_myimg_login ) {
 	    my $cur = execSql( $dbh, $sql, $verbose,
@@ -1219,45 +1219,45 @@ sub printKeggMapByTaxonOid {
 		#}
 		next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 		next if ($height <= 0); # can't display this roi
-		
+
 		my $r = "$x_coord\t";
 		$r .= "$y_coord\t";
 		$r .= "$width\t";
 		$r .= "$height\t";
 		$r .= "$shape";
 
-		my $ko = "$roi_label"; 
-		if ( $old_roi eq "" ) { 
-		    $old_roi = $r; 
-		} 
-		if ( $old_roi eq $r ) { 
-		    $unique_ko{$ko} = 1; 
-		} else { 
-		    my $koStr = join(",", sort(keys(%unique_ko))); 
-		    %unique_ko = (); 
-		
-		    $old_roi .= "\t$koStr"; 
-		    push( @cyanRecs, $old_roi ); 
-		    $unique_ko{$ko} = 1; 
-		} 
-		$old_roi = $r; 
-	    } 
-	
-	    my $koStr = join(",", keys(%unique_ko)); 
+		my $ko = "$roi_label";
+		if ( $old_roi eq "" ) {
+		    $old_roi = $r;
+		}
+		if ( $old_roi eq $r ) {
+		    $unique_ko{$ko} = 1;
+		} else {
+		    my $koStr = join(",", sort(keys(%unique_ko)));
+		    %unique_ko = ();
+
+		    $old_roi .= "\t$koStr";
+		    push( @cyanRecs, $old_roi );
+		    $unique_ko{$ko} = 1;
+		}
+		$old_roi = $r;
+	    }
+
+	    my $koStr = join(",", keys(%unique_ko));
 	    $old_roi .= "\t$koStr";
-	    push( @cyanRecs, $old_roi );	
+	    push( @cyanRecs, $old_roi );
 	    $cur->finish();
 	}
     }
 
-    ## EC equivalogs (orange) 
+    ## EC equivalogs (orange)
     my @orangeRecs;
-    my $sql = qq{ 
+    my $sql = qq{
         select distinct ir.roi_label, ir.shape,
-               ir.x_coord, ir.y_coord, ir.coord_string, 
+               ir.x_coord, ir.y_coord, ir.coord_string,
                ir.width, ir.height,
                dt.taxon, kt.ko_name, kt.definition
-        from dt_gene_ko_module_pwys dt, ko_term kt, 
+        from dt_gene_ko_module_pwys dt, ko_term kt,
              image_roi ir, image_roi_ko_terms irk
         where dt.taxon != ?
         and dt.image_id = ?
@@ -1266,16 +1266,16 @@ sub printKeggMapByTaxonOid {
         and ir.roi_type in ('ko_term', 'enzyme')
         and ir.roi_label = kt.ko_id
         order by ir.x_coord, ir.y_coord, ir.width, ir.height, ir.roi_label
-    }; 
+    };
 
     my %validTaxons = WebUtil::getAllTaxonsHashed($dbh);
     my $cur = execSql( $dbh, $sql, $verbose, $taxon_oid, $map_id );
 
-    my $old_roi; 
-    my %unique_tx; 
-    my %unique_ko; 
+    my $old_roi;
+    my %unique_tx;
+    my %unique_ko;
     for ( ;; ) {
-        my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str, 
+        my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str,
 	     $width, $height, $taxon, $ko_id, $ko_name, $ko_defn )
 	    = $cur->fetchrow();
         last if !$roi_label;
@@ -1306,35 +1306,35 @@ sub printKeggMapByTaxonOid {
 
         my $ko = "$roi_label";
         my $koLabel = "$roi_label, $ko_name";
-        $koLabel .= ", $ko_defn" if $ko_defn ne ""; 
- 
-        if ( $old_roi eq "" ) { 
-            $old_roi = $r; 
-        } 
-        if ( $old_roi eq $r ) { 
-            $unique_ko{$ko} = $koLabel; 
-            $unique_tx{$taxon} = 1; 
-        } else { 
-            my @keys = keys(%unique_tx);
-            my $count = @keys; 
-            my $koStr = join(",", sort(keys(%unique_ko))); 
-            my $koLabelStr = join("; \n", sort(values(%unique_ko))); 
+        $koLabel .= ", $ko_defn" if $ko_defn ne "";
 
-            %unique_tx = (); 
-            %unique_ko = (); 
- 
-	    $old_roi .= "\t$count" . "\t$koStr" . "\t$koLabelStr"; 
-	    push( @orangeRecs, $old_roi ); 
+        if ( $old_roi eq "" ) {
+            $old_roi = $r;
+        }
+        if ( $old_roi eq $r ) {
+            $unique_ko{$ko} = $koLabel;
+            $unique_tx{$taxon} = 1;
+        } else {
+            my @keys = keys(%unique_tx);
+            my $count = @keys;
+            my $koStr = join(",", sort(keys(%unique_ko)));
+            my $koLabelStr = join("; \n", sort(values(%unique_ko)));
+
+            %unique_tx = ();
+            %unique_ko = ();
+
+	    $old_roi .= "\t$count" . "\t$koStr" . "\t$koLabelStr";
+	    push( @orangeRecs, $old_roi );
 
             $unique_ko{$ko} = $koLabel;
             $unique_tx{$taxon} = 1;
         }
-        $old_roi = $r;         
+        $old_roi = $r;
     }
 
     my @keys = keys(%unique_tx);
-    my $count = @keys; 
-    my $koStr = join(",", keys(%unique_ko)); 
+    my $count = @keys;
+    my $koStr = join(",", keys(%unique_ko));
     my $koLabelStr = join(",", values(%unique_ko));
 
     $old_roi .= "\t$count" . "\t$koStr" . "\t$koLabelStr";
@@ -1365,13 +1365,13 @@ sub printKeggMapByTaxonOid {
 
     print "<h1>KEGG Map</h1>\n";
     my $urlt = "$main_cgi?section=TaxonDetail"
-        . "&page=taxonDetail&taxon_oid=$taxon_oid"; 
+        . "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<p>Current Genome: ".alink($urlt, $taxon_name);
 
-    if ( $cluster_id ) { 
+    if ( $cluster_id ) {
         my $url2 = "$main_cgi?section=BiosyntheticDetail" .
             "&page=cluster_detail&taxon_oid=$taxon_oid" .
-            "&cluster_id=$cluster_id"; 
+            "&cluster_id=$cluster_id";
         print "<br/>Cluster ID: " . alink($url2, $cluster_id);
     }
 
@@ -1420,21 +1420,21 @@ sub printKeggMapMissingECByTaxonOid {
     my $urlt = "$main_cgi?section=TaxonDetail"
         . "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<p>Current Genome: ".alink($urlt, $taxon_name);
- 
+
     printMainForm();
     printStatusLine( "Loading ...", 1 );
 
     ## roi ko to ec conversion
-    my %ko2ec; 
-    my $sql2 = "select ko_id, enzymes from ko_term_enzymes"; 
+    my %ko2ec;
+    my $sql2 = "select ko_id, enzymes from ko_term_enzymes";
     my $cur2 = execSql( $dbh, $sql2, $verbose );
-    for (;;) { 
+    for (;;) {
         my ($ko2, $ec2) = $cur2->fetchrow();
-        last if ! $ko2; 
- 
-        $ko2ec{$ko2} = $ec2; 
-    } 
-    $cur2->finish(); 
+        last if ! $ko2;
+
+        $ko2ec{$ko2} = $ec2;
+    }
+    $cur2->finish();
 
     ## Taxon genes (blue)
     my $sql = qq{
@@ -1461,7 +1461,7 @@ sub printKeggMapMissingECByTaxonOid {
 
     my @blueRecs;
     my @allbluerecs;
-    my $old_roi; 
+    my $old_roi;
     my %unique_roi;
     for ( ;; ) {
         my ( $roi_label, $shape, $x_coord, $y_coord, $coord_str,
@@ -1485,37 +1485,37 @@ sub printKeggMapMissingECByTaxonOid {
         next if ($width <= 0 || $height <= 0) && $shape eq "rect";
         next if ($height <= 0); # can't display this roi
 
-	push( @allbluerecs, 
+	push( @allbluerecs,
 	      "$x_coord\t$y_coord\t$width\t$height\t$shape\t$roi_label");
 
-        my $r = "$x_coord\t"; 
-        $r .= "$y_coord\t"; 
-        $r .= "$width\t"; 
-        $r .= "$height\t"; 
-        $r .= "$shape"; 
- 
-        if ($width <= 0 || $height <= 0) { 
-            next; # can't display this roi 
-        } 
-        if ( $old_roi eq "" ) { 
-            $old_roi = $r; 
-        } 
-        if ( $old_roi eq $r ) { 
+        my $r = "$x_coord\t";
+        $r .= "$y_coord\t";
+        $r .= "$width\t";
+        $r .= "$height\t";
+        $r .= "$shape";
+
+        if ($width <= 0 || $height <= 0) {
+            next; # can't display this roi
+        }
+        if ( $old_roi eq "" ) {
+            $old_roi = $r;
+        }
+        if ( $old_roi eq $r ) {
             $unique_roi{$roi_label} = 1;
-        } else { 
-            my $roiStr = join(",", sort(keys(%unique_roi))); 
-            %unique_roi = (); 
- 
-            $old_roi .= "\t$roiStr"; 
-            push( @blueRecs, $old_roi ); 
+        } else {
+            my $roiStr = join(",", sort(keys(%unique_roi)));
+            %unique_roi = ();
+
+            $old_roi .= "\t$roiStr";
+            push( @blueRecs, $old_roi );
             $unique_roi{$roi_label} = 1;
-        } 
-        $old_roi = $r; 
-    } 
- 
-    my $roiStr = join(",", keys(%unique_roi)); 
+        }
+        $old_roi = $r;
+    }
+
+    my $roiStr = join(",", keys(%unique_roi));
     $old_roi .= "\t$roiStr";
-    push( @blueRecs, $old_roi ); 
+    push( @blueRecs, $old_roi );
     $cur->finish();
 
     ## MyIMG genes (cyan)
@@ -1537,7 +1537,7 @@ sub printKeggMapMissingECByTaxonOid {
         and g.taxon = ?
         and g.locus_type = 'CDS'
         and g.obsolete_flag = 'No'
-        order by iroi.x_coord, iroi.y_coord, 
+        order by iroi.x_coord, iroi.y_coord,
                  iroi.width, iroi.height, iroi.roi_label
     };
 
@@ -1570,38 +1570,38 @@ sub printKeggMapMissingECByTaxonOid {
 	    #}
 	    next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	    next if ($height <= 0); # can't display this roi
-	    
-	    push( @allcyanrecs, 
+
+	    push( @allcyanrecs,
 		  "$x_coord\t$y_coord\t$width\t$height\t$shape\t$roi_label");
 
-	    my $r = "$x_coord\t"; 
-	    $r .= "$y_coord\t"; 
-	    $r .= "$width\t"; 
+	    my $r = "$x_coord\t";
+	    $r .= "$y_coord\t";
+	    $r .= "$width\t";
 	    $r .= "$height\t";
-	    $r .= "$shape"; 
-	    
-	    if ($width <= 0 || $height <= 0) { 
-		next; # can't display this roi 
+	    $r .= "$shape";
+
+	    if ($width <= 0 || $height <= 0) {
+		next; # can't display this roi
 	    }
 	    if ( $old_roi eq "" ) {
-		$old_roi = $r; 
-	    } 
-	    if ( $old_roi eq $r ) { 
-		$unique_roi{$roi_label} = 1; 
-	    } else { 
-		my $roiStr = join(",", sort(keys(%unique_roi))); 
-		%unique_roi = (); 
-		
-		$old_roi .= "\t$roiStr"; 
-		push( @cyanRecs, $old_roi ); 
-		$unique_roi{$roi_label} = 1; 
-	    } 
-	    $old_roi = $r; 
-	} 
-	
-	my $roiStr = join(",", keys(%unique_roi)); 
-	$old_roi .= "\t$roiStr"; 
-	push( @cyanRecs, $old_roi ); 
+		$old_roi = $r;
+	    }
+	    if ( $old_roi eq $r ) {
+		$unique_roi{$roi_label} = 1;
+	    } else {
+		my $roiStr = join(",", sort(keys(%unique_roi)));
+		%unique_roi = ();
+
+		$old_roi .= "\t$roiStr";
+		push( @cyanRecs, $old_roi );
+		$unique_roi{$roi_label} = 1;
+	    }
+	    $old_roi = $r;
+	}
+
+	my $roiStr = join(",", keys(%unique_roi));
+	$old_roi .= "\t$roiStr";
+	push( @cyanRecs, $old_roi );
 	$cur->finish();
     }
 
@@ -1631,7 +1631,7 @@ sub printKeggMapMissingECByTaxonOid {
 
     my @koEcRecs;
     my $sql = qq{
-       select distinct iroi.roi_label, iroi.shape, 
+       select distinct iroi.roi_label, iroi.shape,
               iroi.x_coord, iroi.y_coord, iroi.coord_string,
               iroi.width, iroi.height
          from image_roi_ko_terms irkt, ko_term_enzymes kte,
@@ -1676,7 +1676,7 @@ sub printKeggMapMissingECByTaxonOid {
         $r1 .= "$shape\t";
         my $r = $r1 . "$roi_label";
 
-        if ( WebUtil::inArray( $r, @allbluerecs ) || 
+        if ( WebUtil::inArray( $r, @allbluerecs ) ||
 	     WebUtil::inArray( $r, @allcyanrecs ) ) {
             next;
         }
@@ -1687,7 +1687,7 @@ sub printKeggMapMissingECByTaxonOid {
             push( @koEcRecs, $r );
         }
 
-        if ( $ec2 ) { 
+        if ( $ec2 ) {
             my ($part1, $part2) = split(/\:/, $ec2);
             my $r2 = $r1 . "$part2" . "\t" . $roi_label;
             push( @whiteRecs, $r2 );
@@ -1807,7 +1807,7 @@ sub printAbundanceByTaxonOid {
 	#}
 	next if ($width <= 0 || $height <= 0) && $shape eq "rect";
 	next if ($height <= 0); # can't display this roi
-	
+
         my $r = "$x_coord\t";
         $r .= "$y_coord\t";
         $r .= "$width\t";
@@ -1959,16 +1959,16 @@ sub printZscoreNote {
        <p>
        The z-score is a measure of relative abundance over the
        average of all genomes in the database for a
-       given enzyme in a pathway map.  
+       given enzyme in a pathway map.
        Scaling for variance (standard deviation) is taken
        into account in the scoring.
        </p>
 
        <p>
-       Background frequencies (count of genes assigned to enzymes) 
+       Background frequencies (count of genes assigned to enzymes)
        are taken from all
        database genomes (bacterial, archaeal, eukaryotic, and metagenome).
-       (Viruses, GFragment and orhpan plasmids are not included.)  
+       (Viruses, GFragment and orhpan plasmids are not included.)
        The frequences are normalized in terms of count of genes with enzyme
        assignments over the total gene count for the genome.
        These frequencies are computed
@@ -1980,14 +1980,14 @@ sub printZscoreNote {
 
        <p>
        <i>x = Normalized enzyme frequency</i><br/>
-       <i>z<sub>x</sub> = ( x - mean<sub>x</sub> ) / 
+       <i>z<sub>x</sub> = ( x - mean<sub>x</sub> ) /
        standard.deviation<sub>x</sub></i>
        <br/>
        </p>
 
        <p>
        Note: The z-score may not necessarily correlate well with
-       the actual gene count.  Rather it's a statement about 
+       the actual gene count.  Rather it's a statement about
        abundance over a <i>background average</i>.
        </p>
     };
@@ -2104,7 +2104,7 @@ sub applyCoords {
 
 	my $black = $im->colorClosest( 0, 0, 0 );
 	if ( $black == -1 ) {
-	    $black = $im->colorAllocate( 0, 0, 0 ); 
+	    $black = $im->colorAllocate( 0, 0, 0 );
 	}
 
         if ($shape eq "rect") {
@@ -2113,7 +2113,7 @@ sub applyCoords {
 	    } else {
 		highlightRect( $im, $x, $y, $w, $h, $colorName );
 	    }
-	    
+
             $im->rectangle( $x, $y, $x+$w, $y+$h, $black );
 
         } elsif ($shape eq "poly") {
@@ -2215,9 +2215,9 @@ sub applyHeatMapCoords {
             my $black = $im->colorClosest( 0, 0, 0 );
             if ( $black == -1 ) {
                 $black = $im->colorAllocate( 0, 0, 0 );
-            } 
+            }
             $im->rectangle( $x, $y, $x+$w, $y+$h, $black );
-        } 
+        }
         $roiDone{"$x,$y"} = 1;
     }
 }
@@ -2239,8 +2239,8 @@ sub printMapCoords {
 	my $url = "$main_cgi?section=GeneDetail"
                 . "&page=geneDetail&gene_oid=$gene_oid";
 	if ( $d2 eq 'assembled' || $d2 eq 'unassembled' ) {
-	    $url = "$main_cgi?section=MetaGeneDetail" 
-		. "&page=metaGeneDetail&gene_oid=$gene_oid" 
+	    $url = "$main_cgi?section=MetaGeneDetail"
+		. "&page=metaGeneDetail&gene_oid=$gene_oid"
 		. "&taxon_oid=$t2&data_type=$d2";
 	}
 
@@ -2301,16 +2301,16 @@ sub printEcMapCoords {
 ############################################################################
 sub printKoMapCoords {
     my ( $recs_ref, $map_id, $taxon_oid, $gene_oid ) = @_;
-    my %recs; 
+    my %recs;
     foreach my $r (@$recs_ref) {
         my ( $x1, $y1, $w, $h, $shape, $koStr, $koLabelStr ) =
-          split( /\t/, $r ); 
+          split( /\t/, $r );
 
         my $url = "$section_cgi&page=keggMapTaxonGenesKo";
 	$url .= "&taxon_oid=$taxon_oid";
         $url .= "&map_id=$map_id";
         $url .= "&gene_oid=$gene_oid" if $gene_oid ne "";
-        $url .= "&ko=$koStr"; 
+        $url .= "&ko=$koStr";
 
         if ($shape eq "rect") {
             my $x2  = $x1 + $w;
@@ -2323,9 +2323,9 @@ sub printKoMapCoords {
             print "<area shape='poly' coords='$coord_str' href=\"$url\" "
                 . " target='_blank' title='$koLabelStr' >\n";
         }
-    } 
-} 
- 
+    }
+}
+
 ############################################################################
 # printMyIMGMapCoords - Print map coordinates as selectable links for
 #  using EC number as argument.
@@ -2361,21 +2361,21 @@ sub printMyIMGMapCoords {
 }
 
 ############################################################################
-# printKoEquivMapCoords - overlays the image map for the pathway map 
-############################################################################ 
+# printKoEquivMapCoords - overlays the image map for the pathway map
+############################################################################
 sub printKoEquivMapCoords {
     my ( $recs_ref, $map_id, $taxon_oid, $gene_oid ) = @_;
     my %recs;
-    foreach my $r (@$recs_ref) { 
+    foreach my $r (@$recs_ref) {
         my ( $x1, $y1, $w, $h, $shape, $count, $koStr, $koLabelStr )
-	    = split( /\t/, $r ); 
+	    = split( /\t/, $r );
 
         my $url = "$section_cgi&page=keggMapKoEquiv";
         $url .= "&taxon_oid=$taxon_oid";
-        $url .= "&map_id=$map_id"; 
+        $url .= "&map_id=$map_id";
         $url .= "&gene_oid=$gene_oid" if $gene_oid ne "";
-        $url .= "&ko=$koStr"; 
- 
+        $url .= "&ko=$koStr";
+
 	my $text = "($count other genomes), $koLabelStr";
         if ($shape eq "rect") {
             my $x2  = $x1 + $w;
@@ -2388,7 +2388,7 @@ sub printKoEquivMapCoords {
             print "<area shape='poly' coords='$coord_str' href=\"$url\" "
                 . " target='_blank' title='$text' >\n";
         }
-    } 
+    }
 }
 
 ############################################################################
@@ -2487,9 +2487,9 @@ sub printKeggMapTaxonGenes {
     if ( $gene_oid ne "" && scalar @genes > 1) {
         $text = "Positional Cluster ";
 
-        my $sql = qq{                                                           
-            select distinct g.gene_display_name, g.locus_tag                    
-            from gene g where g.gene_oid = ?                                    
+        my $sql = qq{
+            select distinct g.gene_display_name, g.locus_tag
+            from gene g where g.gene_oid = ?
         };
         my $cur = execSql( $dbh, $sql, $verbose, $gene_oid );
 	my ($name, $locus) = $cur->fetchrow();
@@ -2506,7 +2506,7 @@ sub printKeggMapTaxonGenes {
     print "<h1>$text"."Genes</h1>\n";
     print "<p>Current Genome: ".alink($urlt, $taxon_name)."$current_gene</p>";
 
-    my $sql = qq{                                                              
+    my $sql = qq{
         select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
                iroi.roi_label
         from image_roi_ko_terms irk, gene_ko_terms gk,
@@ -2571,13 +2571,13 @@ sub printKeggMapTaxonGenesEc {
     my $taxon_oid = param("taxon_oid");
     my $gene_oid  = param("gene_oid");
 
-    my $dbh = dbLogin(); 
+    my $dbh = dbLogin();
     my ( $taxon_oid, $taxon_name ) = getTaxonRecByTaxonOid($dbh, $taxon_oid);
     print "<h1>Genes with EC: <font color='darkblue'>"
         . "<u>$ec_str</u></font></h1>\n";
 
     my $url = "$main_cgi?section=TaxonDetail"
-        . "&page=taxonDetail&taxon_oid=$taxon_oid"; 
+        . "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<p>Current Genome: ".alink($url, $taxon_name)."</p>";
 
     my $gene_oid_clause;
@@ -2585,10 +2585,10 @@ sub printKeggMapTaxonGenesEc {
 
     my @ec = split(",", $ec_str);
     $ec_str = joinSqlQuoted(",", @ec);
- 
+
     my $sql = qq{
-        select distinct g.gene_oid, g.gene_display_name, g.locus_tag, 
-               iroi.roi_label 
+        select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
+               iroi.roi_label
         from image_roi_ko_terms irkt, ko_term_enzymes kte,
              gene_ko_enzymes ge, gene g,
              image_roi iroi, kegg_pathway pw
@@ -2604,50 +2604,50 @@ sub printKeggMapTaxonGenesEc {
         and g.obsolete_flag = 'No'
         $gene_oid_clause
     };
-    my $cur; 
+    my $cur;
     if ( $gene_oid ne "" ) {
-        $cur = execSql 
+        $cur = execSql
             ( $dbh, $sql, $verbose, $map_id, $taxon_oid, $gene_oid );
     } else {
         $cur = execSql( $dbh, $sql, $verbose, $map_id, $taxon_oid );
-    } 
+    }
 
     printMainForm();
- 
+
     my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
     my $sd = $it->getSdDelim();
     $it->addColSpec( "Select" );
     $it->addColSpec( "Gene ID",   "asc", "right" );
-    $it->addColSpec( "Locus Tag", "asc", "left"  ); 
+    $it->addColSpec( "Locus Tag", "asc", "left"  );
     $it->addColSpec( "Gene Product Name", "asc", "left"  );
-    $it->addColSpec( "EC",        "asc", "left"  ); 
- 
+    $it->addColSpec( "EC",        "asc", "left"  );
+
     my $count = 0;
-    for ( ;; ) { 
-        my ( $gene_oid, $name, $locus_tag, $ec ) 
-            = $cur->fetchrow(); 
-        last if !$gene_oid; 
- 
+    for ( ;; ) {
+        my ( $gene_oid, $name, $locus_tag, $ec )
+            = $cur->fetchrow();
+        last if !$gene_oid;
+
         my $url1 = "$main_cgi?section=GeneDetail"
             . "&page=geneDetail&gene_oid=$gene_oid";
-        my $url2 = "$ec_base_url"."EC:$ec"; 
- 
+        my $url2 = "$ec_base_url"."EC:$ec";
+
         my $row = $sd."<input type='checkbox' "
-            . "name='gene_oid' value='$gene_oid'/>\t"; 
+            . "name='gene_oid' value='$gene_oid'/>\t";
         $row .= $gene_oid.$sd.alink($url1, $gene_oid)."\t";
-        $row .= $locus_tag.$sd.$locus_tag."\t"; 
-        $row .= $name.$sd.$name."\t"; 
+        $row .= $locus_tag.$sd.$locus_tag."\t";
+        $row .= $name.$sd.$name."\t";
         $row .= $ec.$sd.alink($url2, $ec)."\t";
-        $it->addRow($row); 
+        $it->addRow($row);
 	$count++;
-    } 
-    $cur->finish(); 
+    }
+    $cur->finish();
 
-    printGeneCartFooter() if $count > 10; 
-    $it->printOuterTable(1);  
-    printGeneCartFooter(); 
+    printGeneCartFooter() if $count > 10;
+    $it->printOuterTable(1);
+    printGeneCartFooter();
 
-    print end_form(); 
+    print end_form();
 }
 
 ############################################################################
@@ -2659,7 +2659,7 @@ sub printKeggMapTaxonGenesKo {
     my $taxon_oid = param("taxon_oid");
     my $gene_oid  = param("gene_oid");
 
-    my $dbh = dbLogin(); 
+    my $dbh = dbLogin();
     my $rclause = urClause("t.taxon_oid");
     my $sql = "select t.taxon_oid, t.taxon_display_name, t.in_file " .
  	      "from taxon t where t.taxon_oid = ? " . $rclause;
@@ -2689,23 +2689,23 @@ sub printKeggMapTaxonGenesKo {
 	my ($name, $locus) = $cur->fetchrow();
 	$cur->finish();
 
-        my $urlg = "$main_cgi?section=GeneDetail" 
+        my $urlg = "$main_cgi?section=GeneDetail"
             . "&page=geneDetail&gene_oid=$gene_oid";
 	$gene = "<br/>Current Gene: "
 	    . alink( $urlg, "$gene_oid [$locus]");
     }
 
-    my $urlt = "$main_cgi?section=TaxonDetail" 
-    	. "&page=taxonDetail&taxon_oid=$taxon_oid"; 
+    my $urlt = "$main_cgi?section=TaxonDetail"
+    	. "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<h1>$text"."Genes with KO: <font color='darkblue'>"
 	. "<u>$ko_str</u></font></h1>\n";
     print "<p>Current Genome: ".alink($urlt, $taxon_name)."$gene</p>";
- 
-    my @ko = split(",", $ko_str); 
+
+    my @ko = split(",", $ko_str);
     $ko_str = joinSqlQuoted(",", @ko);
     $ko_str =~ s/KO://;
     my $sql = qq{
-      select distinct g.gene_oid, g.gene_display_name, g.locus_tag, 
+      select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
              iroi.roi_label
         from image_roi_ko_terms irk, gene_ko_terms gk, gene g,
 	     image_roi iroi, kegg_pathway pw
@@ -2721,49 +2721,49 @@ sub printKeggMapTaxonGenesKo {
 	 $gene_oid_clause
     };
     my $cur;
-    if ( $gene_oid ne "" ) { 
-        $cur = execSql 
+    if ( $gene_oid ne "" ) {
+        $cur = execSql
             ( $dbh, $sql, $verbose, $map_id, $taxon_oid, $gene_oid );
-    } else { 
+    } else {
         $cur = execSql( $dbh, $sql, $verbose, $map_id, $taxon_oid );
-    } 
- 
-    printMainForm(); 
- 
-    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 ); 
-    my $sd = $it->getSdDelim(); 
-    $it->addColSpec( "Select" ); 
-    $it->addColSpec( "Gene ID",   "asc", "right" ); 
-    $it->addColSpec( "Locus Tag", "asc", "left"  ); 
-    $it->addColSpec( "Gene Product Name", "asc", "left"  ); 
-    $it->addColSpec( "KO",        "asc", "left"  ); 
- 
+    }
+
+    printMainForm();
+
+    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
+    my $sd = $it->getSdDelim();
+    $it->addColSpec( "Select" );
+    $it->addColSpec( "Gene ID",   "asc", "right" );
+    $it->addColSpec( "Locus Tag", "asc", "left"  );
+    $it->addColSpec( "Gene Product Name", "asc", "left"  );
+    $it->addColSpec( "KO",        "asc", "left"  );
+
     my $count = 0;
-    for ( ;; ) { 
-        my ( $gene_oid, $name, $locus_tag, $ko ) 
-            = $cur->fetchrow(); 
-        last if !$gene_oid; 
- 
-        my $url1 = "$main_cgi?section=GeneDetail" 
-            . "&page=geneDetail&gene_oid=$gene_oid"; 
-        my $url2 = "$ko_base_url$ko"; 
- 
-        my $row = $sd."<input type='checkbox' " 
-            . "name='gene_oid' value='$gene_oid'/>\t"; 
-        $row .= $gene_oid.$sd.alink($url1, $gene_oid)."\t"; 
-        $row .= $locus_tag.$sd.$locus_tag."\t"; 
-        $row .= $name.$sd.$name."\t"; 
-        $row .= $ko.$sd.alink($url2, $ko)."\t"; 
-        $it->addRow($row); 
+    for ( ;; ) {
+        my ( $gene_oid, $name, $locus_tag, $ko )
+            = $cur->fetchrow();
+        last if !$gene_oid;
+
+        my $url1 = "$main_cgi?section=GeneDetail"
+            . "&page=geneDetail&gene_oid=$gene_oid";
+        my $url2 = "$ko_base_url$ko";
+
+        my $row = $sd."<input type='checkbox' "
+            . "name='gene_oid' value='$gene_oid'/>\t";
+        $row .= $gene_oid.$sd.alink($url1, $gene_oid)."\t";
+        $row .= $locus_tag.$sd.$locus_tag."\t";
+        $row .= $name.$sd.$name."\t";
+        $row .= $ko.$sd.alink($url2, $ko)."\t";
+        $it->addRow($row);
 	$count++;
-    } 
-    $cur->finish(); 
+    }
+    $cur->finish();
 
-    printGeneCartFooter() if $count > 10; 
-    $it->printOuterTable(1);  
-    printGeneCartFooter(); 
+    printGeneCartFooter() if $count > 10;
+    $it->printOuterTable(1);
+    printGeneCartFooter();
 
-    print end_form(); 
+    print end_form();
 }
 
 
@@ -2779,7 +2779,7 @@ sub printKeggMapTaxonGenesKo_fs {
 	my ($t2, $d2, $gene_oid) = split(/ /, $workspace_id);
 	my $locus = $gene_oid;
 
-	my ($name, $source) = 
+	my ($name, $source) =
 	    MetaUtil::getGeneProdNameSource($gene_oid, $t2, $d2);
 
 	my $urlg = "$main_cgi?section=MetaGeneDetail" .
@@ -2788,26 +2788,26 @@ sub printKeggMapTaxonGenesKo_fs {
 	my $gene = "<br/>Current Gene: " . alink( $urlg, "$gene_oid");
     }
 
-    my $urlt = "$main_cgi?section=MetaDetail" 
-    	     . "&page=metaDetail&taxon_oid=$taxon_oid"; 
+    my $urlt = "$main_cgi?section=MetaDetail"
+    	     . "&page=metaDetail&taxon_oid=$taxon_oid";
     print "<h1>Other Genes with <font color='darkblue'>"
 	. "<u>$ko_str</u></font></h1>\n";
     print "<p>Current Genome: ".alink($urlt, $taxon_name)."$gene</p>";
- 
-    my @kos = split(",", $ko_str); 
- 
-    printMainForm(); 
+
+    my @kos = split(",", $ko_str);
+
+    printMainForm();
 
     printStatusLine( "Loading ...", 1 );
     printStartWorkingDiv();
 
-    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 ); 
-    my $sd = $it->getSdDelim(); 
-    $it->addColSpec( "Select" ); 
-    $it->addColSpec( "Gene ID",   "asc", "right" ); 
-    $it->addColSpec( "Locus Tag", "asc", "left"  ); 
-    $it->addColSpec( "Gene Product Name", "asc", "left"  ); 
-    $it->addColSpec( "KO", "asc", "left"  ); 
+    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
+    my $sd = $it->getSdDelim();
+    $it->addColSpec( "Select" );
+    $it->addColSpec( "Gene ID",   "asc", "right" );
+    $it->addColSpec( "Locus Tag", "asc", "left"  );
+    $it->addColSpec( "Gene Product Name", "asc", "left"  );
+    $it->addColSpec( "KO", "asc", "left"  );
 
     my $select_id_name = "gene_oid";
 
@@ -2830,7 +2830,7 @@ sub printKeggMapTaxonGenesKo_fs {
 	    }
 
 	    my $locus_tag = $gene_oid;
- 
+
 	    my $ws_id = $ko_genes{$gene_oid};
 	    if ( $genes{$ws_id} ) {
 		# duplicated
@@ -2844,15 +2844,15 @@ sub printKeggMapTaxonGenesKo_fs {
 	    my $url1 = "$main_cgi?section=MetaGeneDetail" .
 		       "&page=metaGeneDetail&gene_oid=$g3" .
 		       "&taxon_oid=$t3&data_type=$d3";
-	    my $url2 = "$ko_base_url$ko"; 
-	    my ($name, $source) = MetaUtil::getGeneProdNameSource($g3, $t3, $d3); 
+	    my $url2 = "$ko_base_url$ko";
+	    my ($name, $source) = MetaUtil::getGeneProdNameSource($g3, $t3, $d3);
 	    my $row = $sd."<input type='checkbox' " .
-		      "name='$select_id_name' value='$ws_id'/>\t"; 
-	    $row .= $ws_id.$sd.alink($url1, $gene_oid)."\t"; 
-	    $row .= $locus_tag.$sd.$locus_tag."\t"; 
-	    $row .= $name.$sd.$name."\t"; 
-	    $row .= $ko.$sd.alink($url2, $ko)."\t"; 
-	    $it->addRow($row); 
+		      "name='$select_id_name' value='$ws_id'/>\t";
+	    $row .= $ws_id.$sd.alink($url1, $gene_oid)."\t";
+	    $row .= $locus_tag.$sd.$locus_tag."\t";
+	    $row .= $name.$sd.$name."\t";
+	    $row .= $ko.$sd.alink($url2, $ko)."\t";
+	    $it->addRow($row);
 
 	    $count++;
 	    if ( ($count % 10) == 0 ) {
@@ -2862,7 +2862,7 @@ sub printKeggMapTaxonGenesKo_fs {
 		print "<br/>";
 	    }
 	}
-    } 
+    }
 
     printEndWorkingDiv();
 
@@ -2873,25 +2873,25 @@ sub printKeggMapTaxonGenesKo_fs {
     }
 
     printGeneCartFooter() if $count > 10;
-    $it->printOuterTable(1); 
+    $it->printOuterTable(1);
     printGeneCartFooter();
 
     if ( $count > 0 ) {
-        MetaGeneTable::printMetaGeneTableSelect(); 
+        MetaGeneTable::printMetaGeneTableSelect();
         WorkspaceUtil::printSaveGeneToWorkspace($select_id_name);
     }
 
-    if ($trunc) { 
+    if ($trunc) {
         my $s = "Results limited to $maxGeneListResults genes.\n";
         $s .= "( Go to "
           . alink( $preferences_url, "Preferences" )
           . " to change \"Max. Gene List Results\". )\n";
-        printStatusLine( $s, 2 ); 
-    } else { 
+        printStatusLine( $s, 2 );
+    } else {
         printStatusLine( "$count gene(s) loaded", 2 );
-    } 
-  
-    print end_form(); 
+    }
+
+    print end_form();
 }
 
 
@@ -2910,24 +2910,24 @@ sub printMyIMGKeggMapTaxonGenes {
         webError("Session expired. Please start over again.");
     }
     my $dbh = dbLogin();
-    my ( $taxon_oid, $taxon_name ) = 
+    my ( $taxon_oid, $taxon_name ) =
         getTaxonRecByTaxonOid( $dbh, $taxon_oid );
-    print "<h1>Genes with EC: <font color='darkblue'>" 
+    print "<h1>Genes with EC: <font color='darkblue'>"
         . "<u>$ec_str</u></font></h1>\n";
- 
+
     my $url = "$main_cgi?section=TaxonDetail"
-        . "&page=taxonDetail&taxon_oid=$taxon_oid"; 
+        . "&page=taxonDetail&taxon_oid=$taxon_oid";
     print "<p>Current Genome: ".alink($url, $taxon_name)."</p>";
- 
+
     my @ec = split(",", $ec_str);
-    $ec_str = joinSqlQuoted(",", @ec); 
- 
+    $ec_str = joinSqlQuoted(",", @ec);
+
     my $gene_oid_clause;
     $gene_oid_clause = "and g.gene_oid != ?" if $gene_oid ne "";
 
     my $sql = qq{
         select distinct g.gene_oid, g.gene_display_name, g.locus_tag,
-               iroi.roi_label 
+               iroi.roi_label
         from image_roi_ko_terms irkt, ko_term_enzymes kte,
              gene_myimg_enzymes gme, gene g,
              image_roi iroi, kegg_pathway pw
@@ -2945,51 +2945,51 @@ sub printMyIMGKeggMapTaxonGenes {
         $gene_oid_clause
     };
     my $cur;
-    if ( $gene_oid ne "" ) { 
-        $cur = execSql 
+    if ( $gene_oid ne "" ) {
+        $cur = execSql
             ( $dbh, $sql, $verbose, $map_id,
-	      $contact_oid, $taxon_oid, $gene_oid ); 
-    } else { 
-        $cur = execSql( $dbh, $sql, $verbose, $map_id, 
+	      $contact_oid, $taxon_oid, $gene_oid );
+    } else {
+        $cur = execSql( $dbh, $sql, $verbose, $map_id,
 			$contact_oid, $taxon_oid );
-    } 
+    }
 
-    printMainForm(); 
- 
-    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 ); 
-    my $sd = $it->getSdDelim(); 
-    $it->addColSpec( "Select" ); 
-    $it->addColSpec( "Gene ID",   "asc", "right" ); 
-    $it->addColSpec( "Locus Tag", "asc", "left"  ); 
-    $it->addColSpec( "Gene Product Name", "asc", "left"  ); 
-    $it->addColSpec( "EC",        "asc", "left"  ); 
- 
+    printMainForm();
+
+    my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
+    my $sd = $it->getSdDelim();
+    $it->addColSpec( "Select" );
+    $it->addColSpec( "Gene ID",   "asc", "right" );
+    $it->addColSpec( "Locus Tag", "asc", "left"  );
+    $it->addColSpec( "Gene Product Name", "asc", "left"  );
+    $it->addColSpec( "EC",        "asc", "left"  );
+
     my $count = 0;
-    for ( ;; ) { 
-        my ( $gene_oid, $name, $locus_tag, $ec ) 
-            = $cur->fetchrow(); 
-        last if !$gene_oid; 
- 
-        my $url1 = "$main_cgi?section=GeneDetail" 
-            . "&page=geneDetail&gene_oid=$gene_oid"; 
-        my $url2 = "$ec_base_url"."EC:$ec"; 
- 
+    for ( ;; ) {
+        my ( $gene_oid, $name, $locus_tag, $ec )
+            = $cur->fetchrow();
+        last if !$gene_oid;
+
+        my $url1 = "$main_cgi?section=GeneDetail"
+            . "&page=geneDetail&gene_oid=$gene_oid";
+        my $url2 = "$ec_base_url"."EC:$ec";
+
         my $row = $sd."<input type='checkbox' "
-            . "name='gene_oid' value='$gene_oid'/>\t"; 
+            . "name='gene_oid' value='$gene_oid'/>\t";
         $row .= $gene_oid.$sd.alink($url1, $gene_oid)."\t";
-        $row .= $locus_tag.$sd.$locus_tag."\t"; 
-        $row .= $name.$sd.$name."\t"; 
+        $row .= $locus_tag.$sd.$locus_tag."\t";
+        $row .= $name.$sd.$name."\t";
         $row .= $ec.$sd.alink($url2, $ec)."\t";
-        $it->addRow($row); 
+        $it->addRow($row);
 	$count++;
-    } 
-    $cur->finish(); 
+    }
+    $cur->finish();
 
-    printGeneCartFooter() if $count > 10; 
-    $it->printOuterTable(1);  
-    printGeneCartFooter(); 
+    printGeneCartFooter() if $count > 10;
+    $it->printOuterTable(1);
+    printGeneCartFooter();
 
-    print end_form(); 
+    print end_form();
 }
 
 ############################################################################
@@ -3068,7 +3068,7 @@ sub printKeggMapEcEquivGenes {
     printStatusLine( "$rowCount gene(s) retrieved", 2 );
     print end_form();
 }
- 
+
 ############################################################################
 # printKeggMapKoEquivGenes - prints the genes with the given ko numbers
 ############################################################################
@@ -3079,24 +3079,24 @@ sub printKeggMapKoEquivGenes {
     my $gene_oid  = param("gene_oid");
 
     my $dbh = dbLogin();
-    my $url = "$main_cgi?section=TaxonDetail" 
+    my $url = "$main_cgi?section=TaxonDetail"
         . "&page=taxonDetail&taxon_oid=$taxon_oid";
     my ( $taxon_oid, $taxon_name ) =
         getTaxonRecByTaxonOid( $dbh, $taxon_oid );
     print "<h1>Genes with KO: <font color='darkblue'>"
-	. "<u>$ko_str</u></font> found in other genomes</h1>\n"; 
+	. "<u>$ko_str</u></font> found in other genomes</h1>\n";
     print "<p>Current Genome: ".alink($url, $taxon_name)."</p>";
- 
-    my @ko = split(",", $ko_str); 
-    $ko_str = joinSqlQuoted(",", @ko); 
+
+    my @ko = split(",", $ko_str);
+    $ko_str = joinSqlQuoted(",", @ko);
     $ko_str =~ s/KO://;
-    
+
     my $gene_oid_clause;
     $gene_oid_clause = "and g.gene_oid != ?" if $gene_oid ne "";
 
     my $sql = qq{
-	select distinct g.gene_oid, g.gene_display_name, 
-	       g.locus_tag, g.taxon, tx.taxon_name, iroi.roi_label 
+	select distinct g.gene_oid, g.gene_display_name,
+	       g.locus_tag, g.taxon, tx.taxon_name, iroi.roi_label
 	  from image_roi_ko_terms irk, gene_ko_terms gk, gene g,
 	       image_roi iroi, kegg_pathway pw, taxon tx
 	 where pw.image_id = ?
@@ -3109,7 +3109,7 @@ sub printKeggMapKoEquivGenes {
 	   and g.taxon = tx.taxon_oid
 	   and g.locus_type = 'CDS'
 	   and g.obsolete_flag = 'No'
-	   and iroi.roi_label in ($ko_str) 
+	   and iroi.roi_label in ($ko_str)
 	   $gene_oid_clause
        };
 
@@ -3128,8 +3128,8 @@ sub printKeggMapKoEquivGenes {
     my %validTaxons = WebUtil::getAllTaxonsHashed($dbh);
 
     my $it = new InnerTable( 1, "genelist$$", "genelist", 1 );
-    my $sd = $it->getSdDelim(); 
-    $it->addColSpec( "Select" ); 
+    my $sd = $it->getSdDelim();
+    $it->addColSpec( "Select" );
     $it->addColSpec( "Gene ID",   "asc", "right" );
     $it->addColSpec( "Locus Tag", "asc", "left"  );
     $it->addColSpec( "Gene Product Name", "asc", "left"  );
@@ -3137,28 +3137,28 @@ sub printKeggMapKoEquivGenes {
     $it->addColSpec( "KO",        "asc", "left"  );
 
     my $count = 0;
-    for ( ;; ) { 
-        my ( $gene_oid, $name, $locus_tag, $taxon_oid, $taxon_name, $ko ) 
-            = $cur->fetchrow(); 
-        last if !$gene_oid; 
+    for ( ;; ) {
+        my ( $gene_oid, $name, $locus_tag, $taxon_oid, $taxon_name, $ko )
+            = $cur->fetchrow();
+        last if !$gene_oid;
         next if $validTaxons{$taxon_oid} eq "";
- 
-        my $url1 = "$main_cgi?section=GeneDetail" 
-            . "&page=geneDetail&gene_oid=$gene_oid"; 
+
+        my $url1 = "$main_cgi?section=GeneDetail"
+            . "&page=geneDetail&gene_oid=$gene_oid";
         my $url2 = "$main_cgi?section=TaxonDetail"
             . "&page=taxonDetail&taxon_oid=$taxon_oid";
-        my $url3 = "$ko_base_url$ko"; 
- 
-        my $row = $sd."<input type='checkbox' " 
+        my $url3 = "$ko_base_url$ko";
+
+        my $row = $sd."<input type='checkbox' "
             . "name='gene_oid' value='$gene_oid'/>\t";
         $row .= $gene_oid.$sd.alink($url1, $gene_oid)."\t";
-        $row .= $locus_tag.$sd.$locus_tag."\t"; 
+        $row .= $locus_tag.$sd.$locus_tag."\t";
         $row .= $name.$sd.$name."\t";
         $row .= $taxon_name.$sd.alink($url2, $taxon_name)."\t";
-        $row .= $ko.$sd.alink($url3, $ko)."\t"; 
-        $it->addRow($row); 
+        $row .= $ko.$sd.alink($url3, $ko)."\t";
+        $it->addRow($row);
 	$count++;
-    } 
+    }
     $cur->finish();
 
     printGeneCartFooter() if $count > 10;
