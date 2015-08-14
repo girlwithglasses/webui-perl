@@ -376,8 +376,6 @@ sub getEnv {
 
   merfs_timeout_mins => 0,
 
-  dev_site => 1
-
 	);
 
 	@$e{ keys %h } = values %h;
