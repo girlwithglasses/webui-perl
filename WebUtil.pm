@@ -5537,7 +5537,7 @@ sub checkGenePerm {
         my $cnt = $cur->fetchrow();
         $cur->finish();
         if ( $cnt > 0 ) {
-            webError("The gene your are looking for does not exist or it may have been removed from IMG.");
+            webError("The gene you are looking for does not exist or it may have been removed from IMG.");
         }
     }
 

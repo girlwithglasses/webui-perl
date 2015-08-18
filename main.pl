@@ -7,35 +7,22 @@
 use strict;
 use warnings;
 use feature ':5.16';
-
-use lib qw(
-	/global/homes/a/aireland/perl5/lib/perl5
-	/global/homes/a/aireland/webUI/webui.cgi
-	/global/homes/a/aireland/webUI/proportal/lib
-);
-
-use Data::Dumper;
 # use Carp::Always;
+
 use CGI qw( :standard  );
 use CGI::Cookie;
 use CGI::Session qw/-ip-match/;    # for security - ken
-use CGI::Carp qw( carpout set_message fatalsToBrowser warningsToBrowser );
-# use perl5lib;
+use CGI::Carp qw( carpout set_message fatalsToBrowser );
+use perl5lib;
 use HTML::Template;
 use File::Path qw(remove_tree);
 use Number::Format;
 use WebConfig;
-use WebUtil qw();
+use WebUtil;
 use Template;
-<<<<<<< .mine
-use GenomeCart;
-=======
 use Module::Load;
->>>>>>> .r33963
 
-#use IMG::Views::ViewMaker;
-
-use IMG::Dispatcher;
+# use IMG::Dispatcher;
 
 $| = 1;
 
@@ -93,7 +80,7 @@ my $verbose                  = $env->{verbose};
 my $web_data_dir             = $env->{web_data_dir};
 my $webfs_data_dir           = $env->{webfs_data_dir};
 
-$default_timeout_mins = 5 unless $default_timeout_mins;
+$default_timeout_mins = 5 if $default_timeout_mins eq "";
 my $use_func_cart = 1;
 
 my $imgAppTerm = "IMG";
@@ -112,14 +99,15 @@ my $sso_url         = $env->{sso_url};
 my $sso_domain      = $env->{sso_domain};
 my $sso_cookie_name = $env->{sso_cookie_name};    # jgi_return cookie name
 
+my $jgi_return_url = "";
 my $homePage       = 0;
 my $pageTitle      = "IMG";
 
-WebUtil::timeout( 60 * $default_timeout_mins );
+timeout( 60 * $default_timeout_mins );
 
 # check the number of cgi processes
-#WebUtil::maxCgiProcCheck();
-WebUtil::blockRobots();
+maxCgiProcCheck();
+blockRobots();
 
 # key the AppHeader where $current used
 # value display
@@ -149,8 +137,8 @@ my %breadcrumbs = (
 # is db locked
 # if file not empty dump html from it
 if ( -e $dblock_file && !$img_ken ) {
-    my $s = WebUtil::file2Str( $dblock_file, 1 );
-    if ( ! WebUtil::blankStr($s) ) {
+    my $s = file2Str( $dblock_file, 1 );
+    if ( !blankStr($s) ) {
         print header( -type => "text/html", -status => '503' );
         print $s;
     } else {
@@ -181,11 +169,10 @@ if ( -e $dblock_file && !$img_ken ) {
 #
 
 my $cgi   = WebUtil::getCgi();
-
 my $https = $cgi->https();       # if on its not null
 if ( ( $public_login || $user_restricted_site ) && $https eq '' && $env->{ssl_enabled} ) {
-#    my $REQUEST_METHOD = uc( $ENV{REQUEST_METHOD} );
-    if ( 'GET' eq uc( $ENV{REQUEST_METHOD} ) ) {
+    my $REQUEST_METHOD = uc( $ENV{REQUEST_METHOD} );
+    if ( $REQUEST_METHOD eq 'GET' ) {
         my $seconds = 30;
         my $url     = $cgi_url . "/" . $main_cgi . redirectform(1);
         print header( -type => "text/html", -status => '497 HTTP to HTTPS (Nginx)' );
@@ -203,8 +190,7 @@ if ( ( $public_login || $user_restricted_site ) && $https eq '' && $env->{ssl_en
 #
 # session and cookie expire after 90m
 #
-my $session = WebUtil::getSession();
-$env->{session} = $session;
+my $session = getSession();
 
 # +90m expire after 90 minutes
 # +24h - 24 hour cookie
@@ -217,26 +203,26 @@ $env->{session} = $session;
 #resetContactOid();
 
 my $session_id  = $session->id();
-my $contact_oid = WebUtil::getContactOid();
+my $contact_oid = getContactOid();
 
 # see WebUtil.pm line CGI::Session->name($cookie_name); is called - ken
 my $cookie_name = WebUtil::getCookieName();
 my $cookie      = cookie( $cookie_name => $session_id );
 
-my $oldLogin = $session->param('oldLogin');
-$oldLogin = 0 if $cgi->param('oldLogin') eq 'false';
-if ( $cgi->param('oldLogin') eq 'true' || $oldLogin ) {
-    $session->param( "oldLogin", 1 );
+my $oldLogin = getSessionParam("oldLogin");
+$oldLogin = 0 if param('oldLogin') eq 'false';
+if ( param('oldLogin') eq 'true' || $oldLogin ) {
+    setSessionParam( "oldLogin", 1 );
     $oldLogin = 1;
 } else {
-    $session->param( "oldLogin", 0 );
+    setSessionParam( "oldLogin", 0 );
     $oldLogin = 0;
 }
 
-if ( ! $oldLogin && $sso_enabled ) {
+if ( !$oldLogin && $sso_enabled ) {
     require Caliban;
     if ( !$contact_oid ) {
-        my $dbh_main = WebUtil::dbLogin();
+        my $dbh_main = dbLogin();
         my $ans      = Caliban::validateUser($dbh_main);
 
         if ( !$ans ) {
@@ -264,9 +250,9 @@ if ( ! $oldLogin && $sso_enabled ) {
     }
 } elsif ( ( $public_login || $user_restricted_site ) && !$contact_oid ) {
     require Caliban;
-    my $username = $cgi->param("username");
-    $username = $cgi->param("login") if ( blankStr($username) );    # single login form for sso or img
-    my $password = $cgi->param("password");
+    my $username = param("username");
+    $username = param("login") if ( blankStr($username) );    # single login form for sso or img
+    my $password = param("password");
     if ( blankStr($username) ) {
         printAppHeader("login");
         Caliban::printSsoForm();
@@ -309,7 +295,7 @@ if ( ! $oldLogin && $sso_enabled ) {
         Caliban::checkBannedUsers( $username, $username, $username );
         WebUtil::loginLog( 'login', 'img' );
         MyIMG::loadUserPreferences();
-        $session->param( "oldLogin", 1 );
+        setSessionParam( "oldLogin", 1 );
 
         #if($img_ken) {
             Caliban::migrateImg2JgiSso($redirecturl);
@@ -329,35 +315,28 @@ if ( ! $oldLogin && $sso_enabled ) {
     }
 }
 
-# set up cookies here: if logged in, just use the current IMG session cookie and the JGI cookie
-
 # for adding to genome cart from browser list
-if ( $cgi->param("setTaxonFilter") ) {
-
-    my @taxon_filter_oid = $cgi->multi_param('taxon_filter_oid');
-    if (! @taxon_filter_oid) {
-    	@taxon_filter_oid = $cgi->multi_param('taxon_oid');
+if ( param("setTaxonFilter") ne "" ) {
+    my @taxon_filter_oid = param("taxon_filter_oid");
+    if ( scalar(@taxon_filter_oid) eq 0 ) {
+        @taxon_filter_oid = param("taxon_oid");
     }
-#	say "got params: " . Dumper \@taxon_filter_oid;
+    my %h = WebUtil::array2Hash(@taxon_filter_oid);    # get unique taxon_oid's
+    @taxon_filter_oid     = sort( keys(%h) );
+    $taxon_filter_oid_str = join( ",", @taxon_filter_oid );
 
-    if ( scalar @taxon_filter_oid > 0 ) {
-		# get unique taxon_oids and set the session param
-		my %uniq;
-		undef @uniq{ @taxon_filter_oid };
-		$taxon_filter_oid_str = join ",", sort keys %uniq;
-		$session->param( "blank_taxon_filter_oid_str", "0" );
-
-		# add to the genome cart
-		GenomeCart::addToGenomeCart([ keys %uniq ]);
-	}
+    setTaxonSelections($taxon_filter_oid_str);
+    if ( !blankStr($taxon_filter_oid_str) ) {
+        setSessionParam( "blank_taxon_filter_oid_str", "0" );
+    }
 }
 
-if ( $cgi->param("deleteAllCartGenes") ) {
-    $session->param( "gene_cart_oid_str", "" );
+if ( param("deleteAllCartGenes") ne "" ) {
+    setSessionParam( "gene_cart_oid_str", "" );
 }
 
 #
-# touch user's chart files
+# lets touch user's chart files
 #
 touchCartFiles();
 
@@ -383,71 +362,16 @@ if ( $user_restricted_site && $enable_workspace ) {
 # remap the section param if required
 coerce_section();
 
-
-
-$env->{oldLogin} = $oldLogin;
-$env->{taxon_filter_oid_str} = $taxon_filter_oid_str;
-
-my $dispatcher = IMG::Dispatcher->new({
-	env => $env,
-	cgi => $cgi,
-	session => $session,
-});
-
-#	cookie => $cookie,
-#	imgAppTerm => $imgAppTerm,
-
-my $n_taxa = get_n_taxa();
-
-carp "I've got $n_taxa taxons!";
-my $output = $dispatcher->dispatch_page( n_taxa => $n_taxa );
-
-#	return {
-#		sub       => $sub,
-#		module    => $module,
-#		tmpl_args => %tmpl_args,
-#		tmpl      => $tmpl,
-#		output    => $output
-#	};
-
-printAppHeader(
-	$output->{tmpl_args}{current} // "",
-	undef,
-	$output->{tmpl_args}{gwt_module} // undef,
-	$output->{tmpl_args}{yui_js} || undef,
-	$output->{tmpl_args}{content_js} || undef,
-	$output->{tmpl_args}{help} || undef );
-
-print $output->{output};
-
-#	my (
-#		$current, $noMenu, $gwtModule, $yuijs, $content_js, $help, $redirecturl
-#	) = @_;
-
-#	my @input = @_;
-#	my @params = qw( current no_menu gwt_module yui_js content_js help redirect_url );
-#	my %args;
-
-
-
-
-=cut
+# dispatch_page({ env => $env, page => param('page'), section => param('section') });
 
 ############################################################
 # main viewer dispatch
 ############################################################
-if ( $cgi->param() ) {
+if ( param() ) {
 
+    my $page = param('page');
+    my $section = param('section');
 
-<<<<<<< .mine
-    my $page = $cgi->param('page');
-    my $section = $cgi->param('section');
-
-    if ( $section eq "AbundanceProfileSearch" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
-        require AbundanceProfileSearch;
-        $pageTitle = "Abundance Profile Search";
-=======
     # TODO - for generic section loading new a section checker to ensure no one 
     # tries to enter a bad section name :) - ken
     my %validSections = (
@@ -456,7 +380,6 @@ if ( $cgi->param() ) {
         GenomeList => 'GenomeList',
         ImgStatsOverview => 'ImgStatsOverview',
     );
->>>>>>> .r33963
 
     if ( param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
         # this must before  the "} elsif (exists $validSections{ $section}) { "
@@ -471,6 +394,7 @@ if ( $cgi->param() ) {
         setSessionParam( "lastCart", "genomeCart" );
         printAppHeader("AnaCart");
         GenomeCart::dispatch();
+
     } elsif (exists $validSections{ $section}) {  
 
         # TODO a better section loader  - ken
@@ -536,7 +460,7 @@ if ( $cgi->param() ) {
     } elsif ( $section eq 'ProPortal' ) {
         require ProPortal;
 
-        my $page = $cgi->param('page');
+        my $page = param('page');
         if($page =~ /^kentest/) {
             printAppHeader("Find Genomes");
         } else {
@@ -583,7 +507,7 @@ if ( $cgi->param() ) {
         MeshTree::dispatch();
 
     } elsif ( $section eq "AbundanceProfiles" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require AbundanceProfiles;
         $pageTitle = "Abundance Profiles";
 
@@ -599,14 +523,14 @@ if ( $cgi->param() ) {
         }
         AbundanceProfiles::dispatch();
     } elsif ( $section eq "AbundanceTest" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require AbundanceTest;
         $pageTitle = "Abundance Test";
         printAppHeader("CompareGenomes")
-          if $cgi->param("noHeader") eq "";
+          if param("noHeader") eq "";
         AbundanceTest::dispatch();
     } elsif ( $section eq "AbundanceComparisons" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require AbundanceComparisons;
         $pageTitle = "Abundance Comparisons";
 
@@ -619,13 +543,13 @@ if ( $cgi->param() ) {
         my $numTaxon;
         if ($include_metagenomes) {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', "userGuide_m.pdf#page=20" )
-              if $cgi->param("noHeader") eq "";
+              if param("noHeader") eq "";
         } else {
-            $numTaxon = printAppHeader( "CompareGenomes", '', '', $js ) if $cgi->param("noHeader") eq "";
+            $numTaxon = printAppHeader( "CompareGenomes", '', '', $js ) if param("noHeader") eq "";
         }
         AbundanceComparisons::dispatch($numTaxon);
     } elsif ( $section eq "AbundanceComparisonsSub" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require AbundanceComparisonsSub;
         $pageTitle = "Function Category Comparisons";
 
@@ -638,21 +562,21 @@ if ( $cgi->param() ) {
         my $numTaxon;
         if ($include_metagenomes) {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', "userGuide_m.pdf#page=23" )
-              if $cgi->param("noHeader") eq "";
+              if param("noHeader") eq "";
         } else {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js )
-              if $cgi->param("noHeader") eq "";
+              if param("noHeader") eq "";
         }
         AbundanceComparisonsSub::dispatch($numTaxon);
     } elsif ( $section eq "AbundanceToolkit" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require AbundanceToolkit;
         $pageTitle = "Abundance Toolkit";
         printAppHeader("CompareGenomes")
-          if $cgi->param("noHeader") eq "";
+          if param("noHeader") eq "";
         AbundanceToolkit::dispatch();
     } elsif ( $section eq "Artemis" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require Artemis;
         $pageTitle = "Artemis";
 
@@ -662,17 +586,17 @@ if ( $cgi->param() ) {
         $template->param( YUI      => $YUI );
         my $js = $template->output;
 
-        my $from = $cgi->param("from");
+        my $from = param("from");
         my $numTaxon;
         if ( $from eq "ACT" || $page =~ /^ACT/ || $page =~ /ACT$/ ) {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js );
         } else {
             $numTaxon = printAppHeader( "FindGenomes", '', '', $js )
-              if $cgi->param("noHeader") eq "";
+              if param("noHeader") eq "";
         }
         Artemis::dispatch($numTaxon);
     } elsif ( $section eq "ClustalW" ) {
-        WebUtil::timeout( 60 * 40 );    # WebUtil::timeout in 40 minutes
+        timeout( 60 * 40 );    # timeout in 40 minutes
         require ClustalW;
         $pageTitle = "Clustal - Multiple Sequence Alignment";
         printAppHeader( "AnaCart", '', '', '', '', "DistanceTree.pdf#page=6" );
@@ -691,9 +615,8 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "CompareGenomes" || $section eq "CompareGenomesTab" ) {
         require CompareGenomes;
         $pageTitle = "Compare Genomes";
-        if ( WebUtil::paramMatch("_excel") ) {
-#            printExcelHeader("stats_export$$.xls");
-            IMG::Views::ViewMaker::print_excel_header("stats_export$$.xls");
+        if ( paramMatch("_excel") ) {
+            printExcelHeader("stats_export$$.xls");
         } else {
             printAppHeader("CompareGenomes");
         }
@@ -716,9 +639,8 @@ if ( $cgi->param() ) {
         require Pangenome;
         $pageTitle = "Pangenome";
 
-        if ( WebUtil::paramMatch("_excel") ) {
-#            printExcelHeader("stats_export$$.xls");
-            IMG::Views::ViewMaker::print_excel_header("stats_export$$.xls");
+        if ( paramMatch("_excel") ) {
+            printExcelHeader("stats_export$$.xls");
         } else {
             printAppHeader("Pangenome");
         }
@@ -732,13 +654,14 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "CuraCartStor" ) {
         require CuraCartStor;
         $pageTitle = "Curation Cart";
-        $session->param( "lastCart", "curaCart" );
-        printAppHeader("AnaCart") if ! $cgi->param("noHeader");
+        setSessionParam( "lastCart", "curaCart" );
+        printAppHeader("AnaCart")
+          if !paramMatch("noHeader");
         CuraCartStor::dispatch();
     } elsif ( $section eq "CuraCartDataEntry" ) {
         require CuraCartDataEntry;
         $pageTitle = "Curation Cart Data Entry";
-        $session->param( "lastCart", "curaCart" );
+        setSessionParam( "lastCart", "curaCart" );
         printAppHeader("AnaCart");
         CuraCartDataEntry::dispatch();
     } elsif ( $section eq "DataEvolution" ) {
@@ -752,7 +675,7 @@ if ( $cgi->param() ) {
         print header( -header => "text/html" );
         EbiIprScan::dispatch();
     } elsif ( $section eq "EgtCluster" ) {
-        WebUtil::timeout( 60 * 30 );    # WebUtil::timeout in 30 minutes
+        timeout( 60 * 30 );    # timeout in 30 minutes
         require EgtCluster;
         $pageTitle = "Genome Clustering";
         require GenomeListJSON;
@@ -762,7 +685,7 @@ if ( $cgi->param() ) {
         my $js = $template->output;
 
         my $numTaxon;
-        if ( $cgi->param("method") eq "hier" ) {
+        if ( param("method") eq "hier" ) {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', "DistanceTree.pdf#page=5" );
         } else {
             $numTaxon = printAppHeader( "CompareGenomes", '', '', $js );
@@ -862,7 +785,7 @@ if ( $cgi->param() ) {
         my $numTaxon;
         if (   $page eq 'findGenes'
             || $page eq 'geneSearch'
-            || ( $page ne 'geneSearchForm' && WebUtil::paramMatch("fgFindGenes") eq '' ) )
+            || ( $page ne 'geneSearchForm' && paramMatch("fgFindGenes") eq '' ) )
         {
             $numTaxon = printAppHeader( "FindGenes", '', '', $js, '', 'GeneSearch.pdf' );
         } else {
@@ -904,13 +827,13 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "FuncCartStor" || $section eq "FuncCartStorTab" ) {
         require FuncCartStor;
         $pageTitle = "Function Cart";
-        if ( WebUtil::paramMatch("AssertionProfile") ne "" ) {
+        if ( paramMatch("AssertionProfile") ne "" ) {
             $pageTitle = "Assertion Profile";
         }
-        $session->param( "lastCart", "funcCart" );
+        setSessionParam( "lastCart", "funcCart" );
 
-        #if ( $page eq 'funcCart' || WebUtil::paramMatch("addFunctionCart") ne "" || WebUtil::paramMatch('addToFuncCart') ne "") {
-        if ( $page eq 'funcCart' || !WebUtil::paramMatch("noHeader") ) {
+        #if ( $page eq 'funcCart' || paramMatch("addFunctionCart") ne "" || paramMatch('addToFuncCart') ne "") {
+        if ( $page eq 'funcCart' || !paramMatch("noHeader") ) {
             if ($enable_genomelistJson) {
                 my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
                 $template->param( base_url => $base_url );
@@ -923,7 +846,7 @@ if ( $cgi->param() ) {
         }
 
         # else {
-        #    printAppHeader("AnaCart") if !WebUtil::paramMatch("noHeader");
+        #    printAppHeader("AnaCart") if !paramMatch("noHeader");
         #}
         FuncCartStor::dispatch();
     } elsif ( $section eq "FuncProfile" ) {
@@ -944,7 +867,7 @@ if ( $cgi->param() ) {
         my $numTaxon = printAppHeader( "CompareGenomes", "", "", $js );
         FunctionProfiler::dispatch($numTaxon);
     } elsif ( $section eq "DotPlot" ) {
-        WebUtil::timeout( 60 * 40 );    # WebUtil::timeout in 40 minutes
+        timeout( 60 * 40 );    # timeout in 40 minutes
         require DotPlot;
         $pageTitle = "Dotplot";
 
@@ -956,7 +879,7 @@ if ( $cgi->param() ) {
         my $numTaxon = printAppHeader( "CompareGenomes", "Synteny Viewers", '', $js, '', 'Dotplot.pdf' );
         DotPlot::dispatch($numTaxon);
     } elsif ( $section eq "DistanceTree" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require DistanceTree;
         $pageTitle = "Distance Tree";
         require GenomeListJSON;
@@ -967,7 +890,7 @@ if ( $cgi->param() ) {
         my $numTaxon = printAppHeader( "CompareGenomes", '', '', $js, '', 'DistanceTree.pdf' );
         DistanceTree::dispatch($numTaxon);
     } elsif ( $section eq "RadialPhyloTree" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require RadialPhyloTree;
         $pageTitle = "Radial Phylogenetic Tree";
         require GenomeListJSON;
@@ -976,14 +899,14 @@ if ( $cgi->param() ) {
         $template->param( YUI      => $YUI );
         my $js = $template->output;
         my $numTaxon = printAppHeader( "CompareGenomes", '', '', $js )
-          if !WebUtil::paramMatch("export");
+          if !paramMatch("export");
         RadialPhyloTree::dispatch($numTaxon);
     } elsif ( $section eq "Kmer" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require Kmer;
         $pageTitle = "Kmer Frequency Analysis";
         printAppHeader("FindGenomes")
-          if !WebUtil::paramMatch("export");
+          if !paramMatch("export");
         Kmer::dispatch();
     } elsif ( $section eq "GenBankFile" ) {
         require GenBankFile;
@@ -996,7 +919,7 @@ if ( $cgi->param() ) {
         printAppHeader("FindGenomes");
         GeneAnnotPager::dispatch();
     } elsif ( $section eq "GeneInfoPager" ) {
-        WebUtil::timeout( 60 * 60 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 60 );    # timeout in 20 minutes
         require GeneInfoPager;
         $pageTitle = "Download Gene Information";
         printAppHeader("FindGenomes");
@@ -1004,13 +927,13 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "GeneCartChrViewer" ) {
         require GeneCartChrViewer;
         $pageTitle = "Circular Chromosome Viewer";
-        $session->param( "lastCart", "geneCart" );
+        setSessionParam( "lastCart", "geneCart" );
         printAppHeader("AnaCart");
         GeneCartChrViewer::dispatch();
     } elsif ( $section eq "GeneCartDataEntry" ) {
         require GeneCartDataEntry;
         $pageTitle = "Gene Cart Data Entry";
-        $session->param( "lastCart", "geneCart" );
+        setSessionParam( "lastCart", "geneCart" );
         printAppHeader("AnaCart");
         GeneCartDataEntry::dispatch();
 
@@ -1029,12 +952,12 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "GeneCartStor" || $section eq "GeneCartStorTab" ) {
         require GeneCartStor;
         $pageTitle = "Gene Cart";
-        if ( WebUtil::paramMatch("addFunctionCart") ne "" ) {
-            $session->param( "lastCart", "funcCart" );
+        if ( paramMatch("addFunctionCart") ne "" ) {
+            setSessionParam( "lastCart", "funcCart" );
         } else {
-            $session->param( "lastCart", "geneCart" );
+            setSessionParam( "lastCart", "geneCart" );
         }
-        if ( $page eq 'geneCart' || !WebUtil::paramMatch("noHeader") ) {
+        if ( $page eq 'geneCart' || !paramMatch("noHeader") ) {
             if ($enable_genomelistJson) {
                 my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
                 $template->param( base_url => $base_url );
@@ -1075,7 +998,7 @@ if ( $cgi->param() ) {
         printAppHeader("FindGenes");
         MetaGeneTable::dispatch();
     } elsif ( $section eq "GeneNeighborhood" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require GeneNeighborhood;
         $pageTitle = "Gene Neighborhood";
         printAppHeader("FindGenes");
@@ -1086,7 +1009,7 @@ if ( $cgi->param() ) {
         printAppHeader("AnaCart");
         FindClosure::dispatch();
     } elsif ( $section eq "GeneCassette" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
                                # new for img v2.5 - ken
         require GeneCassette;
         $pageTitle = "IMG Cassette";
@@ -1109,7 +1032,7 @@ if ( $cgi->param() ) {
         printAppHeader("AnaCart");
         Cart::dispatch();
     } elsif ( $section eq "GeneCassetteSearch" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
                                # new for img v2.9 - ken
 
         my $template = HTML::Template->new( filename => "$base_dir/genomeHeaderJson.html" );
@@ -1144,9 +1067,8 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "HmpTaxonList" ) {
         require HmpTaxonList;
         $pageTitle = "Hmp Genome List";
-        if ( WebUtil::paramMatch("_excel") ) {
-#            printExcelHeader("genome_export$$.xls");
-            IMG::Views::ViewMaker::print_excel_header("genome_export$$.xls");
+        if ( paramMatch("_excel") ) {
+            printExcelHeader("genome_export$$.xls");
         } else {
             printAppHeader("FindGenomes");
         }
@@ -1185,7 +1107,7 @@ if ( $cgi->param() ) {
         require AnalysisProject;
         AnalysisProject::dispatch();
     } elsif ( $section eq "GeneCassetteProfiler" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require GeneCassetteProfiler;
         $pageTitle = "Phylogenetic Profiler";
 
@@ -1196,19 +1118,6 @@ if ( $cgi->param() ) {
         my $js = $template->output;
         my $numTaxon = printAppHeader( "FindGenes", '', '', $js );
         GeneCassetteProfiler::dispatch($numTaxon);
-<<<<<<< .mine
-    } elsif ( $section eq "ImgStatsOverview" ) {
-        require ImgStatsOverview;
-        if ( $cgi->param('excel') eq 'yes' ) {
-#            printExcelHeader("stats_export$$.xls");
-            IMG::Views::ViewMaker::print_excel_header("stats_export$$.xls");
-            ImgStatsOverview::dispatch();
-        } else {
-            $pageTitle = "IMG Stats Overview";
-            printAppHeader("ImgStatsOverview");
-            ImgStatsOverview::dispatch();
-        }
-=======
 #    } elsif ( $section eq "ImgStatsOverview" ) {
 #        require ImgStatsOverview;
 #        if ( param('excel') eq 'yes' ) {
@@ -1219,7 +1128,6 @@ if ( $cgi->param() ) {
 #            printAppHeader("ImgStatsOverview");
 #            ImgStatsOverview::dispatch();
 #        }
->>>>>>> .r33963
     } elsif ( $section eq "TaxonEdit" ) {
         require TaxonEdit;
         $pageTitle = "Taxon Edit";
@@ -1233,7 +1141,7 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "GeneProfilerStor" ) {
         require GeneProfilerStor;
         $pageTitle = "Gene Profiler";
-        $session->param( "lastCart", "geneCart" );
+        setSessionParam( "lastCart", "geneCart" );
         printAppHeader("AnaCart");
         GeneProfilerStor::dispatch();
     } elsif ( $section eq "GenomeProperty" ) {
@@ -1267,7 +1175,7 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "ImgCpdCartStor" ) {
         require ImgCpdCartStor;
         $pageTitle = "IMG Compound Cart";
-        $session->param( "lastCart", "imgCpdCart" );
+        setSessionParam( "lastCart", "imgCpdCart" );
         printAppHeader("AnaCart");
         ImgCpdCartStor::dispatch();
     } elsif ( $section eq "ImgTermAndPathTab" ) {
@@ -1293,25 +1201,25 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "ImgPartsListCartStor" ) {
         require ImgPartsListCartStor;
         $pageTitle = "IMG Parts List Cart";
-        $session->param( "lastCart", "imgPartsListCart" );
+        setSessionParam( "lastCart", "imgPartsListCart" );
         printAppHeader("AnaCart");
         ImgPartsListCartStor::dispatch();
     } elsif ( $section eq "ImgPartsListDataEntry" ) {
         require ImgPartsListDataEntry;
         $pageTitle = "IMG Parts List Data Entry";
-        $session->param( "lastCart", "imgPartsListCart" );
+        setSessionParam( "lastCart", "imgPartsListCart" );
         printAppHeader("AnaCart");
         ImgPartsListDataEntry::dispatch();
     } elsif ( $section eq "ImgPwayCartDataEntry" ) {
         require ImgPwayCartDataEntry;
         $pageTitle = "IMG Pathway Cart Data Entry";
-        $session->param( "lastCart", "imgPwayCart" );
+        setSessionParam( "lastCart", "imgPwayCart" );
         printAppHeader("AnaCart");
         ImgPwayCartDataEntry::dispatch();
     } elsif ( $section eq "ImgPwayCartStor" ) {
         require ImgPwayCartStor;
         $pageTitle = "IMG Pathway Cart";
-        $session->param( "lastCart", "imgPwayCart" );
+        setSessionParam( "lastCart", "imgPwayCart" );
         printAppHeader("AnaCart");
         ImgPwayCartStor::dispatch();
     } elsif ( $section eq "ImgReaction" ) {
@@ -1322,7 +1230,7 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "ImgRxnCartStor" ) {
         require ImgRxnCartStor;
         $pageTitle = "IMG Reaction Cart";
-        $session->param( "lastCart", "imgRxnCart" );
+        setSessionParam( "lastCart", "imgRxnCart" );
         printAppHeader("AnaCart");
         ImgRxnCartStor::dispatch();
     } elsif ( $section eq "ImgTermBrowser" ) {
@@ -1333,17 +1241,17 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "ImgTermCartDataEntry" ) {
         require ImgTermCartDataEntry;
         $pageTitle = "IMG Term Cart Data Entry";
-        $session->param( "lastCart", "imgTermCart" );
+        setSessionParam( "lastCart", "imgTermCart" );
         printAppHeader("AnaCart");
         ImgTermCartDataEntry::dispatch();
     } elsif ( $section eq "ImgTermCartStor" ) {
         require ImgTermCartStor;
         $pageTitle = "IMG Term Cart";
-        $session->param( "lastCart", "imgTermCart" );
+        setSessionParam( "lastCart", "imgTermCart" );
         printAppHeader("AnaCart");
         ImgTermCartStor::dispatch();
     } elsif ( $section eq "KeggMap" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require KeggMap;
         $pageTitle = "KEGG Map";
         printAppHeader("FindFunctions");
@@ -1361,7 +1269,7 @@ if ( $cgi->param() ) {
         my $numTaxon = printAppHeader( "FindFunctions", '', '', $js );
         KeggPathwayDetail::dispatch($numTaxon);
     } elsif ( $section eq "PathwayMaps" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require PathwayMaps;
         $pageTitle = "Pathway Maps";
         printAppHeader("PathwayMaps");
@@ -1382,7 +1290,7 @@ if ( $cgi->param() ) {
         printAppHeader("FindFunctions");
         MpwPwayBrowser::dispatch();
     } elsif ( $section eq "GenomeHits" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require GenomeHits;
         $pageTitle = "Genome Hits";
 
@@ -1398,45 +1306,32 @@ if ( $cgi->param() ) {
         require ScaffoldHits;
         $pageTitle = "Scaffold Hits";
 
-        # for download add if WebUtil::paramMatch( "noHeader" ) eq "";
+        # for download add if paramMatch( "noHeader" ) eq "";
         printAppHeader("AnaCart")
-          if WebUtil::paramMatch("noHeader") eq "";
+          if paramMatch("noHeader") eq "";
         ScaffoldHits::dispatch();
     } elsif ( $section eq "ScaffoldCart" ) {
         require ScaffoldCart;
         $pageTitle = "Scaffold Cart";
-        if (   WebUtil::paramMatch("exportScaffoldCart") ne ""
-            || WebUtil::paramMatch("exportFasta") ne "" )
+        if (   paramMatch("exportScaffoldCart") ne ""
+            || paramMatch("exportFasta") ne "" )
         {
 
             # export excel
-            $session->param( "lastCart", "scaffoldCart" );
-        } elsif ( WebUtil::paramMatch("addSelectedToGeneCart") ne "" ) {
+            setSessionParam( "lastCart", "scaffoldCart" );
+        } elsif ( paramMatch("addSelectedToGeneCart") ne "" ) {
         } else {
-            $session->param( "lastCart", "scaffoldCart" );
+            setSessionParam( "lastCart", "scaffoldCart" );
             printAppHeader("AnaCart");
         }
         ScaffoldCart::dispatch();
     } elsif ( $section eq "GenomeCart" ) {
         require GenomeCart;
         $pageTitle = "Genome Cart";
-        $session->param( "lastCart", "genomeCart" );
+        setSessionParam( "lastCart", "genomeCart" );
         printAppHeader("AnaCart")
-          if WebUtil::paramMatch("noHeader") eq "";
+          if paramMatch("noHeader") eq "";
         GenomeCart::dispatch();
-<<<<<<< .mine
-    } elsif ( $cgi->param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
-
-        # add to genome cart - ken
-        require GenomeList;
-        GenomeList::clearCache();
-
-        require GenomeCart;
-        $pageTitle = "Genome Cart";
-        $session->param( "lastCart", "genomeCart" );
-        printAppHeader("AnaCart");
-        GenomeCart::dispatch();
-=======
 #    } elsif ( param("setTaxonFilter") ne "" && !blankStr($taxon_filter_oid_str) ) {
 #
 #        # add to genome cart - ken
@@ -1448,39 +1343,38 @@ if ( $cgi->param() ) {
 #        setSessionParam( "lastCart", "genomeCart" );
 #        printAppHeader("AnaCart");
 #        GenomeCart::dispatch();
->>>>>>> .r33963
     } elsif ( $section eq "MetagenomeHits" ) {
         require MetagenomeHits;
         $pageTitle = "Genome Hits";
 
-        # for download add if WebUtil::paramMatch( "noHeader" ) eq "";
+        # for download add if paramMatch( "noHeader" ) eq "";
         printAppHeader("FindGenomes")
-          if WebUtil::paramMatch("noHeader") eq "";
+          if paramMatch("noHeader") eq "";
         MetagenomeHits::dispatch();
     } elsif ( $section eq "MetaFileHits" ) {
         require MetaFileHits;
         $pageTitle = "Metagenome Hits";
 
-        # for download add if WebUtil::paramMatch( "noHeader" ) eq "";
+        # for download add if paramMatch( "noHeader" ) eq "";
         printAppHeader("FindGenomes")
-          if ( $cgi->param('noHeader') eq '' && WebUtil::paramMatch("noHeader") eq "" );
+          if ( param('noHeader') eq '' && paramMatch("noHeader") eq "" );
         MetaFileHits::dispatch();
     } elsif ( $section eq "MetagenomeGraph" ) {
-        WebUtil::timeout( 60 * 40 );
+        timeout( 60 * 40 );
         require MetagenomeGraph;
         $pageTitle = "Genome Graph";
 
-        # for download add if WebUtil::paramMatch( "noHeader" ) eq "";
+        # for download add if paramMatch( "noHeader" ) eq "";
         printAppHeader("FindGenomes")
-          if WebUtil::paramMatch("noHeader") eq "";
+          if paramMatch("noHeader") eq "";
         MetagenomeGraph::dispatch();
     } elsif ( $section eq "MetaFileGraph" ) {
         require MetaFileGraph;
         $pageTitle = "Metagenome Graph";
 
-        # for download add if WebUtil::paramMatch( "noHeader" ) eq "";
+        # for download add if paramMatch( "noHeader" ) eq "";
         printAppHeader("FindGenomes")
-          if WebUtil::paramMatch("noHeader") eq "";
+          if paramMatch("noHeader") eq "";
         MetaFileGraph::dispatch();
     } elsif ( $section eq "MissingGenes" ) {
         require MissingGenes;
@@ -1498,22 +1392,22 @@ if ( $cgi->param() ) {
         if ( $page eq "taxonUploadForm" ) {
             printAppHeader("AnaCart");
         } else {
-            printAppHeader( "MyIMG", '', '', '', '', 'MyIMG4.pdf' ) if WebUtil::paramMatch("noHeader") eq "";
+            printAppHeader( "MyIMG", '', '', '', '', 'MyIMG4.pdf' ) if paramMatch("noHeader") eq "";
         }
         MyIMG::dispatch();
     } elsif ( $section eq "ImgGroup" ) {
         require ImgGroup;
         $pageTitle = "MyIMG";
-        printAppHeader("MyIMG") if WebUtil::paramMatch("noHeader") eq "";
+        printAppHeader("MyIMG") if paramMatch("noHeader") eq "";
         ImgGroup::dispatch();
     } elsif ( $section eq "Workspace" ) {
         require Workspace;
         my $ws_yui_js = Workspace::getStyles();    # Workspace related YUI JS and styles
         $pageTitle = "Workspace";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader( "MyIMG", "", "", $ws_yui_js, '', 'IMGWorkspaceUserGuide.pdf' );
         }
         Workspace::dispatch();
@@ -1521,10 +1415,10 @@ if ( $cgi->param() ) {
         require WorkspaceGeneSet;
         my $ws_yui_js = Workspace::getStyles();    # Workspace related YUI JS and styles
         $pageTitle = "Workspace Gene Sets";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader( "MyIMG", "", "", $ws_yui_js, '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceGeneSet::dispatch();
@@ -1532,10 +1426,10 @@ if ( $cgi->param() ) {
         require WorkspaceFuncSet;
         my $ws_yui_js = Workspace::getStyles();    # Workspace related YUI JS and styles
         $pageTitle = "Workspace Function Sets";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader( "MyIMG", "", "", $ws_yui_js, '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceFuncSet::dispatch();
@@ -1543,10 +1437,10 @@ if ( $cgi->param() ) {
         require WorkspaceGenomeSet;
         my $ws_yui_js = Workspace::getStyles();    # Workspace related YUI JS and styles
         $pageTitle = "Workspace Genome Sets";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader( "MyIMG", "", "", $ws_yui_js, '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceGenomeSet::dispatch();
@@ -1554,43 +1448,34 @@ if ( $cgi->param() ) {
         require WorkspaceScafSet;
         my $ws_yui_js = Workspace::getStyles();    # Workspace related YUI JS and styles
         $pageTitle = "Workspace Scaffold Sets";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader( "MyIMG", "", "", $ws_yui_js, '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceScafSet::dispatch();
     } elsif ( $section eq "WorkspaceRuleSet" ) {
         require WorkspaceRuleSet;
         $pageTitle = "Workspace";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader("MyIMG", '', '', '', '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceRuleSet::dispatch();
     } elsif ( $section eq "WorkspaceJob" ) {
         require WorkspaceJob;
         $pageTitle = "Workspace";
-        my $header = $cgi->param("header");
-        if ( WebUtil::paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
+        my $header = param("header");
+        if ( paramMatch("wpload") ) {              ##use 'wpload' since param 'uploadFile' interferes 'load'
                                                    # no header
-        } elsif ( $header eq "" && WebUtil::paramMatch("noHeader") eq "" ) {
+        } elsif ( $header eq "" && paramMatch("noHeader") eq "" ) {
             printAppHeader("MyIMG", '', '', '', '', 'IMGWorkspaceUserGuide.pdf' );
         }
         WorkspaceJob::dispatch();
-<<<<<<< .mine
-
-    } elsif ( $section eq "WorkspaceBcSet" ) {
-        require WorkspaceBcSet;
-        $pageTitle = "Workspace";
-        printAppHeader("MyIMG") if WebUtil::paramMatch("noHeader") eq "";
-        WorkspaceBcSet::dispatch();
-=======
         
->>>>>>> .r33963
     } elsif ( $section eq "MyBins" ) {
         require MyBins;
         $pageTitle = "My Bins";
@@ -1741,7 +1626,7 @@ if ( $cgi->param() ) {
         if ( $page eq 'taxonArtemisForm' ) {
             printAppHeader( "FindGenomes", '', '', '', '', 'GenerateGenBankFile.pdf' );
         } else {
-            printAppHeader("FindGenomes") if WebUtil::paramMatch("noHeader") eq "";
+            printAppHeader("FindGenomes") if paramMatch("noHeader") eq "";
         }
         TaxonDetail::dispatch();
     } elsif ( $section eq "TaxonDeleted" ) {
@@ -1749,17 +1634,17 @@ if ( $cgi->param() ) {
         $pageTitle = "Taxon Deleted";
         printAppHeader("FindGenomes");
         TaxonDeleted::dispatch();
-    } elsif ( WebUtil::paramMatch("taxon_oid") && scalar( $cgi->param() ) < 2 ) {
+    } elsif ( paramMatch("taxon_oid") && scalar( param() ) < 2 ) {
 
         # if only taxon_oid is specified assume taxon detail page
-        $session->param( "section", "TaxonDetail" );
-        $session->param( "page",    "taxonDetail" );
+        setSessionParam( "section", "TaxonDetail" );
+        setSessionParam( "page",    "taxonDetail" );
         require TaxonDetail;
         $pageTitle = "Taxon Details";
         if ( $page eq 'taxonArtemisForm' ) {
             printAppHeader( "FindGenomes", '', '', '', '', 'GenerateGenBankFile.pdf' );
         } else {
-            printAppHeader("FindGenomes") if WebUtil::paramMatch("noHeader") eq "";
+            printAppHeader("FindGenomes") if paramMatch("noHeader") eq "";
         }
         TaxonDetail::dispatch();
     } elsif ( $section eq "MetaDetail" || $page eq "metaDetail" ) {
@@ -1768,7 +1653,7 @@ if ( $cgi->param() ) {
         if ( $page eq 'taxonArtemisForm' ) {
             printAppHeader( "FindGenomes", '', '', '', '', 'GenerateGenBankFile.pdf' );
         } else {
-            printAppHeader("FindGenomes");    # if WebUtil::paramMatch("noHeader") eq "";
+            printAppHeader("FindGenomes");    # if paramMatch("noHeader") eq "";
         }
         MetaDetail::dispatch();
     } elsif ( $section eq "TaxonList" ) {
@@ -1777,9 +1662,8 @@ if ( $cgi->param() ) {
         if ( $page eq 'categoryBrowser' ) {
             $pageTitle = "Category Browser";
         }
-        if ( WebUtil::paramMatch("_excel") ) {
-#            printExcelHeader("genome_export$$.xls");
-            IMG::Views::ViewMaker::print_excel_header("genome_export$$.xls");
+        if ( paramMatch("_excel") ) {
+            printExcelHeader("genome_export$$.xls");
         } else {
             if (   $page eq 'taxonListAlpha'
                 || $page eq 'gebaList'
@@ -1809,7 +1693,7 @@ if ( $cgi->param() ) {
     } elsif ( $section eq "Vista" ) {
         require Vista;
         $pageTitle = "VISTA";
-        my $page = $cgi->param("page");
+        my $page = param("page");
         if ( $page eq "toppage" ) {
             $pageTitle = "Synteny Viewers";
         }
@@ -1831,56 +1715,57 @@ if ( $cgi->param() ) {
         printAppHeader( "Methylomics", '', '', '', '', "Methylomics.pdf" );
         Methylomics::dispatch();
     } elsif ( $section eq "RNAStudies" ) {
-        WebUtil::timeout( 60 * 20 );    # WebUtil::timeout in 20 minutes
+        timeout( 60 * 20 );    # timeout in 20 minutes
         require RNAStudies;
         $pageTitle = "RNASeq Expression Studies";
-        if ( WebUtil::paramMatch("samplePathways") ne "" ) {
+        if ( paramMatch("samplePathways") ne "" ) {
             $pageTitle = "RNASeq Studies: Pathways";
-        } elsif ( WebUtil::paramMatch("describeSamples") ne "" ) {
+        } elsif ( paramMatch("describeSamples") ne "" ) {
             $pageTitle = "RNASeq Studies: Describe";
         }
         printAppHeader( "RNAStudies", '', '', '', '', "RNAStudies.pdf" )
-          if $cgi->param("noHeader") eq "";
+          if param("noHeader") eq "";
         RNAStudies::dispatch();
     } elsif ( $page eq "znormNote" ) {
         ## Non-section related dispatch
         $pageTitle = "Z-normalization";
         printAppHeader("FindGenes");
         printZnormNote();
-    } elsif ( $cgi->param("setTaxonFilter") ne "" && blankStr($taxon_filter_oid_str) ) {
+    } elsif ( param("setTaxonFilter") ne "" && blankStr($taxon_filter_oid_str) ) {
         $pageTitle = "Genome Selection Message";
         printAppHeader("FindGenomes");
         printMessage( "Saving 'no selections' is the same as selecting " . "all genomes. Genome filtering is disabled.\n" );
 
-    } elsif ( $cgi->param("exportGenes") ne "" && $cgi->param("exportType") eq "excel" ) {
-        my @gene_oid = $cgi->param("gene_oid");
-        #if ( scalar(@gene_oid) == 0 ) {
-        #    printAppHeader();
-        #    webError("You must select at least one gene to export.");
-        #}
+    } elsif ( param("exportGenes") ne "" && param("exportType") eq "excel" ) {
+        my @gene_oid = param("gene_oid");
+        if ( scalar(@gene_oid) == 0 ) {
+            printAppHeader();
+            webError("You must select at least one gene to export.");
+        }
         printExcelHeader("gene_export$$.xls");
+
         # --es 03/17/08 Use larger version with more columns.
         #printGenesToExcel( \@gene_oid );
         require GeneCartStor;
         GeneCartStor::printGenesToExcelLarge( \@gene_oid );
         WebUtil::webExit(0);
-    } elsif ( $cgi->param("exportGenes") ne ""
-        && $cgi->param("exportType") eq "nucleic" )
+    } elsif ( param("exportGenes") ne ""
+        && param("exportType") eq "nucleic" )
     {
         require GenerateArtemisFile;
         $pageTitle = "Gene Export";
         printAppHeader("");
         GenerateArtemisFile::prepareProcessGeneFastaFile();
-    } elsif ( $cgi->param("exportGenes") ne "" && $cgi->param("exportType") eq "amino" ) {
+    } elsif ( param("exportGenes") ne "" && param("exportType") eq "amino" ) {
         require GenerateArtemisFile;
         $pageTitle = "Gene Export";
         printAppHeader("");
         GenerateArtemisFile::prepareProcessGeneFastaFile(1);
-    } elsif ( $cgi->param("exportGenes") ne "" && $cgi->param("exportType") eq "tab" ) {
+    } elsif ( param("exportGenes") ne "" && param("exportType") eq "tab" ) {
         $pageTitle = "Gene Export";
         printAppHeader("");
         print "<h1>Gene Export</h1>\n";
-        my @gene_oid = $cgi->param("gene_oid");
+        my @gene_oid = param("gene_oid");
         my $nGenes   = @gene_oid;
         if ( $nGenes == 0 ) {
             print "<p>\n";
@@ -1894,7 +1779,7 @@ if ( $cgi->param() ) {
 
         printGeneTableExport( \@gene_oid );
         print "</pre>\n";
-    } elsif ( ( $public_login || $user_restricted_site ) && $cgi->param("logout") ne "" ) {
+    } elsif ( ( $public_login || $user_restricted_site ) && param("logout") ne "" ) {
 
         #        if ( !$oldLogin && $sso_enabled ) {
         #
@@ -1903,8 +1788,8 @@ if ( $cgi->param() ) {
         #            WebUtil::loginLog( 'logout main.pl', 'img' );
         #        }
 
-        $session->param( "blank_taxon_filter_oid_str", "1" );
-        $session->param( "oldLogin",                   0 );
+        setSessionParam( "blank_taxon_filter_oid_str", "1" );
+        setSessionParam( "oldLogin",                   0 );
         setTaxonSelections("");
         printAppHeader("logout");
 
@@ -1927,15 +1812,15 @@ if ( $cgi->param() ) {
             require Caliban;
             Caliban::logout();
 
-            #            $session->param( "contact_oid", "" );
+            #            setSessionParam( "contact_oid", "" );
             #            my $session = WebUtil::getSession();
             #            $session->delete();
             #            $session->flush();    # Recommended practice says use flush() after delete().
         }
     } elsif ( $page eq "message" ) {
         $pageTitle = "Message";
-        my $message       = $cgi->param("message");
-        my $menuSelection = $cgi->param("menuSelection");
+        my $message       = param("message");
+        my $menuSelection = param("menuSelection");
         printAppHeader($menuSelection);
         print "<div id='message'>\n";
         print "<p>\n";
@@ -1944,15 +1829,15 @@ if ( $cgi->param() ) {
         print "</div>\n";
     } elsif ( $section eq "Questions" || $page eq "questions" ) {
         $pageTitle = "Questions / Comments";
-        printAppHeader("about") if $cgi->param("noHeader") eq "";
+        printAppHeader("about") if param("noHeader") eq "";
         require Questions;
         Questions::dispatch();
-        if ( $cgi->param("noHeader") eq "true" ) {
+        if ( param("noHeader") eq "true" ) {
 
             # form redirect submit to jira - ken
             WebUtil::webExit(0);
         }
-    } elsif ( WebUtil::paramMatch("uploadTaxonSelections") ne "" ) {
+    } elsif ( paramMatch("uploadTaxonSelections") ne "" ) {
         $pageTitle = "Genome Browser";
         require TaxonList;
         $taxon_filter_oid_str = TaxonList::uploadTaxonSelections();
@@ -1969,7 +1854,7 @@ if ( $cgi->param() ) {
         $homePage = 1;
         printAppHeader("Home");
     } else {
-        my $rurl = $cgi->param("redirect");
+        my $rurl = param("redirect");
 
         # redirect on login
         if ( ( $public_login || $user_restricted_site ) && $rurl ne "" ) {
@@ -1980,7 +1865,7 @@ if ( $cgi->param() ) {
         }
     }
 } else {
-    my $rurl = $cgi->param("redirect");
+    my $rurl = param("redirect");
     if ( ( $public_login || $user_restricted_site ) && $rurl ne "" ) {
         redirecturl($rurl);
     } else {
@@ -1988,7 +1873,6 @@ if ( $cgi->param() ) {
         printAppHeader("Home");
     }
 }
-=cut
 
 printContentEnd();
 
@@ -2016,7 +1900,7 @@ sub printHTMLHead {
     } else {
 
         my $url = "$main_cgi?section=GenomeCart&page=genomeCart";
-        $url = WebUtil::alink( $url, $numTaxons );
+        $url = alink( $url, $numTaxons );
         my $plural = ( $numTaxons > 1 ) ? "s" : "";    # plural if 2 or more +BSJ 3/16/10
         $str = "$url <br/>  Genome$plural";
     }
@@ -2213,12 +2097,12 @@ sub printMenuDiv {
 
     my $template = HTML::Template->new( filename => "$base_dir/menu-template.html" );
 
-    my $contact_oid = WebUtil::getContactOid();
+    my $contact_oid = getContactOid();
     my $isEditor    = 0;
     if ($user_restricted_site) {
-        $isEditor = WebUtil::isImgEditor( $dbh, $contact_oid );
+        $isEditor = isImgEditor( $dbh, $contact_oid );
     }
-    my $super_user = WebUtil::getSuperUser();
+    my $super_user = getSuperUser();
 
     $img_internal        = 0 if ( $img_internal        eq "" );
     $include_metagenomes = 0 if ( $include_metagenomes eq "" );
@@ -2357,14 +2241,14 @@ sub printBreadcrumbsDiv {
         return;
     }
 
-    my $contact_oid = WebUtil::getContactOid();
+    my $contact_oid = getContactOid();
     my $isEditor    = 0;
     if ($user_restricted_site) {
-        $isEditor = WebUtil::isImgEditor( $dbh, $contact_oid );
+        $isEditor = isImgEditor( $dbh, $contact_oid );
     }
 
     # find last cart if any
-    my $lastCart = $session->param("lastCart");
+    my $lastCart = getSessionParam("lastCart");
     $lastCart = "geneCart" if $lastCart eq "";
     if (
         !$isEditor
@@ -2380,15 +2264,15 @@ sub printBreadcrumbsDiv {
     }
 
     my $str = "";
-    $str = WebUtil::alink( $main_cgi, "Home" );
+    $str = alink( $main_cgi, "Home" );
 
     if ( $current ne "" ) {
-        my $section = $cgi->param("section");
-        my $page    = $cgi->param("page");
+        my $section = param("section");
+        my $page    = param("page");
 
-        my $compare_url   = WebUtil::alink( "$main_cgi?section=CompareGenomes&page=compareGenomes", "Compare Genomes" );
-        my $synteny_url   = WebUtil::alink( "$main_cgi?section=Vista&page=toppage",                 "Synteny Viewers" );
-        my $abundance_url = WebUtil::alink( "$main_cgi?section=AbundanceProfiles&page=topPage",     "Abundance Profiles Tools" );
+        my $compare_url   = alink( "$main_cgi?section=CompareGenomes&page=compareGenomes", "Compare Genomes" );
+        my $synteny_url   = alink( "$main_cgi?section=Vista&page=toppage",                 "Synteny Viewers" );
+        my $abundance_url = alink( "$main_cgi?section=AbundanceProfiles&page=topPage",     "Abundance Profiles Tools" );
         if ( $section eq "Vista" && $page ne "toppage" ) {
             $str .= " &gt; $compare_url &gt; $synteny_url ";
         } elsif ( $section eq "DotPlot" ) {
@@ -2401,22 +2285,22 @@ sub printBreadcrumbsDiv {
             $str .= " &gt; $compare_url &gt; $abundance_url ";
         } elsif ( $section eq "MyBins" ) {
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp = WebUtil::alink( "main.cgi?section=MyBins", "MyBins" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp = alink( "main.cgi?section=MyBins", "MyBins" );
             $str .= " &gt; $display &gt; $tmp ";
 
         } elsif ( $section eq "WorkspaceGeneSet" ) {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp          = WebUtil::alink( "main.cgi?section=Workspace",        "Workspace" );
-            my $gene_set_url = WebUtil::alink( "main.cgi?section=WorkspaceGeneSet", "Gene Sets" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp          = alink( "main.cgi?section=Workspace",        "Workspace" );
+            my $gene_set_url = alink( "main.cgi?section=WorkspaceGeneSet", "Gene Sets" );
             $str .= " &gt; $display &gt; $tmp &gt; $gene_set_url ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=WorkspaceGeneSet", $folder );
+                    my $tmp = alink( "main.cgi?section=WorkspaceGeneSet", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2426,14 +2310,14 @@ sub printBreadcrumbsDiv {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp          = WebUtil::alink( "main.cgi?section=Workspace",        "Workspace" );
-            my $gene_set_url = WebUtil::alink( "main.cgi?section=WorkspaceFuncSet", "Function Sets" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp          = alink( "main.cgi?section=Workspace",        "Workspace" );
+            my $gene_set_url = alink( "main.cgi?section=WorkspaceFuncSet", "Function Sets" );
             $str .= " &gt; $display &gt; $tmp &gt; $gene_set_url ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=WorkspaceFuncSet", $folder );
+                    my $tmp = alink( "main.cgi?section=WorkspaceFuncSet", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2443,14 +2327,14 @@ sub printBreadcrumbsDiv {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp          = WebUtil::alink( "main.cgi?section=Workspace",          "Workspace" );
-            my $gene_set_url = WebUtil::alink( "main.cgi?section=WorkspaceGenomeSet", "Genome Sets" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp          = alink( "main.cgi?section=Workspace",          "Workspace" );
+            my $gene_set_url = alink( "main.cgi?section=WorkspaceGenomeSet", "Genome Sets" );
             $str .= " &gt; $display &gt; $tmp &gt; $gene_set_url ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=WorkspaceGenomeSet", $folder );
+                    my $tmp = alink( "main.cgi?section=WorkspaceGenomeSet", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2460,14 +2344,14 @@ sub printBreadcrumbsDiv {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp          = WebUtil::alink( "main.cgi?section=Workspace",        "Workspace" );
-            my $gene_set_url = WebUtil::alink( "main.cgi?section=WorkspaceScafSet", "Scaffold Sets" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp          = alink( "main.cgi?section=Workspace",        "Workspace" );
+            my $gene_set_url = alink( "main.cgi?section=WorkspaceScafSet", "Scaffold Sets" );
             $str .= " &gt; $display &gt; $tmp &gt; $gene_set_url ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=WorkspaceScafSet", $folder );
+                    my $tmp = alink( "main.cgi?section=WorkspaceScafSet", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2477,14 +2361,14 @@ sub printBreadcrumbsDiv {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp          = WebUtil::alink( "main.cgi?section=Workspace",        "Workspace" );
-            my $rule_set_url = WebUtil::alink( "main.cgi?section=WorkspaceRuleSet", "Rule Sets" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp          = alink( "main.cgi?section=Workspace",        "Workspace" );
+            my $rule_set_url = alink( "main.cgi?section=WorkspaceRuleSet", "Rule Sets" );
             $str .= " &gt; $display &gt; $tmp &gt; $rule_set_url ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=WorkspaceRuleSet", $folder );
+                    my $tmp = alink( "main.cgi?section=WorkspaceRuleSet", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2494,13 +2378,13 @@ sub printBreadcrumbsDiv {
 
             # this should be MyING
             my $display = $breadcrumbs{$current};
-            $display = WebUtil::alink( "main.cgi?section=MyIMG", $display );
-            my $tmp = WebUtil::alink( "main.cgi?section=Workspace", "Workspace" );
+            $display = alink( "main.cgi?section=MyIMG", $display );
+            my $tmp = alink( "main.cgi?section=Workspace", "Workspace" );
             $str .= " &gt; $display &gt; $tmp ";
             if ( $page ne "" ) {
-                my $folder = $cgi->param("folder");
+                my $folder = param("folder");
                 if ( $page eq "view" || $page eq "delete" ) {
-                    my $tmp = WebUtil::alink( "main.cgi?section=Workspace&page=$folder", $folder );
+                    my $tmp = alink( "main.cgi?section=Workspace&page=$folder", $folder );
                     $str .= " &gt; $tmp ";
                 }
                 $str .= " &gt; $page ";
@@ -2549,7 +2433,7 @@ sub printBreadcrumbsDiv {
 #  style="display: block" to override the default css
 # 4th div
 sub printErrorDiv {
-    my $section = $cgi->param('section');
+    my $section = param('section');
 
     my $template = HTML::Template->new( filename => "$base_dir/error-message-tmpl.html" );
     $template->param( base_url => $base_url );
@@ -2561,12 +2445,24 @@ sub printErrorDiv {
         || $section eq 'Kmer'
         || $section eq 'EgtCluster'
         || $section eq 'RNAStudies'
-        || $section eq 'IMGProteins' ) {
+        || $section eq 'IMGProteins' )
+    {
 
         my $text = <<EOF;
 <script src="https://www.java.com/js/deployJava.js"></script>
 <script type="text/javascript">
-var d=document.getElementById("error_content");if(navigator.javaEnabled()){var x=deployJava.versionCheck("1.6+");x||(d.style.display="block",d.innerHTML="Please <a href='http://java.com/'>update your Java.</a>")}else d.style.display="block",d.innerHTML="Please <a href='http://java.com/en/download/help/enable_browser.xml'>enable Java in your browser.</a>";
+if(! navigator.javaEnabled()) {
+    var div = document.getElementById('error_content');
+    div.style.display = "block";
+    div.innerHTML = "Please enable Java on your browser.&nbsp;&nbsp;<a href='http://java.com/en/download/help/enable_browser.xml'>How to enable Java.</a>";
+} else if(navigator.javaEnabled()) {
+    var x = deployJava.versionCheck('1.6+');
+    if (!x) {
+        var div = document.getElementById('error_content');
+        div.style.display = "block";
+        div.innerHTML = "Please update your <a href='http://java.com/'> Java.</a>";
+    }
+}
 </script>
 EOF
         $template->param( java_test => $text );
@@ -2619,7 +2515,7 @@ sub printStatsTableDiv {
 	       };
 
     } elsif ($abc) {
-        my $dbh = WebUtil::dbLogin();
+        my $dbh = dbLogin();
         require BiosyntheticStats;
         my ( $totalCnt, %domain2cnt ) = BiosyntheticStats::getStatsByDomain($dbh);
         print qq{
@@ -2641,7 +2537,7 @@ sub printStatsTableDiv {
                 $domain_name = "Metagenomes";
             }
             print "<td style='line-height: 1.25em; width: 90px;'>$domain_name</td>\n";
-            print "<td style='line-height: 1.25em;' align='right'>" . WebUtil::alink( $url, $cluster_cnt ) . "</td>\n";
+            print "<td style='line-height: 1.25em;' align='right'>" . alink( $url, $cluster_cnt ) . "</td>\n";
             print "</tr>\n";
         }
 
@@ -2662,7 +2558,7 @@ sub printStatsTableDiv {
             my $url = "main.cgi?section=NaturalProd&page=subCategory&stat_type=Phylum&stat_val=" . $tmp;
             print "<tr>\n";
             print "<td style='line-height: 1.25em; width: 90px;'>$name</td>\n";
-            print "<td style='line-height: 1.25em;' align='right'>" . WebUtil::alink( $url, $cnt ) . "</td>\n";
+            print "<td style='line-height: 1.25em;' align='right'>" . alink( $url, $cnt ) . "</td>\n";
             print "</tr>\n";
         }
 
@@ -2828,7 +2724,7 @@ sub printAppHeader {
 
     return if ( $current eq "exit" );
 
-    my $dbh = WebUtil::dbLogin();
+    my $dbh = dbLogin();
 
     # genome cart
     my $numTaxons = printTaxonFilterStatus();    # if ( $current ne "Home" );
@@ -2837,7 +2733,7 @@ sub printAppHeader {
     if ( $current eq "Home" && $abc ) {
 
         # caching home page
-        my $sid  = WebUtil::getContactOid();
+        my $sid  = getContactOid();
         my $time = 3600 * 24;                    # 24 hour cache
 
         printHTMLHead( $current, "JGI IMG Home", $gwtModule, "", "", $numTaxons );
@@ -2872,11 +2768,11 @@ sub printAppHeader {
         printMenuDiv( $current, $dbh );
         printErrorDiv();
         printContentHome();
-        my $section = $cgi->param("section");
+        my $section = param("section");
         if ( $section eq '' ) {
 
             # home page url
-            my $class = $cgi->param("class");
+            my $class = param("class");
             if ( !$class ) {
                 $class = 'datamart';
             }
@@ -2891,7 +2787,7 @@ sub printAppHeader {
     } elsif ( $current eq "Home" ) {
 
         # caching home page
-        my $sid  = WebUtil::getContactOid();
+        my $sid  = getContactOid();
         my $time = 3600 * 24;         # 24 hour cache
 
         printHTMLHead( $current, "JGI IMG Home", $gwtModule, "", "", $numTaxons );
@@ -2910,7 +2806,7 @@ sub printAppHeader {
         if ( $img_hmp && $include_metagenomes ) {
             $templateFile = "$base_dir/home-hmpm-v33.html";
             my $f = $env->{'hmp_home_page_file'};
-            $hmpGoogleJs = WebUtil::file2Str( $f, 1 );
+            $hmpGoogleJs = file2Str( $f, 1 );
         }
 
         my ( $sampleCnt, $proposalCnt, $newSampleCnt, $newStudies );
@@ -2925,18 +2821,18 @@ sub printAppHeader {
                 $file = $webfs_data_dir . "/hmp/" . $env->{home_page};
             }
 
-            $table_str = WebUtil::file2Str( $file, 1 );
+            $table_str = file2Str( $file, 1 );
             $table_str =~ s/__IMG__/$imgAppTerm/;
         } elsif ($img_edu) {
 
             # edu
             my $file = $webfs_data_dir . "/hmp/img_edu_home_page_v400.txt";
-            $table_str = WebUtil::file2Str( $file, 1 );
+            $table_str = file2Str( $file, 1 );
         } elsif ( !$user_restricted_site && !$include_metagenomes && !$img_hmp && !$img_edu ) {
 
             # w
             my $file = $webfs_data_dir . "/hmp/img_w_home_page_v400.txt";
-            $table_str = WebUtil::file2Str( $file, 1 );
+            $table_str = file2Str( $file, 1 );
         }
 
         my $rfh = newReadFileHandle($templateFile);
@@ -3024,7 +2920,7 @@ sub printNewsDiv {
             <div id='news'>
         };
         my $line;
-        my $rfh = WebUtil::newReadFileHandle($file);
+        my $rfh = newReadFileHandle($file);
         my $i = 0;
         while (my $line = $rfh->getline()) {
             last if ($i > 3);
@@ -3040,32 +2936,9 @@ sub printNewsDiv {
         };
     }
 }
-=cut
 
 
-<<<<<<< .mine
-    if ( !$user_restricted_site && !$public_login ) {
 
-    	my $session = WebUtil::getSession();
-
-        # only test cookie for public sites
-        my $cookie_test = cookie( -name => $cookie_name );
-        if ( defined $cookie_test ) {
-
-            # do nothing
-            # cookie was set
-            # print "===>$cookie_test<===  $cookie_name $cookie <br/>\n";
-        } else {
-
-            #print "===>$cookie_test<===  $cookie_name $cookie <br/>\n";
-            WebUtil::clearSession();
-            WebUtil::webError("Your browser is not accepting cookies. Please enabled cookies to view IMG.");
-        }
-    }
-}
-=cut
-=======
->>>>>>> .r33963
 #
 # gets genome's max add date
 #
@@ -3081,7 +2954,7 @@ sub getMaxAddDate {
     $imgclause
     };
 
-    my $cur = WebUtil::execSql( $dbh, $sql, $verbose );
+    my $cur = execSql( $dbh, $sql, $verbose );
     my ($max) = $cur->fetchrow();
 
     # this the acutal db ui release date not the genome add_date - ken
@@ -3089,7 +2962,7 @@ sub getMaxAddDate {
     my $sql2 = qq{
 select to_char(release_date, 'yyyy-mm-dd') from img_build
         };
-    $cur = WebUtil::execSql( $dbh, $sql2, $verbose );
+    $cur = execSql( $dbh, $sql2, $verbose );
     ($maxErDate) = $cur->fetchrow();
 
     return ( $max, $maxErDate );
@@ -3100,9 +2973,9 @@ sub printLogout {
 
     # in the img.css set the z-index to show the logout link - ken
     if ( $public_login || $user_restricted_site ) {
-        my $contact_oid = WebUtil::getContactOid();
+        my $contact_oid = getContactOid();
         return if !$contact_oid;
-        return if $cgi->param("logout");
+        return if ( param("logout") ne "" );
 
         my $name = WebUtil::getUserName2();
         if ( $name eq '' ) {
@@ -3143,14 +3016,14 @@ sub printMainFooter {
 
     my $copyright_year = $env->{copyright_year};
     my $version_year   = $env->{version_year};
-    my $img            = $cgi->param("img");
+    my $img            = param("img");
 
     # no exit read
-    my $buildDate    = WebUtil::file2Str( "$base_dir/buildDate", 1 );
+    my $buildDate    = file2Str( "$base_dir/buildDate", 1 );
     my $templateFile = "$base_dir/footer-v33.html";
 
     #$templateFile = "$base_dir/footer-v33.html" if ($homeVersion);
-    my $s = WebUtil::file2Str( $templateFile, 1 );
+    my $s = file2Str( $templateFile, 1 );
     $s =~ s/__main_cgi__/$main_cgi/g;
     $s =~ s/__base_url__/$base_url/g;
     $s =~ s/__copyright_year__/$copyright_year/;
@@ -3166,7 +3039,7 @@ sub printMainFooter {
 sub googleAnalyticsJavaScript {
     my ( $server, $google_key ) = @_;
 
-    my $str = WebUtil::file2Str( "$base_dir/google.js", 1 );
+    my $str = file2Str( "$base_dir/google.js", 1 );
     $str =~ s/__google_key__/$google_key/g;
     $str =~ s/__server__/$server/g;
 
@@ -3177,7 +3050,7 @@ sub googleAnalyticsJavaScript {
 sub googleAnalyticsJavaScript2 {
     my ( $server, $google_key ) = @_;
 
-    my $str = WebUtil::file2Str( "$base_dir/google2.js", 1 );
+    my $str = file2Str( "$base_dir/google2.js", 1 );
     $str =~ s/__google_key__/$google_key/g;
     $str =~ s/__server__/$server/g;
 
@@ -3188,25 +3061,15 @@ sub googleAnalyticsJavaScript2 {
 # printTaxonFilterStatus - Show current selected number of genomes.
 #  WARNING: very convoluted code.
 ############################################################################
-
-#sub printTaxonFilterStatus {
-sub get_n_taxa {
-
-    require GenomeCart;
-	my $taxon_oids = GenomeCart::getAllGenomeOids();
-	return scalar @$taxon_oids || 0;
-
-#    if ( $taxon_oids ne '' ) {
-#        my $size = $#$taxon_oids + 1;
-#        return $size;
-#    }
-#    return 0;
-}
-
 sub printTaxonFilterStatus {
 
-	return get_n_taxa;
-
+    require GenomeCart;
+    my $taxon_oids = GenomeCart::getAllGenomeOids();
+    if ( $taxon_oids ne '' ) {
+        my $size = $#$taxon_oids + 1;
+        return $size;
+    }
+    return 0;
 }
 
 ############################################################################
@@ -3219,11 +3082,11 @@ sub coerce_section {
 
 	# From submit button naming convention
 	#  section_<sectionName>_<action>, not URL link.
-	my $p = WebUtil::paramMatch("^_section");
+	my $p = paramMatch("^_section");
 	if ( $p ) {
 		my @arr = split /_/, $p;
 		## Force setting.
-		$cgi->param("section", $arr[2]);
+		param("section", $arr[2]);
 	}
 }
 
@@ -3231,7 +3094,7 @@ sub redirectform {
     my ($noprint) = @_;
 
     # get url redirect param
-    my @names = $cgi->param();
+    my @names = param();
 
     my $url;
     my $count = 0;
@@ -3247,7 +3110,7 @@ sub redirectform {
         next if ( $names[$i] eq "jgi_sso" );
 
         #next if ( $names[$i] eq "forceimg" );
-        my $value = $cgi->param( $names[$i] );
+        my $value = param( $names[$i] );
 
         if ( $names[$i] eq "redirect" ) {
 
@@ -3309,6 +3172,7 @@ sub getRequestAcctAttr {
 # after the 90 mins the user's charts are purged.
 # -ken
 sub touchCartFiles {
+
     require GeneCartStor;
     my $c    = new GeneCartStor();
     my $file = $c->getStateFile();
@@ -3350,4 +3214,24 @@ sub printAbcNavBar {
         my $template = HTML::Template->new( filename => $templateFile );
         print $template->output;
     }
+}
+
+
+sub render_template {
+
+	my $tmpl_name = shift || die "No template name specified!";
+	my $data = shift // {};
+
+	my $tt = Template->new({
+		INCLUDE_PATH =>  [
+			"$base_dir/views",
+			"$base_dir/views/pages",
+			"$base_dir/views/layouts",
+			"$base_dir/views/inc"
+		],
+	}) || die "Template error: $Template::ERROR\n";
+	$data->{env} = getEnv();
+
+	$tt->process($tmpl_name, $data) || die $tt->error() . "\n";
+
 }
