@@ -13,7 +13,7 @@ use FileHandle;
 use IMG::Util::Timed;
 use Moo::Role;
 
-requires 'env';
+requires 'config';
 requires 'remote_addr';
 requires 'user_agent';
 
@@ -50,9 +50,9 @@ sub _build_user_agent {
 
 Run preflight checks for IMG apps
 
-	my $errors = IMG::PreFlight::run_checks( env => $env, cgi => $cgi );
+	my $errors = IMG::PreFlight::run_checks( config => $config, cgi => $cgi );
 
-@param  env => environment config hash
+@param  config => configuration hash
 @param  http_params => hash of parameters
     OR  cgi  => $cgi_object
     OR  psgi => $psgi_env_hash
@@ -70,7 +70,7 @@ sub run_checks {
 	my $self = shift;
 	my $args = shift || {};
 
-	croak __PACKAGE__ . " requires parameters 'env' and either 'cgi' or 'psgi'" unless defined $self->env && ( defined $self->cgi || defined $self->psgi_req || defined $self->http_params ) ;
+	croak __PACKAGE__ . " requires parameters 'config' and either 'cgi' or 'psgi'" unless defined $self->config && ( defined $self->cgi || defined $self->psgi_req || defined $self->http_params ) ;
 
 #	warn "http_params: " . Dumper ( $http_params || {} );
 
@@ -87,7 +87,12 @@ sub run_checks {
 	while ( ! defined $resp && @checks) {
 		my $fn = shift @checks;
 		if ( $args->{$fn} ) {
-			$resp = $self->$fn( $args->{$fn} );
+			if (ref $args->{$fn} && 'ARRAY' eq ref $args->{$fn}) {
+				$resp = $self->$fn( @{$args->{$fn}} );
+			}
+			else {
+				$resp = $self->$fn( $args->{$fn} );
+			}
 		}
 		else {
 			$resp = $self->$fn;
@@ -100,7 +105,7 @@ sub run_checks {
 
 =head3 db_lock_check
 
-Check for a database lock file, $self->env->{dblock_file}
+Check for a database lock file, $self->config->{dblock_file}
 
 @return undef or a hashref with error information
 
@@ -109,11 +114,11 @@ Check for a database lock file, $self->env->{dblock_file}
 sub db_lock_check {
 	my $self = shift;
 
-	return undef unless $self->env->{dblock_file} && -e $self->env->{dblock_file};
+	return undef unless $self->config->{dblock_file} && -e $self->config->{dblock_file};
 
 	# check whether there is a message in the lock file
 	local $@;
-	my $s = eval { IMG::IO::File::slurp( $self->env->{dblock_file} ); };
+	my $s = eval { IMG::IO::File::slurp( $self->config->{dblock_file} ); };
 	$s ||= 'The database is currently being serviced; we apologise for the inconvenience. Please try again later.';
 
 	return {
@@ -137,7 +142,7 @@ sub bots_allowed_here {
 
 =head3
 
-Block bots, held in $env->{bot_patterns}
+Block bots, held in $config->{bot_patterns}
 
 @return undef or a hashref with error information
 
@@ -153,11 +158,11 @@ sub block_bots {
 		}
 	}
 
-    if ( $self->env->{allow_hosts} && @{$self->env->{allow_hosts}} ) {
+    if ( $self->config->{allow_hosts} && @{$self->config->{allow_hosts}} ) {
 
 		my @remote_ip_parts;
       ALLOW_HOSTS:
-        for my $ah (@{$self->env->{allow_hosts}}) {
+        for my $ah (@{$self->config->{allow_hosts}}) {
 			# no wildcards
 			if ( index($ah, '*') == -1 ) {
 				next ALLOW_HOSTS unless $self->remote_addr eq $ah;
@@ -196,8 +201,8 @@ sub block_bots {
         return undef;
     }
 
-	if ( $self->env->{bot_patterns} ) {
-        for my $pattern ( @{$self->env->{bot_patterns}} ) {
+	if ( $self->config->{bot_patterns} ) {
+        for my $pattern ( @{$self->config->{bot_patterns}} ) {
             if ( $self->user_agent =~ /$pattern/i ) {
 				return {
 					status  => 403,
@@ -213,7 +218,7 @@ sub block_bots {
 
 =head3
 
-Block users by IP address; blocked IPs are in $self->env->{block_ip_address_file}
+Block users by IP address; blocked IPs are in $self->config->{block_ip_address_file}
 
 @return undef or a hashref with error information
 
@@ -221,14 +226,14 @@ Block users by IP address; blocked IPs are in $self->env->{block_ip_address_file
 
 sub block_ip_address {
 	my $self = shift;
-	return undef unless $self->env->{block_ip_address_file} && -e $self->env->{block_ip_address_file};
+	return undef unless $self->config->{block_ip_address_file} && -e $self->config->{block_ip_address_file};
 
     # read in the file
     local $@;
-    my $contents = eval { IMG::IO::File::file_to_hash( $self->env->{block_ip_address_file}, '=' ); };
+    my $contents = eval { IMG::IO::File::file_to_hash( $self->config->{block_ip_address_file}, '=' ); };
     if ( $@ ) {
     	# is there a problem with the file?
-		$self->webLog("problem reading " . $self->env->{block_ip_address_file} . ": $@");
+		$self->webLog("problem reading " . $self->config->{block_ip_address_file} . ": $@");
 		return undef;
     }
 	if ( $contents && keys %$contents && $contents->{ $self->remote_addr } ) {
@@ -254,9 +259,9 @@ sub max_cgi_process_check {
 	my $self = shift;
     my $scriptName = shift || $0;
 
-	return undef unless $self->env->{max_cgi_procs};
+	return undef unless $self->config->{max_cgi_procs};
 
-    $self->webLog( $self->env->{max_cgi_procs} . " allowed processes" );
+    $self->webLog( $self->config->{max_cgi_procs} . " allowed processes" );
 
 #    return if ! $max_cgi_procs;
 
@@ -279,7 +284,7 @@ sub max_cgi_process_check {
 
     $self->webLog("max_cgi_process_check: $count $scriptName running\n");
 
-    if ( $count > $self->env->{max_cgi_procs} + 1 ) {
+    if ( $count > $self->config->{max_cgi_procs} + 1 ) {
         #webLog "WARNING: max_cgi_procs exceeded.\n";
 		return {
 			status => 503,
