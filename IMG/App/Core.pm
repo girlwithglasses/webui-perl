@@ -9,11 +9,11 @@ package IMG::App::Core;
 
 use IMG::Util::Base 'Class';
 
-has 'env' => (
+has 'config' => (
 	is => 'rw',
 	isa => HashRef,
-	required => 1,
-	writer => 'set_env',
+#	required => 1,
+	writer => 'set_config',
 );
 
 has 'session' => (
@@ -41,7 +41,8 @@ has 'psgi_req' => (
 sub BUILDARGS {
 	my $class = shift;
 	my $args = ( @_ && 1 < scalar( @_ ) ) ? { @_ } : shift;
-	return $args;
+
+	return $args || {};
 }
 
 sub _build_http_params {
@@ -56,6 +57,12 @@ sub _build_http_params {
 		return \%params;
 	}
 	return {};
+}
+
+sub env {
+	my $self = shift;
+	warn 'use of "env" is deprecated; please use "config" instead';
+	return $self->config;
 }
 
 1;

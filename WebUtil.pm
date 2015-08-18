@@ -1272,7 +1272,7 @@ sub webfsTest {
           # not using (perl 5.8.2 and later) 'safe' switch or sa_flags
     );
     my $oldaction = POSIX::SigAction->new();
-    sigaction( 'ALRM', $action, $oldaction );
+    sigaction( SIGALRM, $action, $oldaction );
     eval {
         alarm( $dbLoginTimeout ) if $dbLoginTimeout;    # seconds before time out
         if ( -e $webfs ) {
@@ -1283,7 +1283,7 @@ sub webfsTest {
     alarm(0);                      # cancel alarm (if eval failed)
 
     # restore original signal handler
-    sigaction( 'ALRM', $oldaction );
+    sigaction( SIGALRM, $oldaction );
     alarm($timeoutSec) if $timeoutSec;
 
     if ($@) {
@@ -2317,7 +2317,7 @@ sub dbLogin {
     );
 
     my $oldaction = POSIX::SigAction->new();
-    sigaction( 'ALRM', $action, $oldaction );
+    sigaction( SIGALRM, $action, $oldaction );
     my $dbh;
     eval {
         alarm($dbLoginTimeout);                  # seconds before time out
@@ -2327,7 +2327,7 @@ sub dbLogin {
     alarm(0);                                    # cancel alarm (if eval failed)
 
     # restore original signal handler
-    sigaction( 'ALRM', $oldaction );
+    sigaction( SIGALRM, $oldaction );
     alarm($timeoutSec) if ( $timeoutSec ne '' && $timeoutSec > 0 );
 
     if ($@) {
@@ -2477,7 +2477,7 @@ sub dbGoldLogin {
     );
 
     my $oldaction = POSIX::SigAction->new();
-    sigaction( 'ALRM', $action, $oldaction );
+    sigaction( SIGALRM, $action, $oldaction );
     my $dbh;
     eval {
         alarm($dbLoginTimeout);                  # seconds before time out
@@ -2487,7 +2487,7 @@ sub dbGoldLogin {
     alarm(0);                                    # cancel alarm (if eval failed)
 
     # restore original signal handler
-    sigaction( 'ALRM', $oldaction );
+    sigaction( SIGALRM, $oldaction );
     alarm($timeoutSec) if ( $timeoutSec ne '' && $timeoutSec > 0 );
 
     if ($@) {
